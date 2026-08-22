@@ -14,6 +14,8 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 add_library(pda_gfx
     src/gfx/bitmap.c
     src/gfx/pbm.c
+    src/gfx/pattern.c
+    src/gfx/draw.c
 )
 target_include_directories(pda_gfx PUBLIC src)
 
@@ -27,7 +29,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden)
+set(PDA_TESTS bitmap pbm golden draw)
 
 foreach(name IN LISTS PDA_TESTS)
     add_executable(test_${name} tests/unit/test_${name}.c)
