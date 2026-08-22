@@ -120,9 +120,16 @@ Platine gebraucht wird: die Skripte aus M14 laufen ein zweites Mal mit gesetztem
 Bildpfad aus DESIGN.md 12.3 (memcmp, Ausklapptabelle, PSRAM), Vault auf microSD,
 SQLite auf dem Gerät. Weil die Auflösung schon seit M4 dieselbe ist, gibt es hier
 keine Layout-Überraschungen — nur den Bildpfad und die Eingabe.
+
+**Fang mit DESIGN.md 12.6 an, nicht mit einem Datenblatt.** Anschlussbelegung,
+Zeitlage, PCLK, Bounce-Puffer, Flash-Modus und die vertauschte Farbreihenfolge
+sind auf genau dieser Platine verifiziert und stehen dort fertig. Wer das
+übergeht, verbrennt einen Tag an einem Bootloader, der nicht startet, und einen
+zweiten an blauem Text, der rot sein sollte.
 *Lehrstoff:* Hier geht die Rechnung für die zwölf Funktionen auf — oder eben
-nicht, und dann weißt du warum. Miss das Reißen unter WLAN-Last am Anfang des
-Kapitels, nicht am Ende.
+nicht, und dann weißt du warum. Miss die Bildstabilität am Anfang des Kapitels,
+nicht am Ende: unser Ausklappen nach RGB565 erzeugt Last, die der Referenzport
+so nicht hatte.
 
 **M17 · SPARTAN://-Browser**
 Socket in der Plattformschicht, Protokoll, Textdarstellung mit den vorhandenen

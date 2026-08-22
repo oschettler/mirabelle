@@ -1,0 +1,3 @@
+[submodule "extern/draftling"]
+	path = extern/draftling
+	url = https://github.com/clackups/draftling

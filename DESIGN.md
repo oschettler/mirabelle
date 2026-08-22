@@ -705,6 +705,11 @@ Arbeitsfläche — und überlappende Fenster wären auf 400 × 240 kaum sinnvoll
 Schriftgrößen ohnehin Datendateien sind, ist der größere Schnitt (`system16`) der
 billigere Weg zu lesbarem Text.
 
+Diese Entscheidung ist unabhängig bestätigt: Draftling lief auf derselben Platine
+zunächst mit 400 × 240 und zweifacher Vergrößerung, hat diesen Weg wieder verlassen
+und stellt heute nativ mit einer größeren Schrift dar. Die Skalierungsoption wurde
+dort ersatzlos entfernt. Wir sparen uns den Umweg.
+
 ### 12.3 Der Bildpfad
 
 ![Bildpfad](docs/diagramme/bildpfad-esp32.svg)
@@ -728,9 +733,18 @@ zu je 16 Bytes: ein Quellbyte wird acht Pixel, ein `memcpy` pro Byte.
 in der Plattformschicht; `gfx/` und `ui/` erfahren nichts davon. Genau dafür gibt
 es die zwölf Funktionen — das ist der erste echte Beleg, dass die Schichtung trägt.
 
-Gegen Reißen unter WLAN-Last bekommt `esp_lcd_rgb_panel` Bounce-Puffer im
-internen RAM; das ist ein bekanntes Verhalten dieser Platinenfamilie und eine
-Konfigurationszeile, kein Entwurfsproblem.
+Gegen Reißen bekommt `esp_lcd_rgb_panel` Bounce-Puffer im internen RAM. Die
+bewährten Werte stehen in Abschnitt 12.6 und sind aus einem laufenden Port auf
+derselben Platine übernommen, nicht geraten.
+
+Ein Unterschied zu jenem Port ist erwähnenswert, weil er direkt aus D-5 folgt:
+dort meldet die Oberfläche selbst, welcher Bereich sich geändert hat, und der
+Treiber sammelt daraus ein Rechteck. Unser Kern meldet nichts — er zeichnet
+stumpf alles neu. Der `memcmp` über 48 kB kauft genau diese Information
+nachträglich zurück, für einen Preis, der neben dem Ausklappen nach RGB565 nicht
+ins Gewicht fällt. Wir zahlen also einen kleinen Aufschlag dafür, dass `gfx/` und
+`ui/` nichts von Bildschirmauffrischung wissen müssen. Das ist der Handel, den
+Leitplanke 1 uns empfiehlt.
 
 ### 12.4 Farbe, obwohl 1 Bit
 
@@ -742,11 +756,70 @@ Ausklapptabelle — und erlaubt einen ruhigen Papierton statt hartem Weiß.
 
 | Punkt | Folge |
 |---|---|
-| Kein Zeiger, keine Tastatur | Bildschirmtastatur ist Pflicht (6.5); kein Hover, größere Trefferflächen (6.3) |
+| Keine eingebaute Tastatur | Eine Bildschirmtastatur muss es geben (6.5). Eine *externe* Tastatur ist über USB-Host oder BLE-HID aber sehr wohl möglich — Draftling fährt genau so und ist dort sogar der Normalfall. Die vollständige Tastaturbedienung aus 6.4 ist damit auf dem Gerät nicht nur Vorsichtsmaßnahme, sondern nutzbar. |
+| Kein Zeiger | Kein Hover, größere Trefferflächen (6.3) |
 | microSD und 8 MB PSRAM | SQLite ist auf dem Gerät realistisch. Der Rückfallplan „einfacher Index im RAM“ bleibt beschrieben, wird aber voraussichtlich nicht gebraucht |
 | WLAN an Bord | M16 (SPARTAN) läuft auf dem Gerät, nicht nur auf dem Arbeitsplatz |
 | Lautsprecher | Erinnerungen im Kalender können klingeln. Optional, eine Handvoll Zeilen in `plat` |
 | 16 MB Flash | Programm, Zeichensätze, Schemata und Kataloge passen bequem; der Vault liegt auf der SD-Karte |
+
+### 12.6 Übernommen aus Draftling
+
+Unter `extern/draftling` liegt ein fertiger Port auf genau diese Platine. Die
+folgenden Werte sind dort auf der Hardware verifiziert und werden übernommen,
+statt sie neu zu erarbeiten. Quelle: `extern/draftling/docs/sunton-esp32-8048S070c.md`
+und `components/display/display_rgb.cpp`.
+
+**Panelanschluss und Zeitlage**
+
+| Signal | GPIO | | Zeitparameter | Wert |
+|---|---|---|---|---|
+| HSYNC | 39 | | PCLK | **12 MHz** |
+| VSYNC | 40 | | HSYNC vorn / hinten / Puls | 8 / 43 / 2 |
+| DE | 41 | | VSYNC vorn / hinten / Puls | 8 / 12 / 2 |
+| PCLK | 42 | | `pclk_idle_high` | 1 |
+| DISP | nicht verdrahtet | | | |
+| Hintergrundlicht | 2, LEDC-PWM | | | |
+
+12 MHz ist die stabile Taktrate für dieses Panel. Höhere Raten flimmern unter
+CPU-Last. Das ist keine Vermutung, sondern auf dieser Platine gemessen.
+
+**Die Falle mit der Farbreihenfolge.** Die sechzehn Datenleitungen liegen
+physisch in der Reihenfolge R, G, B. `esp_lcd_new_rgb_panel()` bildet aber
+`data_gpio_nums[0]` auf das *niederwertigste* Bit des RGB565-Wortes ab, und
+RGB565 packt als `R[15:11] G[10:5] B[4:0]`. Das Feld muss deshalb in **B, G, R**
+aufgezählt werden:
+
+| RGB565-Bits | Gruppe | GPIOs |
+|---|---|---|
+| 0..4 | B0-B4 | 15, 7, 6, 5, 4 |
+| 5..10 | G0-G5 | 9, 46, 3, 8, 16, 1 |
+| 11..15 | R0-R4 | 14, 21, 47, 48, 45 |
+
+In R-G-B-Reihenfolge kommen Rot und Blau vertauscht heraus. Für uns wäre das
+besonders tückisch, weil ein einfarbiges Bild auf zwei RGB565-Werte abgebildet
+wird (12.4): ein vertauschtes Rot-Blau fiele bei Schwarz auf Weiß gar nicht auf
+und erst bei der ersten getönten Papierfarbe.
+
+**Bildspeicher.** `num_fbs = 1`, `fb_in_psram = 1`, Bounce-Puffer über sechzehn
+Zeilen, also `bounce_buffer_size_px = 800 * 16`.
+
+**Flash im DIO-Modus.** Die übliche Voreinstellung für den ESP32-S3 ist QIO,
+diese Platine ist aber für DIO verdrahtet. Ohne `CONFIG_ESPTOOLPY_FLASHMODE_DIO`
+kommt der Bootloader nicht zuverlässig hoch. PSRAM ist oktal mit 80 MHz, das
+entspricht der Voreinstellung.
+
+**SD-Karte** an SPI3, CS 10, MOSI 11, MISO 13, SCK 12. Das RGB-Peripheral belegt
+keinen SPI-Bus, es gibt also keinen Streit um Leitungen.
+
+**GT911.** SDA 19, SCL 20, RST 38, **INT nicht verdrahtet**. Daraus folgen zwei
+Dinge: der Treiber muss das Statusregister zyklisch abfragen statt auf eine
+Flanke zu warten, und die INT-gesteuerte Adressauswahl beim Zurücksetzen ist
+nicht durchführbar. Deshalb werden beide möglichen Adressen geprüft, 0x5D und
+0x14, mit erneuter Bindung, falls der Baustein wechselt. Das Panel ist nativ
+im Querformat, es braucht also weder Achsentausch noch Spiegelung.
+
+**Aufwecken aus dem Tiefschlaf** über GPIO 0, die BOOT-Taste, als EXT0.
 
 ---
 
@@ -820,7 +893,7 @@ Zeichenkette im Quelltext.
 
 | Punkt | Stand |
 |---|---|
-| Bounce-Puffer und WLAN | Die Platinenfamilie neigt unter Funklast zum Reißen. Erste Messung gleich in M15, nicht am Ende. |
+| Reißen des Bildes | Weitgehend entschärft: PCLK 12 MHz und Bounce-Puffer über sechzehn Zeilen sind auf dieser Platine verifiziert (12.6). Offen bleibt, ob unser Ausklappen nach RGB565 zusätzliche Last erzeugt, die der fremde Port so nicht hatte. Gleich am Anfang von M16 messen. |
 | Schriften | Eigene Entwürfe, kein Apple-Material. Rechtlich sauber, kostet aber Zeichenarbeit für rund 160 Glyphen in drei Schnitten. |
 | Textbearbeitung | Ein mehrzeiliges Feld mit Umbruch, Auswahl und Widerrufen ist mehr Arbeit, als es aussieht. Eigenes Kapitel, eigene Testabdeckung. |
 | Touch-Genauigkeit des GT911 | Ob `hit_slop` allein reicht oder das Touch-Thema durchgehend größere Bedienelemente braucht, zeigt erst das Gerät. |
@@ -840,6 +913,6 @@ Zeichenkette im Quelltext.
 | D-6 | 1 Bit pro Pixel im Kern | Passt zu System 1 und hält den Bildspeicher mit 48 kB im internen SRAM des ESP32 |
 | D-7 | Ein generischer Browser plus Schemadateien | Drei der vier Anwendungen entstehen ohne Code |
 | D-8 | Eigener Mini-YAML-Parser statt Bibliothek | 150 Zeilen, lehrreich, keine Abhängigkeit |
-| D-9 | 800 × 480 auf beiden Zielen, Vergrößerung nur in der Anzeige | Was du entwickelst, ist pixelgenau was das Gerät zeigt; Sollbilder gelten für beide Seiten |
+| D-9 | 800 × 480 auf beiden Zielen, Vergrößerung nur in der Anzeige | Was du entwickelst, ist pixelgenau was das Gerät zeigt; Sollbilder gelten für beide Seiten. Auf derselben Platine unabhängig bestätigt (12.2) |
 | D-10 | Touch ist ein Zeiger ohne Hover, Trefferflächen kommen aus dem Thema | Die Plattformschicht bleibt bei zwölf Funktionen |
-| D-11 | Bildschirmtastatur ist ein gewöhnliches Fenster | Erzeugt normale Ereignisse; der Rest des Systems merkt nichts |
+| D-11 | Bildschirmtastatur ist ein gewöhnliches Fenster | Erzeugt normale Ereignisse; der Rest des Systems merkt nichts. Eine externe Tastatur über USB oder BLE ist damit kein Sonderfall, sondern derselbe Weg (12.5) |
