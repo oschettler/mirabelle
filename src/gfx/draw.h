@@ -65,4 +65,9 @@ void gfx_invert_rect(gc *g, rect r);        /* unabhängig von pat und mode */
  * hier ist src die Quelle. */
 void gfx_blit(gc *g, const bitmap *src, int x, int y);
 
+/* Dasselbe für einen rohen 1-Bit-Block, der keine bitmap ist - etwa eine
+ * Glyphe im Zeichensatz. Bitreihenfolge wie in bitmap.h: MSB links. */
+void gfx_blit_bits(gc *g, const uint8_t *bits, int stride, int w, int h,
+                   int x, int y);
+
 #endif /* PDA_GFX_DRAW_H */

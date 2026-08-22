@@ -90,9 +90,13 @@ static bool check(const char *name, const bitmap *bm, bool binary)
     }
 
     bool same = bitmap_equal(&want, bm);
-    if (!same) {
-        char actual[512];
-        path_for(actual, sizeof actual, name, ".actual");
+    char actual[512];
+    path_for(actual, sizeof actual, name, ".actual");
+
+    if (same) {
+        /* Eine Abweichungsdatei aus einem früheren Lauf wäre jetzt irreführend. */
+        remove(actual);
+    } else {
         if (binary) pbm_write_p4(actual, bm); else pbm_write_p1(actual, bm);
         printf("  Sollbild %s weicht ab. Aktuelles Bild liegt in %s.\n", name, actual);
         print_diff(&want, bm);

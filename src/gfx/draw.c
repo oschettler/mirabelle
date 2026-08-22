@@ -239,14 +239,18 @@ void gfx_invert_rect(gc *g, rect r)
             set_pixel(g, x, y, !bitmap_get(g->dst, x, y));
 }
 
-void gfx_blit(gc *g, const bitmap *src, int x, int y)
+void gfx_blit_bits(gc *g, const uint8_t *bits, int stride, int w, int h,
+                   int x, int y)
 {
-    for (int sy = 0; sy < src->h; sy++) {
-        for (int sx = 0; sx < src->w; sx++) {
-            int ix = x + g->origin.x + sx;
-            int iy = y + g->origin.y + sy;
-
-            blend_at(g, ix, iy, bitmap_get(src, sx, sy));
+    for (int sy = 0; sy < h; sy++) {
+        for (int sx = 0; sx < w; sx++) {
+            int bit = (bits[(size_t)sy * stride + sx / 8] >> (7 - (sx & 7))) & 1;
+            blend_at(g, x + g->origin.x + sx, y + g->origin.y + sy, bit);
         }
     }
+}
+
+void gfx_blit(gc *g, const bitmap *src, int x, int y)
+{
+    gfx_blit_bits(g, src->bits, src->stride, src->w, src->h, x, y);
 }

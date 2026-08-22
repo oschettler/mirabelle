@@ -1,0 +1,23 @@
+# Zeichenvorrat, den jede Schrift enthalten muss.
+#
+# Die Liste ist ein Vertrag: ein Test prüft jede Schrift dagegen. Sie wächst
+# mit jeder Sprache, die dazukommt, und ist damit die Stelle, an der sich
+# entscheidet, ob eine Übersetzung überhaupt darstellbar ist.
+#
+# Format: einzelne Codepunkte oder Bereiche mit "..", danach frei Kommentar.
+
+U+0020..U+007E   ASCII, druckbar
+U+00C4 U+00D6 U+00DC             Umlaute groß
+U+00E4 U+00F6 U+00FC U+00DF      Umlaute klein und Eszett
+U+201E U+201C                    deutsche Anführungszeichen unten und oben
+U+201A U+2018                    einfache Anführungszeichen
+U+2013                           Halbgeviertstrich
+U+2026                           Auslassungspunkte
+U+20AC                           Eurozeichen
+U+00E9 U+00E8 U+00E0 U+00E7      für Namen im Adressbuch
+U+00F1 U+00E5 U+00F8
+U+00C9 U+00C8 U+00C0 U+00C7
+U+00D1 U+00C5 U+00D8
+U+00AB U+00BB                    französische Anführungszeichen
+U+00B0                           Gradzeichen
+U+FFFD                           Ersatzzeichen, Pflicht in jeder Schrift

@@ -44,6 +44,18 @@ static int test_failed_here;
         if (!(cond)) TEST_FAIL("%s ist nicht wahr", #cond);                    \
     } while (0)
 
+/* Wie CHECK, bricht den Test aber ab. Für Bedingungen, ohne die die folgenden
+ * Zeilen abstürzen würden - typisch ein Zeiger, der nicht NULL sein darf. Ein
+ * abstürzender Test ist schlimmer als ein fehlschlagender: er verschluckt alle
+ * Ergebnisse, die nach ihm kämen. */
+#define REQUIRE(cond)                                                         \
+    do {                                                                      \
+        if (!(cond)) {                                                        \
+            TEST_FAIL("%s ist nicht wahr, Test abgebrochen", #cond);          \
+            return;                                                           \
+        }                                                                     \
+    } while (0)
+
 #define CHECK_EQ(got, want)                                                   \
     do {                                                                      \
         long long g_ = (long long)(got), w_ = (long long)(want);              \

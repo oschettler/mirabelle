@@ -1,0 +1,45 @@
+# Metrik der Systemschrift, size 12, ascent 9.
+# Diese Datei ist Beschreibung für Menschen, nicht Eingabe für fontc.
+#
+# Zeilen 0..11, die Grundlinie liegt unter Zeile 8.
+#
+#   0   frei für Akzente über Großbuchstaben
+#   1   frei
+#   2   Oberkante Großbuchstaben, Akzente über Kleinbuchstaben
+#   3
+#   4   Oberkante Kleinbuchstaben (x-Höhe)
+#   5
+#   6   Mittelband, hier sitzen Querstriche
+#   7
+#   8   Grundlinie, letzte Zeile des Buchstabenkörpers
+#   9   Unterlängen (g j p q y), Cedille
+#  10   Unterlängen
+#  11   immer leer, das ist der Zeilenabstand
+#
+# Regel für Punkte und Akzente: sie sitzen zwei Zeilen über der Oberkante des
+# Buchstabens. Also Zeile 2 bei Kleinbuchstaben, Zeile 0 bei Großbuchstaben.
+# Dazwischen bleibt genau eine leere Zeile.
+#
+# Diese Regel geht bei Großbuchstaben nicht immer auf, und das ist eine echte
+# Grenze der Metrik, keine Nachlässigkeit. Über einem Großbuchstaben liegen nur
+# zwei freie Zeilen. Ein Trema braucht eine davon, die leere Zeile bleibt also
+# erhalten. Ein Akut, ein Gravis, eine Tilde oder ein Ring brauchen zwei Zeilen
+# und berühren den Buchstaben deshalb zwangsläufig.
+#
+# Der Ausweg wäre, die Großbuchstaben eine Zeile niedriger zu machen. Das haben
+# wir verworfen: sechs Zeilen Versalhöhe lesen sich auf 133 Pixeln je Zoll
+# schlechter als sieben, und É kommt in einer deutschen Oberfläche selten vor,
+# Großbuchstaben aber ständig. Wer die Schrift später überarbeitet, soll das
+# als bewusste Abwägung vorfinden und nicht als Fehler wieder aufmachen.
+#
+# Stämme sind ein Pixel breit. Die rechteste Spalte jeder Glyphe ist leer und
+# ist der Zeichenabstand; einen getrennten Abstandswert gibt es nicht.
+#
+# Übliche Breiten (jeweils inklusive der leeren Spalte rechts):
+#   Leerzeichen             4
+#   i l ! . , : ; ' | ( ) [ ] 3 bis 4
+#   Kleinbuchstaben         6
+#   m w                     8
+#   Großbuchstaben          7
+#   M W                     9
+#   Ziffern                 6, alle gleich breit
