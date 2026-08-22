@@ -1,0 +1,31 @@
+#direction: down
+#spacing: 30
+#padding: 9
+#font: Helvetica
+#fontSize: 12
+#lineWidth: 1
+#edges: hard
+#stroke: #000000
+#fill: #ffffff
+#title: Schichten und erlaubte Abhängigkeiten
+
+[apps/ (Lua)|Aufgaben; Kalender; Kontakte; Notizen; später: Spartan-Browser]
+[Lua-API|cls print rect btn key mouse; window on send; store.find store.search]
+[ui/|Fensterverwaltung; Menüs; Dialoge; Widgets; Layout; Fokus]
+[store/|Datensätze; Markdown + Front Matter; Index; Abfragen; Suche]
+[gfx/|Bitmap; Muster; Übertragungsmodi; Zeichensätze; UTF-8-Textsatz]
+[core/|Ereignisse; UTF-8; Sortierung; Zeit]
+[plat/|zwölf Funktionen; Bild zeigen; Ereignis holen; Zeit; Dateien]
+
+[apps/ (Lua)] -> [Lua-API]
+[Lua-API] -> [ui/]
+[Lua-API] -> [store/]
+[ui/] -> [gfx/]
+[ui/] -> [core/]
+[store/] -> [core/]
+[gfx/] -> [core/]
+[core/] -> [plat/]
+[store/] -> [plat/]
+[plat/] -> [SDL3]
+[plat/] -> [ESP32-8048S070C]
+[plat/] -> [headless]

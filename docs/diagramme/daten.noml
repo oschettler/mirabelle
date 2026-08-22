@@ -1,0 +1,22 @@
+#direction: down
+#spacing: 24
+#padding: 9
+#font: Helvetica
+#fontSize: 12
+#lineWidth: 1
+#edges: hard
+#stroke: #000000
+#fill: #ffffff
+#title: Markdown ist die Wahrheit, SQLite ist Index
+
+[Markdown-Dateien|Front Matter + Text; die Wahrheit]
+[index.db|records; records_fts5; jederzeit löschbar]
+[Abfrage als Datenstruktur|store.find; store.search]
+[Schemadatei|task.lua; contact.lua]
+[Generischer Browser|Liste; Formular; Menüs]
+
+[Markdown-Dateien] -- Scan über mtime + Größe --> [index.db]
+[index.db] -> [Abfrage als Datenstruktur]
+[Abfrage als Datenstruktur] -> [Generischer Browser]
+[Schemadatei] -> [Generischer Browser]
+[Generischer Browser] -- schreibt --> [Markdown-Dateien]

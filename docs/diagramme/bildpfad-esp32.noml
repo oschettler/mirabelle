@@ -1,0 +1,25 @@
+#direction: down
+#spacing: 24
+#padding: 9
+#font: Helvetica
+#fontSize: 12
+#lineWidth: 1
+#edges: hard
+#stroke: #000000
+#fill: #ffffff
+#title: Bildpfad auf dem ESP32-8048S070C
+
+[<frame>Kern, portabel|
+  [gfx: Vollbild neu zeichnen]
+  -> [1-Bit-Bildspeicher|48 000 Bytes; interner SRAM]
+]
+
+[<frame>plat_esp32.c|
+  [memcmp gegen das Vorbild|48 kB; liefert geänderte Kacheln]
+  -> [Ausklappen per Tabelle|256 Einträge à 16 Bytes; 1 Byte wird 8 Pixel]
+  -> [RGB565-Bildspeicher|768 000 Bytes im PSRAM; Bounce-Puffer]
+]
+
+[Kern, portabel] -> [plat_esp32.c]
+[plat_esp32.c] -> [esp_lcd_rgb_panel]
+[esp_lcd_rgb_panel] -> [Panel EK9716|800 x 480; paralleler RGB565-Bus]

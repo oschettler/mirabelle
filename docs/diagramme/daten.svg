@@ -1,0 +1,148 @@
+<svg version="1.1" baseProfile="full" width="600.5" height="500.0" viewBox="0 0 600.5 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+	<title >Markdown ist die Wahrheit, SQLite ist Index</title>
+	<desc >#direction: down
+	#spacing: 24
+	#padding: 9
+	#font: Helvetica
+	#fontSize: 12
+	#lineWidth: 1
+	#edges: hard
+	#stroke: #000000
+	#fill: #ffffff
+	#title: Markdown ist die Wahrheit, SQLite ist Index
+	
+	[Markdown-Dateien|Front Matter + Text; die Wahrheit]
+	[index.db|records; records_fts5; jederzeit löschbar]
+	[Abfrage als Datenstruktur|store.find; store.search]
+	[Schemadatei|task.lua; contact.lua]
+	[Generischer Browser|Liste; Formular; Menüs]
+	
+	[Markdown-Dateien] -- Scan über mtime + Größe --&gt; [index.db]
+	[index.db] -&gt; [Abfrage als Datenstruktur]
+	[Abfrage als Datenstruktur] -&gt; [Generischer Browser]
+	[Schemadatei] -&gt; [Generischer Browser]
+	[Generischer Browser] -- schreibt --&gt; [Markdown-Dateien]
+	</desc>
+	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="normal" font-style="normal">
+		<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="round" stroke="#000000">
+			<g stroke="transparent" fill="transparent">
+				<rect x="0.0" y="0.0" height="500.0" width="600.5" stroke="none"></rect>
+			</g>
+			<g transform="translate(155, 9)" fill="#000000">
+				<g transform="translate(20, 20)" fill="#000000" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal">
+					<text x="-146.0" y="99.0" stroke="none">Scan über mtime + Größe --&gt;</text>
+					<g stroke-dasharray="4 4">
+						<path d="M165.5 74.5 L110.0 96.0 L110.0 108.0" fill="none"></path>
+					</g>
+					<path d="M110.0 209.0 L110.0 221.0 L110.0 229.0" fill="none"></path>
+					<path d="M106.8 225.0 L110.0 229.0 L113.2 225.0 L110.0 233.0 Z"></path>
+					<path d="M110.0 317.0 L110.0 329.0 L208.7 360.7" fill="none"></path>
+					<path d="M203.9 362.5 L208.7 360.7 L205.9 356.4 L212.5 361.9 Z"></path>
+					<path d="M304.5 317.0 L304.5 329.0 L304.5 337.0" fill="none"></path>
+					<path d="M301.3 333.0 L304.5 337.0 L307.7 333.0 L304.5 341.0 Z"></path>
+					<text x="234.5" y="95.5" stroke="none">schreibt --&gt;</text>
+					<g stroke-dasharray="4 4">
+						<path d="M372.8 341.0 L389.0 329.0 L389.0 275.0 L389.0 221.0 L389.0 158.5 L389.0 96.0 L333.5 74.5" fill="none"></path>
+					</g>
+					<g data-name="Markdown-Dateien">
+						<g fill="#ffffff" stroke="#000000" data-name="Markdown-Dateien">
+							<rect x="165.5" y="0.0" height="84.0" width="168.0" data-name="Markdown-Dateien"></rect>
+							<path d="M165.5 34.0 L333.5 34.0" fill="none" data-name="Markdown-Dateien"></path>
+						</g>
+						<g transform="translate(165.5, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Markdown-Dateien" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="Markdown-Dateien" data-compartment="0">
+								<text x="75.0" y="14.1" stroke="none" text-anchor="middle" data-name="Markdown-Dateien" data-compartment="0">Markdown-Dateien</text>
+								
+							</g>
+						</g>
+						<g transform="translate(165.5, 34)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Markdown-Dateien" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="Markdown-Dateien" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Markdown-Dateien" data-compartment="1">Front Matter + Text</text>
+								<text x="0.0" y="30.3" stroke="none" data-name="Markdown-Dateien" data-compartment="1">die Wahrheit</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="index.db">
+						<g fill="#ffffff" stroke="#000000" data-name="index.db">
+							<rect x="27.5" y="108.0" height="101.0" width="165.0" data-name="index.db"></rect>
+							<path d="M27.5 142.0 L192.5 142.0" fill="none" data-name="index.db"></path>
+						</g>
+						<g transform="translate(27.5, 108)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="index.db" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="index.db" data-compartment="0">
+								<text x="73.5" y="14.1" stroke="none" text-anchor="middle" data-name="index.db" data-compartment="0">index.db</text>
+								
+							</g>
+						</g>
+						<g transform="translate(27.5, 142)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="index.db" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="index.db" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="index.db" data-compartment="1">records</text>
+								<text x="0.0" y="30.3" stroke="none" data-name="index.db" data-compartment="1">records_fts5</text>
+								<text x="0.0" y="46.5" stroke="none" data-name="index.db" data-compartment="1">jederzeit löschbar</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Abfrage als Datenstruktur">
+						<g fill="#ffffff" stroke="#000000" data-name="Abfrage als Datenstruktur">
+							<rect x="0.0" y="233.0" height="84.0" width="220.0" data-name="Abfrage als Datenstruktur"></rect>
+							<path d="M0.0 267.0 L220.0 267.0" fill="none" data-name="Abfrage als Datenstruktur"></path>
+						</g>
+						<g transform="translate(0, 233)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Abfrage als Datenstruktur" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="Abfrage als Datenstruktur" data-compartment="0">
+								<text x="101.0" y="14.1" stroke="none" text-anchor="middle" data-name="Abfrage als Datenstruktur" data-compartment="0">Abfrage als Datenstruktur</text>
+								
+							</g>
+						</g>
+						<g transform="translate(0, 267)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Abfrage als Datenstruktur" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="Abfrage als Datenstruktur" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Abfrage als Datenstruktur" data-compartment="1">store.find</text>
+								<text x="0.0" y="30.3" stroke="none" data-name="Abfrage als Datenstruktur" data-compartment="1">store.search</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Schemadatei">
+						<g fill="#ffffff" stroke="#000000" data-name="Schemadatei">
+							<rect x="244.0" y="233.0" height="84.0" width="121.0" data-name="Schemadatei"></rect>
+							<path d="M244.0 267.0 L365.0 267.0" fill="none" data-name="Schemadatei"></path>
+						</g>
+						<g transform="translate(244, 233)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Schemadatei" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="Schemadatei" data-compartment="0">
+								<text x="51.5" y="14.1" stroke="none" text-anchor="middle" data-name="Schemadatei" data-compartment="0">Schemadatei</text>
+								
+							</g>
+						</g>
+						<g transform="translate(244, 267)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Schemadatei" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="Schemadatei" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Schemadatei" data-compartment="1">task.lua</text>
+								<text x="0.0" y="30.3" stroke="none" data-name="Schemadatei" data-compartment="1">contact.lua</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Generischer Browser">
+						<g fill="#ffffff" stroke="#000000" data-name="Generischer Browser">
+							<rect x="212.5" y="341.0" height="101.0" width="184.0" data-name="Generischer Browser"></rect>
+							<path d="M212.5 375.0 L396.5 375.0" fill="none" data-name="Generischer Browser"></path>
+						</g>
+						<g transform="translate(212.5, 341)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Generischer Browser" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="Generischer Browser" data-compartment="0">
+								<text x="83.0" y="14.1" stroke="none" text-anchor="middle" data-name="Generischer Browser" data-compartment="0">Generischer Browser</text>
+								
+							</g>
+						</g>
+						<g transform="translate(212.5, 375)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Generischer Browser" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="Generischer Browser" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Generischer Browser" data-compartment="1">Liste</text>
+								<text x="0.0" y="30.3" stroke="none" data-name="Generischer Browser" data-compartment="1">Formular</text>
+								<text x="0.0" y="46.5" stroke="none" data-name="Generischer Browser" data-compartment="1">Menüs</text>
+								
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+</svg>

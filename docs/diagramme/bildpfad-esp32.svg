@@ -1,0 +1,202 @@
+<svg version="1.1" baseProfile="full" width="841.0" height="666.0" viewBox="0 0 841 666" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+	<title >Bildpfad auf dem ESP32-8048S070C</title>
+	<desc >#direction: down
+	#spacing: 24
+	#padding: 9
+	#font: Helvetica
+	#fontSize: 12
+	#lineWidth: 1
+	#edges: hard
+	#stroke: #000000
+	#fill: #ffffff
+	#title: Bildpfad auf dem ESP32-8048S070C
+	
+	[&lt;frame&gt;Kern, portabel|
+	  [gfx: Vollbild neu zeichnen]
+	  -&gt; [1-Bit-Bildspeicher|48 000 Bytes; interner SRAM]
+	]
+	
+	[&lt;frame&gt;plat_esp32.c|
+	  [memcmp gegen das Vorbild|48 kB; liefert geänderte Kacheln]
+	  -&gt; [Ausklappen per Tabelle|256 Einträge à 16 Bytes; 1 Byte wird 8 Pixel]
+	  -&gt; [RGB565-Bildspeicher|768 000 Bytes im PSRAM; Bounce-Puffer]
+	]
+	
+	[Kern, portabel] -&gt; [plat_esp32.c]
+	[plat_esp32.c] -&gt; [esp_lcd_rgb_panel]
+	[esp_lcd_rgb_panel] -&gt; [Panel EK9716|800 x 480; paralleler RGB565-Bus]
+	</desc>
+	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="normal" font-style="normal">
+		<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="round" stroke="#000000">
+			<g stroke="transparent" fill="transparent">
+				<rect x="0.0" y="0.0" height="666.0" width="841.0" stroke="none"></rect>
+			</g>
+			<g transform="translate(9, 9)" fill="#000000">
+				<g transform="translate(20, 20)" fill="#000000" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal">
+					<path d="M391.5 201.0 L391.5 213.0 L391.5 221.0" fill="none"></path>
+					<path d="M388.3 217.0 L391.5 221.0 L394.7 217.0 L391.5 225.0 Z"></path>
+					<path d="M391.5 442.0 L391.5 454.0 L391.5 462.0" fill="none"></path>
+					<path d="M388.3 458.0 L391.5 462.0 L394.7 458.0 L391.5 466.0 Z"></path>
+					<path d="M391.5 500.0 L391.5 512.0 L391.5 520.0" fill="none"></path>
+					<path d="M388.3 516.0 L391.5 520.0 L394.7 516.0 L391.5 524.0 Z"></path>
+					<g data-name="Kern, portabel">
+						<g fill="#ffffff" stroke="#000000" data-name="Kern, portabel">
+							<rect x="161.5" y="0.0" height="201.0" width="460.0" data-name="Kern, portabel"></rect>
+							<path d="M161.5 34.0 L283.0 34.0 L300.0 17.0 L300.0 0.0" fill="none" data-name="Kern, portabel"></path>
+						</g>
+						<g transform="translate(161.5, 0)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Kern, portabel" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="Kern, portabel" data-compartment="0">
+								<text x="0.0" y="14.1" stroke="none" data-name="Kern, portabel" data-compartment="0">Kern, portabel</text>
+								
+							</g>
+						</g>
+						<g transform="translate(161.5, 34)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Kern, portabel" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="Kern, portabel" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Kern, portabel" data-compartment="1">-&gt;</text>
+								<g transform="translate(20, 20)" data-name="Kern, portabel" data-compartment="1">
+									<g data-name="gfx: Vollbild neu zeichnen">
+										<g fill="#ffffff" stroke="#000000" data-name="gfx: Vollbild neu zeichnen">
+											<rect x="0.0" y="25.0" height="34.0" width="221.0" data-name="gfx: Vollbild neu zeichnen"></rect>
+										</g>
+										<g transform="translate(0, 25)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="gfx: Vollbild neu zeichnen" data-compartment="0">
+											<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="gfx: Vollbild neu zeichnen" data-compartment="0">
+												<text x="101.5" y="14.1" stroke="none" text-anchor="middle" data-name="gfx: Vollbild neu zeichnen" data-compartment="0">gfx: Vollbild neu zeichnen</text>
+												
+											</g>
+										</g>
+									</g>
+									<g data-name="1-Bit-Bildspeicher">
+										<g fill="#ffffff" stroke="#000000" data-name="1-Bit-Bildspeicher">
+											<rect x="245.0" y="0.0" height="84.0" width="157.0" data-name="1-Bit-Bildspeicher"></rect>
+											<path d="M245.0 34.0 L402.0 34.0" fill="none" data-name="1-Bit-Bildspeicher"></path>
+										</g>
+										<g transform="translate(245, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="1-Bit-Bildspeicher" data-compartment="0">
+											<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="1-Bit-Bildspeicher" data-compartment="0">
+												<text x="69.5" y="14.1" stroke="none" text-anchor="middle" data-name="1-Bit-Bildspeicher" data-compartment="0">1-Bit-Bildspeicher</text>
+												
+											</g>
+										</g>
+										<g transform="translate(245, 34)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="1-Bit-Bildspeicher" data-compartment="1">
+											<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="1-Bit-Bildspeicher" data-compartment="1">
+												<text x="0.0" y="14.1" stroke="none" data-name="1-Bit-Bildspeicher" data-compartment="1">48 000 Bytes</text>
+												<text x="0.0" y="30.3" stroke="none" data-name="1-Bit-Bildspeicher" data-compartment="1">interner SRAM</text>
+												
+											</g>
+										</g>
+									</g>
+								</g>
+							</g>
+						</g>
+					</g>
+					<g data-name="plat_esp32.c">
+						<g fill="#ffffff" stroke="#000000" data-name="plat_esp32.c">
+							<rect x="0.0" y="225.0" height="217.0" width="783.0" data-name="plat_esp32.c"></rect>
+							<path d="M0.0 259.0 L111.5 259.0 L128.5 242.0 L128.5 225.0" fill="none" data-name="plat_esp32.c"></path>
+						</g>
+						<g transform="translate(0, 225)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="plat_esp32.c" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="plat_esp32.c" data-compartment="0">
+								<text x="0.0" y="14.1" stroke="none" data-name="plat_esp32.c" data-compartment="0">plat_esp32.c</text>
+								
+							</g>
+						</g>
+						<g transform="translate(0, 259)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="plat_esp32.c" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="plat_esp32.c" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="plat_esp32.c" data-compartment="1">-&gt;</text>
+								<text x="0.0" y="30.3" stroke="none" data-name="plat_esp32.c" data-compartment="1">-&gt;</text>
+								<g transform="translate(20, 20)" data-name="plat_esp32.c" data-compartment="1">
+									<g data-name="memcmp gegen das Vorbild">
+										<g fill="#ffffff" stroke="#000000" data-name="memcmp gegen das Vorbild">
+											<rect x="0.0" y="0.0" height="84.0" width="238.0" data-name="memcmp gegen das Vorbild"></rect>
+											<path d="M0.0 34.0 L238.0 34.0" fill="none" data-name="memcmp gegen das Vorbild"></path>
+										</g>
+										<g transform="translate(0, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="memcmp gegen das Vorbild" data-compartment="0">
+											<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="memcmp gegen das Vorbild" data-compartment="0">
+												<text x="110.0" y="14.1" stroke="none" text-anchor="middle" data-name="memcmp gegen das Vorbild" data-compartment="0">memcmp gegen das Vorbild</text>
+												
+											</g>
+										</g>
+										<g transform="translate(0, 34)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="memcmp gegen das Vorbild" data-compartment="1">
+											<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="memcmp gegen das Vorbild" data-compartment="1">
+												<text x="0.0" y="14.1" stroke="none" data-name="memcmp gegen das Vorbild" data-compartment="1">48 kB</text>
+												<text x="0.0" y="30.3" stroke="none" data-name="memcmp gegen das Vorbild" data-compartment="1">liefert geänderte Kacheln</text>
+												
+											</g>
+										</g>
+									</g>
+									<g data-name="Ausklappen per Tabelle">
+										<g fill="#ffffff" stroke="#000000" data-name="Ausklappen per Tabelle">
+											<rect x="262.0" y="0.0" height="84.0" width="220.0" data-name="Ausklappen per Tabelle"></rect>
+											<path d="M262.0 34.0 L482.0 34.0" fill="none" data-name="Ausklappen per Tabelle"></path>
+										</g>
+										<g transform="translate(262, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Ausklappen per Tabelle" data-compartment="0">
+											<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="Ausklappen per Tabelle" data-compartment="0">
+												<text x="101.0" y="14.1" stroke="none" text-anchor="middle" data-name="Ausklappen per Tabelle" data-compartment="0">Ausklappen per Tabelle</text>
+												
+											</g>
+										</g>
+										<g transform="translate(262, 34)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Ausklappen per Tabelle" data-compartment="1">
+											<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="Ausklappen per Tabelle" data-compartment="1">
+												<text x="0.0" y="14.1" stroke="none" data-name="Ausklappen per Tabelle" data-compartment="1">256 Einträge à 16 Bytes</text>
+												<text x="0.0" y="30.3" stroke="none" data-name="Ausklappen per Tabelle" data-compartment="1">1 Byte wird 8 Pixel</text>
+												
+											</g>
+										</g>
+									</g>
+									<g data-name="RGB565-Bildspeicher">
+										<g fill="#ffffff" stroke="#000000" data-name="RGB565-Bildspeicher">
+											<rect x="506.0" y="0.0" height="84.0" width="219.0" data-name="RGB565-Bildspeicher"></rect>
+											<path d="M506.0 34.0 L725.0 34.0" fill="none" data-name="RGB565-Bildspeicher"></path>
+										</g>
+										<g transform="translate(506, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="RGB565-Bildspeicher" data-compartment="0">
+											<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="RGB565-Bildspeicher" data-compartment="0">
+												<text x="100.5" y="14.1" stroke="none" text-anchor="middle" data-name="RGB565-Bildspeicher" data-compartment="0">RGB565-Bildspeicher</text>
+												
+											</g>
+										</g>
+										<g transform="translate(506, 34)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="RGB565-Bildspeicher" data-compartment="1">
+											<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="RGB565-Bildspeicher" data-compartment="1">
+												<text x="0.0" y="14.1" stroke="none" data-name="RGB565-Bildspeicher" data-compartment="1">768 000 Bytes im PSRAM</text>
+												<text x="0.0" y="30.3" stroke="none" data-name="RGB565-Bildspeicher" data-compartment="1">Bounce-Puffer</text>
+												
+											</g>
+										</g>
+									</g>
+								</g>
+							</g>
+						</g>
+					</g>
+					<g data-name="esp_lcd_rgb_panel">
+						<g fill="#ffffff" stroke="#000000" data-name="esp_lcd_rgb_panel">
+							<rect x="306.5" y="466.0" height="34.0" width="170.0" data-name="esp_lcd_rgb_panel"></rect>
+						</g>
+						<g transform="translate(306.5, 466)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="esp_lcd_rgb_panel" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="esp_lcd_rgb_panel" data-compartment="0">
+								<text x="76.0" y="14.1" stroke="none" text-anchor="middle" data-name="esp_lcd_rgb_panel" data-compartment="0">esp_lcd_rgb_panel</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Panel EK9716">
+						<g fill="#ffffff" stroke="#000000" data-name="Panel EK9716">
+							<rect x="292.0" y="524.0" height="84.0" width="199.0" data-name="Panel EK9716"></rect>
+							<path d="M292.0 558.0 L491.0 558.0" fill="none" data-name="Panel EK9716"></path>
+						</g>
+						<g transform="translate(292, 524)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Panel EK9716" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="Panel EK9716" data-compartment="0">
+								<text x="90.5" y="14.1" stroke="none" text-anchor="middle" data-name="Panel EK9716" data-compartment="0">Panel EK9716</text>
+								
+							</g>
+						</g>
+						<g transform="translate(292, 558)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Panel EK9716" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="Panel EK9716" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Panel EK9716" data-compartment="1">800 x 480</text>
+								<text x="0.0" y="30.3" stroke="none" data-name="Panel EK9716" data-compartment="1">paralleler RGB565-Bus</text>
+								
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+</svg>
