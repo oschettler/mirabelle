@@ -581,6 +581,12 @@ Umgekehrt gilt: eine Notiz über SPARTAN auszuliefern heißt, das Front Matter z
 überspringen und den Rest unverändert zu senden. Keine Umwandlung, kein
 Zwischenformat.
 
+Das betrifft ausschließlich die **gespeicherten Datensätze**, also das, was
+der Nutzer anlegt. Die Dokumentation dieses Projekts — README, DESIGN,
+ROADMAP, das Handbuch — bleibt Markdown beziehungsweise AsciiDoc. Sie wird von
+Werkzeugen gelesen, die Markdown erwarten, und sie wird nie über SPARTAN
+ausgeliefert.
+
 Die Dateiendung ist `.gmi`, wie in der Gemini-Welt üblich. Der Medientyp ist
 `text/gemini`, und weil unsere Kataloge ohnehin deutsch sind, wird beim
 Ausliefern `lang=de` mitgegeben.

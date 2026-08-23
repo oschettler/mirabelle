@@ -7,6 +7,20 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 
+# Speicherfehler finden, bevor sie abstürzen.
+#
+# Der Anlass war ein Zugriff auf ein bereits geschlossenes Fenster: das
+# Programm stürzte beim Nutzer ab, die Testsuite blieb grün. Mit -fsanitize
+# meldet derselbe Test die Stelle samt beider Aufrufpfade - wo freigegeben
+# wurde und wo darauf zugegriffen wird.
+#
+#   make asan
+option(PDA_SANITIZE "Mit Address- und UB-Sanitizer bauen" OFF)
+if(PDA_SANITIZE)
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -g)
+    add_link_options(-fsanitize=address,undefined)
+endif()
+
 # --- Der portable Kern -------------------------------------------------------
 # Eine Bibliothek je Schicht. Dass die Schichten getrennt übersetzt werden, ist
 # der Mechanismus, der die Abhängigkeitsregel aus DESIGN.md Abschnitt 2 durchsetzt.

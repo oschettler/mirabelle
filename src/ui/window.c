@@ -36,8 +36,19 @@ window *window_create(const theme *th, rect frame, const char *title, unsigned f
 void window_destroy(window *w)
 {
     if (!w) return;
+
+    /* Erst der Eigentümer, dann freigeben. Andersherum bekäme er einen Zeiger
+     * auf bereits freigegebenen Speicher. */
+    if (w->on_close) w->on_close(w, w->on_close_user);
+
     bitmap_free(&w->content);
     free(w);
+}
+
+void window_set_on_close(window *w, window_close_fn fn, void *user)
+{
+    w->on_close      = fn;
+    w->on_close_user = user;
 }
 
 bool window_set_frame(window *w, rect frame)

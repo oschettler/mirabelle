@@ -88,6 +88,16 @@ static void backspace_codepoint(char *buf)
     *(char *)p = '\0';
 }
 
+/* Die Fensterverwaltung schließt ein Fenster selbst, sobald der Nutzer das
+ * Schließfeld trifft. Ohne diese Rückmeldung zeigten w_desk und w_keys danach
+ * ins Leere, und der nächste Zeichenlauf griff auf freigegebenen Speicher zu. */
+static void demo_window_closed(window *w, void *user)
+{
+    demo_state *st = user;
+    if (w == st->w_desk) st->w_desk = NULL;
+    if (w == st->w_keys) st->w_keys = NULL;
+}
+
 bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
                const theme *th, int screen_w, int screen_h)
 {
@@ -127,6 +137,9 @@ bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
         demo_free(st);
         return false;
     }
+
+    window_set_on_close(st->w_keys, demo_window_closed, st);
+    window_set_on_close(st->w_desk, demo_window_closed, st);
     return true;
 }
 
@@ -160,11 +173,7 @@ static void demo_run_action(demo_state *st, const char *action)
         if (!st->dlg) st->running = false;
     } else if (strcmp(action, "window.close") == 0) {
         window *w = wm_active(st->m);
-        if (w) {
-            if (w == st->w_keys) st->w_keys = NULL;
-            if (w == st->w_desk) st->w_desk = NULL;
-            wm_close(st->m, w);
-        }
+        if (w) wm_close(st->m, w);   /* die Rückmeldung räumt die Zeiger auf */
     }
 }
 

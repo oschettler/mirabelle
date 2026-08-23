@@ -24,6 +24,9 @@ struct window {
     bitmap       content;
     bool         active;
     void        *user;
+
+    window_close_fn on_close;
+    void           *on_close_user;
 };
 
 typedef enum {

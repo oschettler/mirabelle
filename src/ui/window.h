@@ -45,6 +45,18 @@ rect window_content_rect(const window *w);
 /* Zeichenziel für den Inhalt. Der Ursprung liegt bei (0,0) des Inhalts. */
 void window_gc(window *w, gc *g);
 
+/* Wird gerufen, kurz bevor das Fenster freigegeben wird - gleich ob über das
+ * Schließfeld, über wm_close oder beim Abräumen der ganzen Verwaltung.
+ *
+ * Der Eigentümer erfährt sonst nichts davon: die Fensterverwaltung schließt
+ * ein Fenster selbst, wenn der Nutzer das Schließfeld trifft, und ein
+ * Anwendungszeiger auf dieses Fenster zeigte danach ins Leere. Genau daran ist
+ * die Vorführung einmal abgestürzt.
+ *
+ * Die Rückmeldung darf das Fenster nicht erneut schließen. */
+typedef void (*window_close_fn)(window *w, void *user);
+void window_set_on_close(window *w, window_close_fn fn, void *user);
+
 void  window_set_title(window *w, const char *title);
 void *window_user(const window *w);
 void  window_set_user(window *w, void *user);

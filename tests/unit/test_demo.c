@@ -261,6 +261,35 @@ TEST(golden_demo_after_input)
     keymap_free(km);
 }
 
+/* Der gemeldete Absturz: Klick auf das Schließfeld, danach zeichnen. Vorher
+ * zeigte st.w_desk auf freigegebenen Speicher. */
+TEST(closing_a_window_by_its_close_box_is_safe)
+{
+    demo_state st;
+    REQUIRE(start(&st, NULL));
+    REQUIRE(st.w_desk != NULL);
+
+    theme th;
+    theme_defaults(&th);
+
+    rect f  = window_frame(st.w_desk);
+    event e = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1,
+                .x = f.x + th.box_margin + th.close_box / 2,
+                .y = f.y + th.titlebar_h / 2 };
+    demo_event(&st, &e);
+
+    CHECK(st.w_desk == NULL);
+
+    bitmap fb;
+    REQUIRE(bitmap_init(&fb, 800, 480));
+    gc g;
+    gc_init(&g, &fb);
+    demo_draw(&st, &g);          /* darf nicht auf Freigegebenes zugreifen */
+
+    bitmap_free(&fb);
+    demo_free(&st);
+}
+
 int main(void)
 {
     char path[512], err[512] = "";
@@ -276,6 +305,7 @@ int main(void)
     RUN(unknown_shortcut_leaves_last_action_alone);
     RUN(plain_letter_is_not_a_shortcut);
     RUN(mouse_click_is_recorded_with_count);
+    RUN(closing_a_window_by_its_close_box_is_safe);
     RUN(golden_demo_after_input);
     i18n_free(g_cat);
     return test_summary();

@@ -226,6 +226,85 @@ TEST(click_on_back_window_raises_it)
  * trifft der Klick das vordere. Ohne diesen Test bliebe unbemerkt, wenn die
  * Trefferprüfung in der falschen Richtung liefe - gezeichnet wird von hinten
  * nach vorn, getroffen aber von vorn nach hinten. */
+/* Der Eigentümer muss erfahren, wenn sein Fenster verschwindet - die
+ * Verwaltung schließt es beim Klick auf das Schließfeld selbst. Ohne diese
+ * Rückmeldung zeigt ein Anwendungszeiger danach ins Leere. */
+static window *g_closed;
+static int     g_closed_count;
+
+static void note_close(window *w, void *user)
+{
+    g_closed = w;
+    *(int *)user += 1;
+}
+
+TEST(close_notifies_the_owner)
+{
+    theme th = load_test_theme();
+    wm   *m  = wm_create(&th, 400, 300);
+    REQUIRE(m);
+
+    window *w = wm_open(m, rect_make(10, 10, 120, 90), "A", WIN_NORMAL);
+    REQUIRE(w);
+
+    g_closed       = NULL;
+    g_closed_count = 0;
+    window_set_on_close(w, note_close, &g_closed_count);
+
+    wm_close(m, w);
+    CHECK(g_closed == w);
+    CHECK_EQ(g_closed_count, 1);
+    CHECK_EQ(wm_count(m), 0);
+
+    wm_destroy(m);
+}
+
+/* Auch beim Abräumen der ganzen Verwaltung, sonst müsste der Eigentümer zwei
+ * verschiedene Wege kennen. */
+TEST(destroy_notifies_owners_of_remaining_windows)
+{
+    theme th = load_test_theme();
+    wm   *m  = wm_create(&th, 400, 300);
+    REQUIRE(m);
+
+    int count = 0;
+    window *a = wm_open(m, rect_make(10, 10, 100, 60), "A", WIN_NORMAL);
+    window *b = wm_open(m, rect_make(50, 50, 100, 60), "B", WIN_NORMAL);
+    REQUIRE(a && b);
+    window_set_on_close(a, note_close, &count);
+    window_set_on_close(b, note_close, &count);
+
+    wm_destroy(m);
+    CHECK_EQ(count, 2);
+}
+
+/* Der Weg, an dem es wirklich krachte: Klick auf das Schließfeld. */
+TEST(close_box_click_notifies_the_owner)
+{
+    theme th = load_test_theme();
+    wm   *m  = wm_create(&th, 400, 300);
+    REQUIRE(m);
+
+    rect    fa = rect_make(20, 20, 160, 120);
+    window *w  = wm_open(m, fa, "A", WIN_NORMAL);
+    REQUIRE(w);
+
+    int count = 0;
+    g_closed  = NULL;
+    window_set_on_close(w, note_close, &count);
+
+    event e = { .kind = EV_MOUSE_DOWN, .button = 1,
+                .x = close_box_center_x(&th, fa),
+                .y = close_box_center_y(&th, fa) };
+    CHECK(wm_event(m, &e));
+
+    CHECK(g_closed == w);
+    CHECK_EQ(count, 1);
+    CHECK_EQ(wm_count(m), 0);
+
+    wm_destroy(m);
+}
+
 TEST(overlap_is_hit_front_to_back)
 {
     theme th = load_test_theme();
@@ -643,6 +722,9 @@ int main(void)
     RUN(wm_open_activates_and_orders);
     RUN(click_on_back_window_raises_it);
 
+    RUN(close_notifies_the_owner);
+    RUN(destroy_notifies_owners_of_remaining_windows);
+    RUN(close_box_click_notifies_the_owner);
     RUN(overlap_is_hit_front_to_back);
     RUN(overlap_is_drawn_back_to_front);
     RUN(wm_hit_returns_correct_parts);
