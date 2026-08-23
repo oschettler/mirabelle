@@ -17,3 +17,13 @@ hit_slop       0
 min_w         96
 min_h         48
 font          system12
+
+# --- Menüs und Dialoge (M7) --------------------------------------------------
+menubar_h     20
+menu_item_h   15
+menu_pad      12
+menu_gap      24
+dialog_pad    14
+button_h      18
+button_min_w  62
+button_gap    10

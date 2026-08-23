@@ -1,0 +1,63 @@
+# Deutsche Oberflächentexte.
+#
+# Format: schlüssel = text. # leitet einen Kommentar ein.
+# Platzhalter sind nummeriert: {0}, {1}. Niemals Zeichenketten zusammenkleben -
+# die Wortstellung ändert sich zwischen Sprachen.
+# Pluralformen als Schlüsselvarianten .one und .other.
+
+# --- Menüleiste -------------------------------------------------------------
+menu.file                = Ablage
+menu.file.new            = Neu
+menu.file.open           = Öffnen
+menu.file.save           = Sichern
+menu.file.close          = Schließen
+menu.file.quit           = Beenden
+
+menu.edit                = Bearbeiten
+menu.edit.undo           = Widerrufen
+menu.edit.redo           = Wiederholen
+menu.edit.cut            = Ausschneiden
+menu.edit.copy           = Kopieren
+menu.edit.paste          = Einsetzen
+
+menu.view                = Ansicht
+menu.view.tasks          = Aufgaben
+menu.view.calendar       = Kalender
+menu.view.contacts       = Kontakte
+menu.view.notes          = Notizen
+
+menu.special             = Spezial
+menu.special.search      = Suchen
+menu.special.about       = Über PDA
+
+# --- Knöpfe -----------------------------------------------------------------
+button.ok                = OK
+button.cancel            = Abbrechen
+button.save              = Sichern
+button.discard           = Verwerfen
+
+# --- Dialoge ----------------------------------------------------------------
+dialog.discard.title     = Änderungen verwerfen?
+dialog.discard.body      = „{0}“ wurde geändert. Sollen die Änderungen verworfen werden?
+dialog.about.body        = Ein PIM-Paket im Stil von Macintosh System 1.
+
+# --- Fenster ----------------------------------------------------------------
+window.desk              = Schreibtisch
+window.keys              = Kürzel
+
+# --- Vorführung -------------------------------------------------------------
+demo.greeting            = Grüße aus Köln, Fräulein Müller!
+demo.hint                = Ziehen Sie die Titelleiste.
+demo.action              = Aktion: {0}
+demo.action.none         = (noch keine)
+demo.click               = Klick: {0}, {1} ({2}x)
+
+# --- Zählungen --------------------------------------------------------------
+list.count.one           = {0} Eintrag
+list.count.other         = {0} Einträge
+
+# --- Formate ----------------------------------------------------------------
+date.format              = %d.%m.%Y
+time.format              = %H:%M
+week.start               = 1
+weekday.short            = Mo Di Mi Do Fr Sa So

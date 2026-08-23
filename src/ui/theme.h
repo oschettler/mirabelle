@@ -24,6 +24,17 @@ typedef struct {
     int title_pad;     /* Luft links und rechts vom Titel */
     int hit_slop;      /* Trefferfläche wächst um so viel über das Gezeichnete */
     int min_w, min_h;  /* kleinste Fenstergröße */
+
+    int menubar_h;     /* Höhe der Menüleiste am oberen Rand */
+    int menu_item_h;   /* Zeilenhöhe in einem Aufklappmenü */
+    int menu_pad;      /* Luft links und rechts in Menüs */
+    int menu_gap;      /* Abstand zwischen Titel und Kürzel */
+
+    int dialog_pad;    /* Rand im Dialog */
+    int button_h;      /* Höhe eines Knopfs */
+    int button_min_w;  /* kleinste Knopfbreite */
+    int button_gap;    /* Abstand zwischen Knöpfen */
+
     char font[32];
 } theme;
 

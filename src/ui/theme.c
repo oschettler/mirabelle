@@ -23,6 +23,15 @@ void theme_defaults(theme *th)
     th->min_w      = 96;
     th->min_h      = 48;
     snprintf(th->font, sizeof th->font, "system12");
+
+    th->menubar_h    = 20;
+    th->menu_item_h  = 15;
+    th->menu_pad     = 12;
+    th->menu_gap     = 24;
+    th->dialog_pad   = 14;
+    th->button_h     = 18;
+    th->button_min_w = 62;
+    th->button_gap   = 10;
 }
 
 /* Wie fail() in keymap.c, liefert hier aber gleich false: der Aufrufer kann
@@ -82,6 +91,15 @@ bool theme_load(theme *th, const char *path, char *err, size_t err_size)
         { "hit_slop",   &th->hit_slop   },
         { "min_w",      &th->min_w      },
         { "min_h",      &th->min_h      },
+
+        { "menubar_h",    &th->menubar_h    },
+        { "menu_item_h",  &th->menu_item_h  },
+        { "menu_pad",     &th->menu_pad     },
+        { "menu_gap",     &th->menu_gap     },
+        { "dialog_pad",   &th->dialog_pad   },
+        { "button_h",     &th->button_h     },
+        { "button_min_w", &th->button_min_w },
+        { "button_gap",   &th->button_gap   },
     };
     size_t field_count = sizeof fields / sizeof fields[0];
 

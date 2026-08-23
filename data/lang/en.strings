@@ -1,0 +1,63 @@
+# English interface texts.
+#
+# Diese Datei gibt es nicht, weil wir sie brauchen, sondern damit auffällt,
+# wenn die Übersetzbarkeit kaputtgeht. Ein Test prüft, dass jeder Schlüssel in
+# jedem Katalog vorkommt und dass jeder Text mit dem vorhandenen Zeichenvorrat
+# darstellbar ist.
+
+# --- Menu bar ---------------------------------------------------------------
+menu.file                = File
+menu.file.new            = New
+menu.file.open           = Open
+menu.file.save           = Save
+menu.file.close          = Close
+menu.file.quit           = Quit
+
+menu.edit                = Edit
+menu.edit.undo           = Undo
+menu.edit.redo           = Redo
+menu.edit.cut            = Cut
+menu.edit.copy           = Copy
+menu.edit.paste          = Paste
+
+menu.view                = View
+menu.view.tasks          = Tasks
+menu.view.calendar       = Calendar
+menu.view.contacts       = Contacts
+menu.view.notes          = Notes
+
+menu.special             = Special
+menu.special.search      = Find
+menu.special.about       = About PDA
+
+# --- Buttons ----------------------------------------------------------------
+button.ok                = OK
+button.cancel            = Cancel
+button.save              = Save
+button.discard           = Discard
+
+# --- Dialogs ----------------------------------------------------------------
+dialog.discard.title     = Discard changes?
+dialog.discard.body      = “{0}” has been changed. Discard the changes?
+dialog.about.body        = A PIM suite in the style of Macintosh System 1.
+
+# --- Windows ----------------------------------------------------------------
+window.desk              = Desktop
+window.keys              = Shortcuts
+
+# --- Demo -------------------------------------------------------------------
+demo.greeting            = Greetings from Köln, Fräulein Müller!
+demo.hint                = Drag the title bar.
+demo.action              = Action: {0}
+demo.action.none         = (none yet)
+demo.click               = Click: {0}, {1} ({2}x)
+
+# --- Counts -----------------------------------------------------------------
+list.count.one           = {0} entry
+list.count.other         = {0} entries
+
+# --- Formats ----------------------------------------------------------------
+date.format              = %Y-%m-%d
+time.format              = %H:%M
+week.start               = 0
+weekday.short            = Mo Tu We Th Fr Sa Su

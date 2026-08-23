@@ -14,6 +14,7 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 add_library(pda_core
     src/core/utf8.c
     src/core/keymap.c
+    src/core/i18n.c
 )
 target_include_directories(pda_core PUBLIC src)
 
@@ -114,7 +115,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n)
 
 foreach(name IN LISTS PDA_TESTS)
     add_executable(test_${name} tests/unit/test_${name}.c)
@@ -130,6 +131,9 @@ target_compile_definitions(test_wm
 
 target_link_libraries(test_demo PRIVATE pda_demo pda_fonts)
 target_compile_definitions(test_demo
+    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
+target_compile_definitions(test_i18n
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 target_compile_definitions(test_keymap
