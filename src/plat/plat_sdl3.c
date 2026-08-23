@@ -32,6 +32,28 @@ static expand_table  s_expand;
 static event s_text_queue[TEXT_QUEUE_MAX];
 static int   s_text_head, s_text_count;
 
+/* Die größte ganzzahlige Vergrößerung, mit der das Fenster noch bequem auf den
+ * Bildschirm passt. "Bequem" heißt: nicht mehr als 85 Prozent der nutzbaren
+ * Fläche, damit Menüleiste, Dock und Fensterrahmen Platz behalten.
+ *
+ * Ohne das stand die Vergrößerung fest auf 2, also 1600 x 960 - mehr, als auf
+ * ein Notebookdisplay passt. */
+static int auto_scale(int w, int h)
+{
+    SDL_Rect usable;
+    if (!SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &usable))
+        return 1;
+
+    int max_w = usable.w * 85 / 100;
+    int max_h = usable.h * 85 / 100;
+
+    int scale = 1;
+    while (scale < 3 && w * (scale + 1) <= max_w && h * (scale + 1) <= max_h)
+        scale++;
+
+    return scale;
+}
+
 static uint16_t rgb565(int r, int g, int b)
 {
     return (uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3));
@@ -42,10 +64,11 @@ bool plat_init(const plat_config *cfg)
     s_w = (cfg && cfg->width  > 0) ? cfg->width  : 800;
     s_h = (cfg && cfg->height > 0) ? cfg->height : 480;
 
-    int scale = (cfg && cfg->scale > 0) ? cfg->scale : 2;
-    if (scale > 3) scale = 3;
-
     if (!SDL_Init(SDL_INIT_VIDEO)) return false;
+
+    int scale = (cfg && cfg->scale > 0) ? cfg->scale : auto_scale(s_w, s_h);
+    if (scale < 1) scale = 1;
+    if (scale > 3) scale = 3;
 
     const char *title = (cfg && cfg->title) ? cfg->title : "PDA";
     if (!SDL_CreateWindowAndRenderer(title, s_w * scale, s_h * scale, 0,
