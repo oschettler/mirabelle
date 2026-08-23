@@ -1,10 +1,9 @@
 == Wie wir prüfen, ob es stimmt
 
-Ein Test, der nie fehlschlägt, ist nicht automatisch ein guter Test. Er könnte
-auch einfach nichts prüfen. Dieses Kapitel handelt nicht davon, wie man Tests
-schreibt — das siehst du an jeder Datei unter `tests/unit/`. Es handelt davon,
-wie man herausfindet, ob ein Test, den man gerade geschrieben hat, überhaupt
-etwas taugt.
+Ein Test, der nie fehlschlägt, ist nicht automatisch ein guter Test — er
+könnte auch einfach nichts prüfen. Dieses Kapitel handelt nicht davon, wie man
+Tests schreibt, das siehst du an jeder Datei unter `tests/unit/`. Es handelt
+davon, wie man herausfindet, ob ein Test überhaupt etwas taugt.
 
 === Ein Testläufer ohne Magie
 
@@ -25,12 +24,11 @@ Zufall. Der Kopf der Datei sagt es geradeheraus:
 wird. Kein Testframework registriert die Funktion automatisch, keine
 Reflexion sucht sie im Programm zusammen — jede Testdatei zählt ihre Tests in
 `main` selbst auf, mit `RUN(name)`. Das wirkt altmodisch, verglichen mit
-Frameworks, die Tests über Annotationen finden. Es hat aber einen Vorteil, der
-für dieses Projekt schwerer wiegt: es gibt keine Stelle, an der Magie
-passiert, die du nicht lesen könntest. Wenn ein Test nicht läuft, liegt es
-nicht daran, dass ihn irgendein Mechanismus übersehen hat — er steht entweder
-in der `RUN`-Liste in `main`, oder er steht nicht darin, und das siehst du auf
-einen Blick.
+Frameworks, die Tests über Annotationen finden. Es hat aber einen Vorteil: es
+gibt keine Stelle, an der Magie passiert, die du nicht lesen könntest. Wenn
+ein Test nicht läuft, liegt es nicht daran, dass ihn irgendein Mechanismus
+übersehen hat — er steht entweder in der `RUN`-Liste in `main`, oder nicht,
+und das siehst du auf einen Blick.
 
 `RUN` selbst macht drei Dinge: den Namen merken, zählen, aufrufen, und danach
 melden, ob etwas fehlgeschlagen ist:
@@ -75,13 +73,12 @@ Kommentar in `tests/test.h` ihn eigens erklärt:
 ----
 
 Der Unterschied ist der zwischen einer Prüfung, die scheitern darf, ohne dass
-danach alles zusammenbricht, und einer Voraussetzung, ohne die gar nichts
-mehr Sinn ergibt. `wm_create` liefert zum Beispiel entweder einen gültigen
-Zeiger oder `NULL` — ruft ein Test danach ungeprüft `wm_open` auf einem
-`NULL`-Zeiger auf, stürzt nicht nur dieser Test ab, sondern das ganze
-Testprogramm, und jeder Test, der danach in der `RUN`-Liste steht, wird nie
-ausgeführt. Deshalb steht an genau solchen Stellen `REQUIRE(m)`, nicht
-`CHECK(m)`.
+danach alles zusammenbricht, und einer Voraussetzung, ohne die gar nichts mehr
+Sinn ergibt. `wm_create` liefert zum Beispiel entweder einen gültigen Zeiger
+oder `NULL` — ruft ein Test danach ungeprüft `wm_open` auf einem
+`NULL`-Zeiger auf, stürzt das ganze Testprogramm ab, und jeder Test danach in
+der `RUN`-Liste wird nie ausgeführt. Deshalb steht an solchen Stellen
+`REQUIRE(m)`, nicht `CHECK(m)`.
 
 === Sollbilder: ein Bild als Beweis
 
@@ -119,12 +116,11 @@ welche gilt:
 Rechne die zweite Zahl selbst nach: 800 × 480 Pixel bei einem Bit je Pixel
 sind `800 / 8 = 100` Bytes je Zeile (Kapitel 5 leitet diese Rechnung her), mal
 480 Zeilen, macht genau 48 000 Bytes — egal wie das Bild aussieht, weil P4 den
-Bildspeicher unverändert herausschreibt. Ein Textsollbild desselben Bilds
-wäre, wie der Kommentar sagt, rund 750 kB groß: statt eines Bits braucht ein
-Pixel im Textformat ein ganzes Zeichen, und dazu kommen Zeilenumbrüche. Der
-Unterschied ist mehr als das Fünfzehnfache — bei einem einzigen Vollbild. Ein
-paar solche Dateien im Repository, und `git diff` würde bei jeder kleinsten
-Änderung Hunderttausende Zeichen anzeigen, die niemand liest.
+Bildspeicher unverändert herausschreibt. Ein Textsollbild desselben Bilds wäre,
+wie der Kommentar sagt, rund 750 kB groß: statt eines Bits braucht ein Pixel
+im Textformat ein ganzes Zeichen, dazu kommen Zeilenumbrüche. Ein paar solche
+Dateien im Repository, und `git diff` würde bei jeder kleinsten Änderung
+Hunderttausende Zeichen anzeigen, die niemand liest.
 
 Deshalb ist P1 nur für Ausschnitte gedacht, kleine Bereiche wie einen
 Fensterrahmen oder eine Textzeile, bei denen die Textform ihren eigentlichen
@@ -148,12 +144,11 @@ bool golden_check(const char *name, const bitmap *bm)
 
 `GOLDEN_MAX_P1_PIXELS` ist `256 * 256`. Ein Test, der versehentlich ein
 Vollbild an `golden_check` statt `golden_check_full` übergibt, scheitert also
-nicht leise mit einer riesigen Textdatei im Repository — er scheitert laut,
-mit einer Meldung, die sagt, was zu tun ist. `tests/unit/test_golden.c` prüft
-sogar genau das als eigenen Test, `golden_rejects_oversized_text_image`, mit
-dem Kommentar: „Die Größenregel steht im Code, nicht nur in der
-Dokumentation.“ Eine Regel, die nur in der Doku steht, wird irgendwann
-vergessen. Eine, die der Code selbst durchsetzt, nicht.
+nicht leise mit einer riesigen Textdatei im Repository, sondern laut, mit
+einer Meldung, die sagt, was zu tun ist. `tests/unit/test_golden.c` prüft
+sogar genau das als eigenen Test, mit dem Kommentar: „Die Größenregel steht im
+Code, nicht nur in der Dokumentation.“ Eine Regel, die nur in der Doku steht,
+wird irgendwann vergessen. Eine, die der Code selbst durchsetzt, nicht.
 
 === Erst hinsehen, dann übernehmen
 
@@ -179,8 +174,7 @@ stimmt, sondern weil niemand mehr hinschaut.
 Die Regel ist deshalb: erst hinsehen, dann übernehmen. Bei einem
 Textausschnitt heißt das, das PBM tatsächlich zu lesen oder die Meldung beim
 Fehlschlag zu prüfen — `golden.c` druckt bei einer Abweichung den betroffenen
-Bereich als ASCII-Bild in die Konsole, damit du siehst, was sich geändert hat,
-ohne eine Bilddatei öffnen zu müssen. Bei einem Vollbild bedeutet es, die
+Bereich als ASCII-Bild in die Konsole. Bei einem Vollbild bedeutet es, die
 `.actual`-Datei anzusehen, die bei jedem Fehlschlag neben dem Sollbild
 entsteht. Wer `ACCEPT=1` blind läuft, um eine rote Testsuite grün zu bekommen,
 hat am Ende keine Sollbilder mehr — nur noch Dateien, die zufällig zu dem
@@ -191,16 +185,15 @@ passen, was der Code gerade tut.
 Das ist die schwierigere und wichtigere Frage. Ein grüner Test beweist nicht,
 dass der Code richtig ist — er beweist nur, dass die gewählten Eingaben nicht
 durch den vorhandenen Fehler gefallen sind. Ob der Test einen Fehler
-überhaupt *entdecken könnte*, ist eine ganz eigene Frage, und die einzige
-Methode, sie zu beantworten, ist: absichtlich einen Fehler einbauen und
-schauen, ob wenigstens ein Test anschlägt. Das nennt man einen
-Mutationstest. Bleibt die Suite grün, obwohl der Code jetzt falsch ist, hat
-sie diese Stelle nie wirklich geprüft, egal wie viele grüne Zeilen sie
-ausgibt.
+überhaupt *entdecken könnte*, ist eine eigene Frage, und die einzige Methode,
+sie zu beantworten, ist: absichtlich einen Fehler einbauen und schauen, ob
+wenigstens ein Test anschlägt. Das nennt man einen Mutationstest. Bleibt die
+Suite grün, obwohl der Code jetzt falsch ist, hat sie diese Stelle nie
+wirklich geprüft, egal wie viele grüne Zeilen sie ausgibt.
 
-Das Projekt hat diese Methode mehrfach angewendet, und mehrfach etwas
-gefunden. Vier Beispiele lohnen sich, weil jedes eine andere Art zeigt, wie
-ein Test versagen kann, ohne dass man es ihm ansieht.
+Das Projekt hat diese Methode mehrfach angewendet und mehrfach etwas gefunden.
+Vier Beispiele zeigen, wie unterschiedlich ein Test versagen kann, ohne dass
+man es ihm ansieht.
 
 **Ein Muster, das seine eigene Prüfung unterläuft.** Kapitel 5 erklärt, dass
 ein gezeichnetes Muster am Zielbild haftet, nicht am gezeichneten Objekt — ein
@@ -225,9 +218,8 @@ genau diese Verschiebung blind ist. Der Kommentar in
 ----
 
 Selbst ein Fehler, der das Muster fälschlich am Objekt statt am Ziel verankert
-hätte, wäre mit der alten Verschiebung unentdeckt geblieben. Die Lehre: eine
-Testeingabe kann zufällig genau die Eigenschaft verdecken, die sie beweisen
-soll.
+hätte, wäre mit der alten Verschiebung unentdeckt geblieben: eine Testeingabe
+kann zufällig genau die Eigenschaft verdecken, die sie beweisen soll.
 
 **Zwei Fenster, die sich nicht berühren.** M6 führte überlappende Fenster ein:
 von hinten nach vorn gezeichnet, von vorn nach hinten getroffen. Der
@@ -256,18 +248,15 @@ CHECK(wm_hit(m, x, y, &part) == b);
 ----
 
 Erst mit einem Punkt, der in beiden Fenstern liegt, prüft der Test überhaupt
-etwas über die Reihenfolge. Der Commit dazu nennt die beiden Tests beim Namen:
-`overlap_is_hit_front_to_back` und `overlap_is_drawn_back_to_front` — beide
-Richtungen einzeln festgenagelt.
+etwas über die Reihenfolge — `overlap_is_hit_front_to_back` und
+`overlap_is_drawn_back_to_front` nageln seither beide Richtungen einzeln fest.
 
 **Ein Tab zu wenig.** Der Dialog aus M7 lässt sich mit kbd:[Tab] zwischen
 seinen Knöpfen bewegen, mit Umbruch am Ende zurück zum ersten. Bei zwei
 Knöpfen ist das eine Falle für den Test selbst: prüft man den Fokus erst nach
 *zwei* Tabs, landet man beim Knopf, bei dem man auch ohne jeden Umbruch
-gelandet wäre — ein Test, der nach zwei Tabs prüft, kann also gar nicht
-unterscheiden, ob der Umbruch tatsächlich passiert ist. Genau das stand im
-ursprünglichen Test. `tests/unit/test_dialog.c` korrigiert es mit einem
-Kommentar, der die Falle benennt:
+gelandet wäre. Genau das stand im ursprünglichen Test. `tests/unit/test_dialog.c`
+korrigiert es mit einem Kommentar, der die Falle benennt:
 
 [source,c]
 ----
@@ -278,19 +267,17 @@ event tab = { .kind = EV_KEY_DOWN, .key = KEY_TAB };
 CHECK(dialog_event(d, &tab));   /* Fokus 1 -> 0, also mit Umbruch */
 ----
 
-Eine Mutation, die den Umbruch ganz entfernt, wäre mit der alten Prüfung nach
-zwei Tabs unentdeckt geblieben — mit der neuen, nach genau einem, schlägt sie
-zuverlässig fehl.
+Eine Mutation, die den Umbruch ganz entfernt, bliebe mit der alten Prüfung
+unentdeckt — mit der neuen, nach genau einem Tab, schlägt sie zuverlässig
+fehl.
 
 **Ein Test, der hängt statt fehlzuschlagen.** Bei den Mutationstests zur
 Menüleiste (M7 Teil 3) ließ eine Mutation — die Schrittgrenze beim
 Weiterrücken durch die Einträge entfernt — einen Test nicht fehlschlagen,
 sondern in einer Endlosschleife hängen bleiben. Das ist schlimmer als ein
-Fehlschlag: ein hängender Test blockiert den gesamten Lauf, statt sich zu
-melden, und jeder Test danach kommt nie zu Wort — dasselbe Problem wie bei
-einem abstürzenden Test, nur ohne dass irgendetwas auf dem Bildschirm
-verrät, was passiert ist. Die Antwort steht seither in `CMakeLists.txt`, für
-jeden einzelnen Test:
+Fehlschlag: ein hängender Test blockiert den gesamten Lauf, und jeder Test
+danach kommt nie zu Wort, ohne dass irgendetwas verrät, was passiert ist. Die
+Antwort steht seither in `CMakeLists.txt`, für jeden einzelnen Test:
 
 [source,cmake]
 ----
@@ -328,21 +315,19 @@ asan:
 	@ctest --test-dir $(BUILD)-asan --output-on-failure
 ----
 
-Ein *Sanitizer* ist ein Werkzeug, das der Compiler in das Programm einbaut und
+Ein *Sanitizer* ist ein Werkzeug, das der Compiler ins Programm einbaut und
 das zur Laufzeit mitprotokolliert, welcher Speicher gerade gültig ist. Greift
-das Programm auf Speicher zu, der bereits freigegeben wurde, meldet der
-Sanitizer genau das — mit der Stelle, an der freigegeben wurde, und der
-Stelle, an der fälschlich noch zugegriffen wurde. `CMakeLists.txt` schaltet
-dafür `-fsanitize=address,undefined` zu, in einem eigenen Bauverzeichnis, das
-neben dem normalen bestehen bleibt. Mit der zurückgenommenen Reparatur meldet
-`make asan` die Stelle samt beider Aufrufpfade; mit der Reparatur laufen alle
-Suiten sauber durch.
+das Programm auf bereits freigegebenen Speicher zu, meldet der Sanitizer
+genau das, mit beiden Stellen: wo freigegeben wurde, und wo fälschlich noch
+zugegriffen wurde. `CMakeLists.txt` schaltet dafür `-fsanitize=address,undefined`
+zu, in einem eigenen Bauverzeichnis neben dem normalen. Mit der
+zurückgenommenen Reparatur meldet `make asan` die Stelle samt beider
+Aufrufpfade; mit der Reparatur laufen alle Suiten sauber durch.
 
-Die Lehre daraus ist unbequem, aber wichtig: eine grüne Testsuite beweist
-nicht, dass kein Speicherfehler vorliegt — sie beweist nur, dass keiner der
-Tests einen ausgelöst hat, an einer Stelle, an der es auffiel. Ein
-Speicherfehler fällt eben nur auf, wenn jemand hinsieht, und der Sanitizer ist
-das Werkzeug, das genauer hinsieht als das bloße Ergebnis eines Tests.
+Die Lehre ist unbequem, aber wichtig: eine grüne Testsuite beweist nicht, dass
+kein Speicherfehler vorliegt — nur, dass keiner der Tests einen ausgelöst hat,
+an einer Stelle, an der es auffiel. Ein Speicherfehler fällt eben nur auf,
+wenn jemand hinsieht.
 
 === Der Wächter, der zuerst selbst geprüft werden musste
 
@@ -390,29 +375,26 @@ Katalogaufrufe vor der eigentlichen Suche aus:
 flat=$(tr '\n' ' ' < "$f" | sed -E 's/T[fn]?\([^()]*\)/KATALOG/g')
 ----
 
-Beide Schwächen führen zur selben Lehre: einen Wächter reicht es nicht, an
-einer einzigen Stelle zu prüfen, ob er falschen Code erkennt. Man muss auch
-prüfen, ob er *richtigen* Code in Ruhe lässt — sonst verliert er, sobald er
-den ersten korrekten Aufruf fälschlich meldet, das Vertrauen aller, die ihn
-danach ignorieren. Ein Wächter, der nie anschlägt, ist nutzlos. Einer, der
-ständig zu Unrecht anschlägt, ist es genauso.
+Beide Schwächen führen zur selben Lehre: es reicht nicht, zu prüfen, ob ein
+Wächter falschen Code erkennt. Man muss auch prüfen, ob er *richtigen* Code in
+Ruhe lässt — sonst verliert er, sobald er einen korrekten Aufruf fälschlich
+meldet, das Vertrauen aller, die ihn danach ignorieren.
 
 === Zum Ausprobieren
 
 . Baue absichtlich einen Fehler in `apply_mode` in `src/gfx/draw.c` ein —
   vertausche etwa `GFX_OR` und `GFX_XOR` — und lass die Testsuite laufen.
-  Welcher Test schlägt fehl? Wenn keiner fehlschlägt: welche Eingabe müsste
-  ein Test wählen, damit er den Unterschied überhaupt sehen könnte?
+  Welcher Test schlägt fehl? Falls keiner: welche Eingabe müsste ein Test
+  wählen, damit er den Unterschied überhaupt sehen könnte?
 
-. Lies dir `tests/unit/test_wm.c` an der Stelle `overlap_is_drawn_back_to_front`
-  durch und vertausche in `wm_draw` versuchsweise die Zeichenreihenfolge.
-  Prüfe mit `make test`, ob genau dieser Test es meldet.
+. Vertausche in `wm_draw` versuchsweise die Zeichenreihenfolge und prüfe mit
+  `make test`, ob `overlap_is_drawn_back_to_front` aus `tests/unit/test_wm.c`
+  es meldet.
 
 . Ändere ein Sollbild unter `tests/golden/` von Hand — kippe ein einzelnes
-  Zeichen bei einer P1-Datei — und lass `make test` laufen. Sieh dir an, was
-  der Testläufer dazu ausgibt, und vergleiche es mit der `.actual`-Datei, die
-  daraufhin entsteht.
+  Zeichen bei einer P1-Datei — und lass `make test` laufen. Vergleiche die
+  Ausgabe mit der `.actual`-Datei, die daraufhin entsteht.
 
-. Baue in `tests/no_hardcoded_text.sh` versuchsweise die Ausblendung von
-  Katalogaufrufen aus (entferne die Zeile mit `sed -E`) und lass es über den
-  Quelltext laufen. Zähl nach, wie viele falsche Meldungen dabei entstehen.
+. Entferne in `tests/no_hardcoded_text.sh` die Zeile mit `sed -E`, die
+  Katalogaufrufe ausblendet, und lass es über den Quelltext laufen. Zähl
+  nach, wie viele falsche Meldungen dabei entstehen.

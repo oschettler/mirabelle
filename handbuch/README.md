@@ -31,6 +31,20 @@ Eine lokale Ruby- oder Asciidoctor-Installation ist nicht nötig.
 
 ## Bauen
 
+Am schnellsten geht es lokal, wenn Asciidoctor installiert ist:
+
+```bash
+cd handbuch
+asciidoctor -a toc=left -a toclevels=2 -a icons=font -a data-uri \
+            -D output -o pda-handbuch.html src/00-master.adoc
+```
+
+`-a data-uri` bettet die Diagramme als Daten-URI ein; die HTML-Datei braucht
+danach keine Begleitdateien. Ohne diesen Schalter sucht der Browser die SVG
+neben der HTML-Datei und findet sie nicht, weil sie unter `src/diagramme/`
+liegen.
+
+Für EPUB und PDF, und wenn kein Asciidoctor da ist, läuft alles über Docker.
 Alle Befehle aus `handbuch/build/`:
 
 ```bash
