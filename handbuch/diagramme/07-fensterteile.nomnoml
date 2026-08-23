@@ -1,0 +1,20 @@
+#direction: down
+#spacing: 24
+#padding: 9
+#font: Helvetica
+#fontSize: 12
+#lineWidth: 1
+#edges: hard
+#stroke: #000000
+#fill: #ffffff
+
+[<frame>Fenster|
+  [Titelleiste|th.titlebar_h]
+  [Titelleiste] -> [Schließfeld|th.close_box; Treffer wächst um; th.hit_slop]
+  [Titelleiste] -> [Rahmen|th.border]
+  [Rahmen] -> [Inhalt|eigene Bitmap; Ursprung (0,0)]
+  [Rahmen] -> [Größenfeld|th.grow_box]
+]
+
+[<note>Alle Maße stehen im Thema,
+keines im Zeichencode.]

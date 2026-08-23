@@ -1,0 +1,121 @@
+<svg version="1.1" baseProfile="full" width="659.6" height="314.0" viewBox="0 0 659.5957446808511 314" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+	<desc >#direction: down
+	#spacing: 26
+	#padding: 9
+	#font: Helvetica
+	#fontSize: 12
+	#lineWidth: 1
+	#edges: hard
+	#stroke: #000000
+	#fill: #ffffff
+	
+	[A|z=0, hinten]
+	[B|z=1]
+	[C|z=2, aktiv, vorn]
+	
+	[A] -- zeichnen: wm_draw --&gt; [B]
+	[B] --&gt; [C]
+	
+	[C] -- treffen: wm_hit --&gt; [B]
+	[B] --&gt; [A]
+	
+	[&lt;note&gt;Dieselbe Liste, zweimal gegenläufig gelesen:
+	was zuletzt gezeichnet wird, liegt vorn
+	und wird zuerst getroffen.]
+	</desc>
+	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="bold" font-style="normal">
+		<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="round" stroke="#000000">
+			<g stroke="transparent" fill="transparent">
+				<rect x="0.0" y="0.0" height="314.0" width="659.6" stroke="none"></rect>
+			</g>
+			<g transform="translate(82.09574468085107, 9)" fill="#000000">
+				<g transform="translate(20, 20)" fill="#000000" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal">
+					<text x="69.1" y="85.0" stroke="none">zeichnen: wm_draw --&gt;</text>
+					<g stroke-dasharray="4 4">
+						<path d="M60.1 68.0 L56.5 81.0 L60.1 94.0" fill="none"></path>
+					</g>
+					<g stroke-dasharray="4 4">
+						<path d="M60.1 162.0 L56.5 175.0 L58.9 183.8" fill="none"></path>
+					</g>
+					<path d="M54.4 180.6 L58.9 183.8 L61.1 178.7 L60.1 188.0 Z"></path>
+					<text x="-73.1" y="183.0" stroke="none">treffen: wm_hit --&gt;</text>
+					<g stroke-dasharray="4 4">
+						<path d="M78.9 188.0 L82.5 175.0 L78.9 162.0" fill="none"></path>
+					</g>
+					<g stroke-dasharray="4 4">
+						<path d="M78.9 94.0 L82.5 81.0 L80.1 72.2" fill="none"></path>
+					</g>
+					<path d="M84.6 75.4 L80.1 72.2 L77.9 77.3 L78.9 68.0 Z"></path>
+					<g data-name="A">
+						<g fill="#ffffff" stroke="#000000" data-name="A">
+							<rect x="16.5" y="0.0" height="68.0" width="106.0" data-name="A"></rect>
+							<path d="M16.5 34.0 L122.5 34.0" fill="none" data-name="A"></path>
+						</g>
+						<g transform="translate(16.5, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="A" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="A" data-compartment="0">
+								<text x="44.0" y="14.1" stroke="none" text-anchor="middle" data-name="A" data-compartment="0">A</text>
+								
+							</g>
+						</g>
+						<g transform="translate(16.5, 34)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="A" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="A" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="A" data-compartment="1">z=0, hinten</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="B">
+						<g fill="#ffffff" stroke="#000000" data-name="B">
+							<rect x="46.0" y="94.0" height="68.0" width="47.0" data-name="B"></rect>
+							<path d="M46.0 128.0 L93.0 128.0" fill="none" data-name="B"></path>
+						</g>
+						<g transform="translate(46, 94)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="B" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="B" data-compartment="0">
+								<text x="14.5" y="14.1" stroke="none" text-anchor="middle" data-name="B" data-compartment="0">B</text>
+								
+							</g>
+						</g>
+						<g transform="translate(46, 128)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="B" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="B" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="B" data-compartment="1">z=1</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="C">
+						<g fill="#ffffff" stroke="#000000" data-name="C">
+							<rect x="0.0" y="188.0" height="68.0" width="139.0" data-name="C"></rect>
+							<path d="M0.0 222.0 L139.0 222.0" fill="none" data-name="C"></path>
+						</g>
+						<g transform="translate(0, 188)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="C" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="C" data-compartment="0">
+								<text x="60.5" y="14.1" stroke="none" text-anchor="middle" data-name="C" data-compartment="0">C</text>
+								
+							</g>
+						</g>
+						<g transform="translate(0, 222)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="C" data-compartment="1">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="C" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="C" data-compartment="1">z=2, aktiv, vorn</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Dieselbe Liste, zweimal gegenläufig gelesen:">
+						<g fill="#ffffff" stroke="#000000" data-name="Dieselbe Liste, zweimal gegenläufig gelesen:">
+							<path d="M148.5 0.5 L519.5 0.5 L528.5 9.5 L528.5 67.5 L148.5 67.5 L148.5 0.5 Z" data-name="Dieselbe Liste, zweimal gegenläufig gelesen:"></path>
+							<path d="M519.5 0.5 L519.5 9.5 L528.5 9.5" fill="none" data-name="Dieselbe Liste, zweimal gegenläufig gelesen:"></path>
+						</g>
+						<g transform="translate(148.5, 0.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Dieselbe Liste, zweimal gegenläufig gelesen:" data-compartment="0">
+							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="Dieselbe Liste, zweimal gegenläufig gelesen:" data-compartment="0">
+								<text x="0.0" y="14.1" stroke="none" data-name="Dieselbe Liste, zweimal gegenläufig gelesen:" data-compartment="0">Dieselbe Liste, zweimal gegenläufig gelesen:</text>
+								<text x="0.0" y="30.3" stroke="none" data-name="Dieselbe Liste, zweimal gegenläufig gelesen:" data-compartment="0">was zuletzt gezeichnet wird, liegt vorn</text>
+								<text x="0.0" y="46.5" stroke="none" data-name="Dieselbe Liste, zweimal gegenläufig gelesen:" data-compartment="0">und wird zuerst getroffen.</text>
+								
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+</svg>

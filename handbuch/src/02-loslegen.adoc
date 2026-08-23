@@ -1,0 +1,209 @@
+== Bauen und starten
+
+Bevor du ein Wort C-Code liest, solltest du das Projekt einmal bauen und
+laufen sehen. Das dauert wenige Minuten und gibt dir etwas, an dem du die
+späteren Kapitel überprüfen kannst.
+
+=== Was du brauchst
+
+Drei Dinge: einen C-Compiler, CMake und SDL3.
+
+`CMakeLists.txt` verlangt mindestens CMake 3.16 und einen Compiler, der C11
+versteht:
+
+[source,cmake]
+----
+cmake_minimum_required(VERSION 3.16)
+project(pda C)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+----
+
+Auf einem Mac reicht dafür die Kommandozeilenwerkzeuge von Xcode (`clang`),
+unter Linux `gcc` oder `clang` aus der Paketverwaltung deiner Distribution.
+CMake bringen beide üblicherweise nicht mit, das installierst du separat.
+
+SDL3 ist die Bibliothek, die das Programm auf dem Arbeitsplatz ein echtes
+Fenster zeigen lässt. Ohne sie baut das Projekt trotzdem — nur ohne
+`pda`-Programm, siehe unten. Das Projekt findet SDL3 über `pkg-config`:
+
+[source,cmake]
+----
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(SDL3 IMPORTED_TARGET sdl3)
+endif()
+----
+
+Ob `pkg-config` SDL3 kennt, prüfst du selbst mit `pkg-config --exists sdl3 &&
+echo gefunden`. Fehlt SDL3, installiere es über die Paketverwaltung deines
+Systems (zum Beispiel `brew install sdl3` auf dem Mac).
+
+=== Bauen
+
+Ein `Makefile` im Wurzelverzeichnis ist eine dünne Hülle um CMake, „damit
+`make test` das tut, was die Dokumentation sagt“, wie es dort im Kommentar
+heißt. Zum Bauen genügt:
+
+[source,bash]
+----
+make
+----
+
+Das legt beim ersten Lauf ein Verzeichnis `build/` an, ruft dort `cmake -S .
+-B build` und danach `cmake --build build` auf. Jeder weitere Aufruf von
+`make` baut nur noch das neu, was sich geändert hat.
+
+=== Testen
+
+[source,bash]
+----
+make test
+----
+
+Das baut zuerst neu, falls nötig, und lässt danach `ctest` im Verzeichnis
+`build/` laufen. Ein Testlauf sieht so aus:
+
+[source]
+----
+Test #4: golden ........... Passed
+Test #6: utf8 ............. Passed
+Test #13: wm ............... Passed
+...
+100% tests passed out of 16
+----
+
+Ein Teil dieser sechzehn Testsuiten vergleicht gezeichnete Bilder mit
+sogenannten Sollbildern — genau den `.pbm`-Dateien aus Kapitel 1. Ändert sich
+absichtlich etwas am Zeichencode, weichen diese Bilder ab, und der Test schlägt
+fehl. Um das neue Bild als richtig zu übernehmen, läufst du:
+
+[source,bash]
+----
+make test ACCEPT=1
+----
+
+Das setzt die Umgebungsvariable `PDA_GOLDEN_ACCEPT`, die `tests/support/golden.c`
+abfragt: Statt zu vergleichen, schreibt der Test das neue Bild einfach als
+neues Sollbild. Ein Test, der wirklich fehlschlägt, schreibt zusätzlich eine
+`.actual.pbm`-Datei daneben und sagt dir, wo genau sich die Pixel
+unterscheiden — bei kleinen Abweichungen sogar als ASCII-Bild direkt in der
+Konsole. Sieh dir das ruhig einmal live an, in Aufgabe 3 unten.
+
+[TIP]
+.make asan
+====
+`make asan` baut das Projekt ein zweites Mal, in einem eigenen Verzeichnis
+`build-asan/`, mit Address- und Undefined-Behavior-Sanitizer, und lässt danach
+alle Tests laufen. Der Anlass dafür steht als Kommentar direkt in
+`CMakeLists.txt`:
+
+[source,c]
+----
+// Speicherfehler finden, bevor sie abstürzen.
+//
+// Der Anlass war ein Zugriff auf ein bereits geschlossenes Fenster: das
+// Programm stürzte beim Nutzer ab, die Testsuite blieb grün. Mit -fsanitize
+// meldet derselbe Test die Stelle samt beider Aufrufpfade - wo freigegeben
+// wurde und wo darauf zugegriffen wird.
+----
+
+Was dort in einer Zeile steht, war ein echter Fehler: Ein Klick auf das
+Schließfeld eines Fensters gab dessen Speicher frei, aber die Vorführung
+zeichnete im nächsten Bild weiter dorthin. Alle sechzehn Testsuiten liefen
+grün — ein Speicherfehler, der nicht abstürzt, hinterlässt in einer normalen
+Testsuite einfach keine Spur. Erst der Sanitizer zeigt ihn, mit beiden
+Stellen: wo freigegeben und wo trotzdem noch zugegriffen wurde. Kapitel 3
+erzählt, wie der Fehler behoben wurde.
+====
+
+=== Das Programm starten
+
+[source,bash]
+----
+./build/pda
+----
+
+Es öffnet sich ein Fenster mit 800 mal 480 Pixeln — oder ein Vielfaches davon,
+wenn dein Bildschirm mehr Platz hat, siehe `src/plat/plat_sdl3.c`. Darin
+liegen zwei kleinere Fenster: „Kürzel“ zeigt eine Handvoll Tastenkombinationen,
+„Schreibtisch“ eine Begrüßung und ein Eingabefeld. Beide Titel kommen aus
+`data/lang/de.strings`, nicht aus dem Quelltext — probier es aus, indem du dort
+`window.desk` änderst und neu baust.
+
+Das ist die „Vorführung“ aus `src/demo.c`, keine der vier PIM-Anwendungen aus
+Kapitel 1. Sie existiert, damit sich Fenster, Menüs und Texteingabe schon
+prüfen lassen, bevor es überhaupt Datensätze gibt. Kapitel 3 zeigt, was du
+damit alles tun kannst.
+
+=== --shot: der eigene Bildspeicher als Datei
+
+[source,bash]
+----
+./build/pda --shot mein-bild.pbm
+----
+
+Mit dieser Option zeichnet das Programm genau ein Bild, schreibt seinen
+eigenen Bildspeicher als `.pbm`-Datei und beendet sich, ganz ohne ein Fenster
+zu öffnen. Der Kommentar in `src/main.c` sagt, warum das mehr wert ist als ein
+gewöhnlicher Bildschirmabzug:
+
+[quote, src/main.c]
+____
+Das ist genauer als ein Bildschirmabzug: es zeigt exakt die Pixel, die das
+Programm erzeugt, ohne Fensterrahmen und ohne Skalierung.
+____
+
+Ein Bildschirmfoto zeigt, was am Ende auf deinem Monitor ankommt — mitsamt
+Fensterrahmen deines Betriebssystems, möglicher Neuskalierung durch dein
+Display und was auch immer sonst noch auf dem Bildschirm lag. `--shot` zeigt
+stattdessen genau das, was das Programm selbst in seine Bitmap geschrieben
+hat, Pixel für Pixel. Das ist derselbe Mechanismus, den `make test`
+benutzt, um Sollbilder zu vergleichen — nur, dass du ihn hier von Hand
+anstößt. In Kapitel 4 wird daraus ein größeres Thema: Weil der Kern immer nur
+in eine Bitmap zeichnet, lässt sich fast alles ohne Bildschirm prüfen.
+
+=== Wenn etwas nicht geht
+
+**„SDL3 nicht gefunden“**: Findet CMake kein SDL3, meldet es das mit einer
+klaren Zeile aus `CMakeLists.txt` selbst: „SDL3 nicht gefunden - das Programm
+wird nicht gebaut, Tests laufen trotzdem“. Das ist kein Fehler, der den Bau
+abbricht — du bekommst nur kein `pda`-Programm zum Starten. Installiere SDL3
+über deine Paketverwaltung und lösche danach `build/CMakeCache.txt` oder
+gleich das ganze `build/`-Verzeichnis, damit CMake erneut nach SDL3 sucht.
+
+**`pkg-config` fehlt ganz**: Ohne `pkg-config` kann CMake SDL3 gar nicht erst
+suchen. Installiere `pkg-config` (oder unter manchen Systemen `pkgconf`) nach,
+bevor du SDL3 installierst.
+
+**Der Bau reagiert nicht auf eine geänderte Option**: `build/` und
+`build-asan/` sind zwei getrennte Verzeichnisse mit je eigenem
+`CMakeCache.txt`. Wenn ein Bau sich seltsam verhält, hilft oft `make clean`,
+das laut `Makefile` beide Verzeichnisse löscht — der nächste `make` oder
+`make asan` baut dann sauber neu.
+
+**Ein Testbild fehlt oder eine `.actual.pbm`-Datei taucht auf**: Läuft ein
+Test zum ersten Mal und gibt es noch kein Sollbild, schreibt er das
+tatsächliche Bild als `<name>.actual.pbm` daneben und sagt dir genau das, was
+`tests/support/golden.c` als Meldung vorsieht: „Wenn es stimmt: make test
+ACCEPT=1“. Prüfe das Bild, bevor du es annimmst — nicht jede Abweichung ist
+richtig.
+
+=== Zum Ausprobieren
+
+. Baue das Projekt mit `make` und miss mit `time make test`, wie lange die
+  gesamte Testsuite braucht.
+
+. Erzeuge mit `./build/pda --shot eigenes.pbm` dein eigenes Bild und prüfe mit
+  `file eigenes.pbm`, dass es sich um ein binäres P4-Bild mit 800 mal 480
+  Pixeln handelt.
+
+. Ändere probeweise eine einzelne Ziffer in `tests/golden/text_umlauts.pbm`
+  und lass `make test` laufen. Lies die Ausgabe: Welcher Bereich wird als
+  unterschiedlich gemeldet? Mach die Änderung danach rückgängig.
+
+. Lies den Kommentar zu `PDA_SANITIZE` in `CMakeLists.txt` noch einmal in
+  Ruhe. Erkläre in eigenen Worten, warum eine grüne Testsuite allein nichts
+  über Speicherfehler aussagt.

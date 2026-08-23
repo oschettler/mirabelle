@@ -1,0 +1,242 @@
+<svg version="1.1" baseProfile="full" width="573.0" height="950.0" viewBox="0 0 573 950" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+	<title >Die Schichten und was heute schon läuft</title>
+	<desc >#direction: down
+	#spacing: 34
+	#padding: 10
+	#font: Helvetica
+	#fontSize: 13
+	#lineWidth: 1
+	#edges: hard
+	#stroke: #000000
+	#fill: #ffffff
+	#title: Die Schichten und was heute schon läuft
+	
+	[Anwendungen (Lua) - geplant|Aufgaben; Kalender; Kontakte; Notizen]
+	[Lua-API - geplant|window(); store.find(); print()]
+	[ui/ - läuft|Fenster; Menüs; Dialoge]
+	[store/ - geplant|Datensätze; Suche]
+	[gfx/ - läuft|Bitmap; Muster; Schrift]
+	[core/ - läuft|Ereignisse; UTF-8; Zeit]
+	[plat/ - läuft|13 Funktionen]
+	
+	[Anwendungen (Lua) - geplant] -&gt; [Lua-API - geplant]
+	[Lua-API - geplant] -&gt; [ui/ - läuft]
+	[Lua-API - geplant] -&gt; [store/ - geplant]
+	[ui/ - läuft] -&gt; [gfx/ - läuft]
+	[ui/ - läuft] -&gt; [core/ - läuft]
+	[store/ - geplant] -&gt; [core/ - läuft]
+	[gfx/ - läuft] -&gt; [core/ - läuft]
+	[core/ - läuft] -&gt; [plat/ - läuft]
+	[store/ - geplant] -&gt; [plat/ - läuft]
+	
+	[plat/ - läuft] -&gt; [SDL3 - läuft]
+	[plat/ - läuft] -&gt; [headless - läuft]
+	[plat/ - läuft] -&gt; [ESP32 - geplant]
+	</desc>
+	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="13pt" font-family="Helvetica" font-weight="bold" font-style="normal">
+		<g font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="round" stroke="#000000">
+			<g stroke="transparent" fill="transparent">
+				<rect x="0.0" y="0.0" height="950.0" width="573.0" stroke="none"></rect>
+			</g>
+			<g transform="translate(10, 10)" fill="#000000">
+				<g transform="translate(20, 20)" fill="#000000" font-family="Helvetica" font-size="13pt" font-weight="normal" font-style="normal">
+					<path d="M220.5 128.0 L220.5 145.0 L220.5 156.3" fill="none"></path>
+					<path d="M216.0 150.7 L220.5 156.3 L225.0 150.7 L220.5 162.0 Z"></path>
+					<path d="M170.7 273.0 L155.5 290.0 L155.5 301.3" fill="none"></path>
+					<path d="M151.0 295.7 L155.5 301.3 L160.0 295.7 L155.5 307.0 Z"></path>
+					<path d="M296.7 273.0 L320.0 290.0 L320.0 362.5 L320.0 435.0 L320.0 455.3" fill="none"></path>
+					<path d="M315.5 449.7 L320.0 455.3 L324.5 449.7 L320.0 461.0 Z"></path>
+					<path d="M122.2 418.0 L112.0 435.0 L112.0 446.3" fill="none"></path>
+					<path d="M107.5 440.7 L112.0 446.3 L116.5 440.7 L112.0 452.0 Z"></path>
+					<path d="M191.1 418.0 L202.0 435.0 L202.0 507.5 L202.0 580.0 L197.2 591.8" fill="none"></path>
+					<path d="M195.2 584.8 L197.2 591.8 L203.6 588.2 L195.1 597.0 Z"></path>
+					<path d="M301.1 554.0 L290.5 580.0 L239.3 611.4" fill="none"></path>
+					<path d="M241.8 604.6 L239.3 611.4 L246.5 612.3 L234.5 614.4 Z"></path>
+					<path d="M112.0 563.0 L112.0 580.0 L122.6 592.6" fill="none"></path>
+					<path d="M115.4 591.2 L122.6 592.6 L122.4 585.4 L126.2 597.0 Z"></path>
+					<path d="M172.5 708.0 L172.5 725.0 L183.6 737.7" fill="none"></path>
+					<path d="M176.5 736.4 L183.6 737.7 L183.3 730.5 L187.3 742.0 Z"></path>
+					<path d="M336.0 554.0 L345.0 580.0 L345.0 652.5 L345.0 725.0 L296.7 746.3" fill="none"></path>
+					<path d="M300.0 739.9 L296.7 746.3 L303.7 748.2 L291.5 748.6 Z"></path>
+					<path d="M149.5 804.9 L63.5 835.0 L63.5 846.3" fill="none"></path>
+					<path d="M59.0 840.7 L63.5 846.3 L68.0 840.7 L63.5 852.0 Z"></path>
+					<path d="M234.3 818.0 L240.5 835.0 L240.5 846.3" fill="none"></path>
+					<path d="M236.0 840.7 L240.5 846.3 L245.0 840.7 L240.5 852.0 Z"></path>
+					<path d="M291.5 798.3 L433.5 835.0 L433.5 846.3" fill="none"></path>
+					<path d="M429.0 840.7 L433.5 846.3 L438.0 840.7 L433.5 852.0 Z"></path>
+					<g data-name="Anwendungen (Lua) - geplant">
+						<g fill="#ffffff" stroke="#000000" data-name="Anwendungen (Lua) - geplant">
+							<rect x="83.0" y="0.0" height="128.0" width="275.0" data-name="Anwendungen (Lua) - geplant"></rect>
+							<path d="M83.0 38.0 L358.0 38.0" fill="none" data-name="Anwendungen (Lua) - geplant"></path>
+						</g>
+						<g transform="translate(83, 0)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="Anwendungen (Lua) - geplant" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="Anwendungen (Lua) - geplant" data-compartment="0">
+								<text x="127.5" y="15.3" stroke="none" text-anchor="middle" data-name="Anwendungen (Lua) - geplant" data-compartment="0">Anwendungen (Lua) - geplant</text>
+								
+							</g>
+						</g>
+						<g transform="translate(83, 38)" font-family="Helvetica" font-size="13pt" font-weight="normal" font-style="normal" data-name="Anwendungen (Lua) - geplant" data-compartment="1">
+							<g transform="translate(10, 10)" fill="#000000" text-align="left" data-name="Anwendungen (Lua) - geplant" data-compartment="1">
+								<text x="0.0" y="15.3" stroke="none" data-name="Anwendungen (Lua) - geplant" data-compartment="1">Aufgaben</text>
+								<text x="0.0" y="32.8" stroke="none" data-name="Anwendungen (Lua) - geplant" data-compartment="1">Kalender</text>
+								<text x="0.0" y="50.4" stroke="none" data-name="Anwendungen (Lua) - geplant" data-compartment="1">Kontakte</text>
+								<text x="0.0" y="67.9" stroke="none" data-name="Anwendungen (Lua) - geplant" data-compartment="1">Notizen</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Lua-API - geplant">
+						<g fill="#ffffff" stroke="#000000" data-name="Lua-API - geplant">
+							<rect x="135.5" y="162.0" height="111.0" width="170.0" data-name="Lua-API - geplant"></rect>
+							<path d="M135.5 200.0 L305.5 200.0" fill="none" data-name="Lua-API - geplant"></path>
+						</g>
+						<g transform="translate(135.5, 162)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="Lua-API - geplant" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="Lua-API - geplant" data-compartment="0">
+								<text x="75.0" y="15.3" stroke="none" text-anchor="middle" data-name="Lua-API - geplant" data-compartment="0">Lua-API - geplant</text>
+								
+							</g>
+						</g>
+						<g transform="translate(135.5, 200)" font-family="Helvetica" font-size="13pt" font-weight="normal" font-style="normal" data-name="Lua-API - geplant" data-compartment="1">
+							<g transform="translate(10, 10)" fill="#000000" text-align="left" data-name="Lua-API - geplant" data-compartment="1">
+								<text x="0.0" y="15.3" stroke="none" data-name="Lua-API - geplant" data-compartment="1">window()</text>
+								<text x="0.0" y="32.8" stroke="none" data-name="Lua-API - geplant" data-compartment="1">store.find()</text>
+								<text x="0.0" y="50.4" stroke="none" data-name="Lua-API - geplant" data-compartment="1">print()</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="ui/ - läuft">
+						<g fill="#ffffff" stroke="#000000" data-name="ui/ - läuft">
+							<rect x="105.0" y="307.0" height="111.0" width="101.0" data-name="ui/ - läuft"></rect>
+							<path d="M105.0 345.0 L206.0 345.0" fill="none" data-name="ui/ - läuft"></path>
+						</g>
+						<g transform="translate(105, 307)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="ui/ - läuft" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="ui/ - läuft" data-compartment="0">
+								<text x="40.5" y="15.3" stroke="none" text-anchor="middle" data-name="ui/ - läuft" data-compartment="0">ui/ - läuft</text>
+								
+							</g>
+						</g>
+						<g transform="translate(105, 345)" font-family="Helvetica" font-size="13pt" font-weight="normal" font-style="normal" data-name="ui/ - läuft" data-compartment="1">
+							<g transform="translate(10, 10)" fill="#000000" text-align="left" data-name="ui/ - läuft" data-compartment="1">
+								<text x="0.0" y="15.3" stroke="none" data-name="ui/ - läuft" data-compartment="1">Fenster</text>
+								<text x="0.0" y="32.8" stroke="none" data-name="ui/ - läuft" data-compartment="1">Menüs</text>
+								<text x="0.0" y="50.4" stroke="none" data-name="ui/ - läuft" data-compartment="1">Dialoge</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="store/ - geplant">
+						<g fill="#ffffff" stroke="#000000" data-name="store/ - geplant">
+							<rect x="245.0" y="461.0" height="93.0" width="150.0" data-name="store/ - geplant"></rect>
+							<path d="M245.0 499.0 L395.0 499.0" fill="none" data-name="store/ - geplant"></path>
+						</g>
+						<g transform="translate(245, 461)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="store/ - geplant" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="store/ - geplant" data-compartment="0">
+								<text x="65.0" y="15.3" stroke="none" text-anchor="middle" data-name="store/ - geplant" data-compartment="0">store/ - geplant</text>
+								
+							</g>
+						</g>
+						<g transform="translate(245, 499)" font-family="Helvetica" font-size="13pt" font-weight="normal" font-style="normal" data-name="store/ - geplant" data-compartment="1">
+							<g transform="translate(10, 10)" fill="#000000" text-align="left" data-name="store/ - geplant" data-compartment="1">
+								<text x="0.0" y="15.3" stroke="none" data-name="store/ - geplant" data-compartment="1">Datensätze</text>
+								<text x="0.0" y="32.8" stroke="none" data-name="store/ - geplant" data-compartment="1">Suche</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="gfx/ - läuft">
+						<g fill="#ffffff" stroke="#000000" data-name="gfx/ - läuft">
+							<rect x="56.0" y="452.0" height="111.0" width="112.0" data-name="gfx/ - läuft"></rect>
+							<path d="M56.0 490.0 L168.0 490.0" fill="none" data-name="gfx/ - läuft"></path>
+						</g>
+						<g transform="translate(56, 452)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="gfx/ - läuft" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="gfx/ - läuft" data-compartment="0">
+								<text x="46.0" y="15.3" stroke="none" text-anchor="middle" data-name="gfx/ - läuft" data-compartment="0">gfx/ - läuft</text>
+								
+							</g>
+						</g>
+						<g transform="translate(56, 490)" font-family="Helvetica" font-size="13pt" font-weight="normal" font-style="normal" data-name="gfx/ - läuft" data-compartment="1">
+							<g transform="translate(10, 10)" fill="#000000" text-align="left" data-name="gfx/ - läuft" data-compartment="1">
+								<text x="0.0" y="15.3" stroke="none" data-name="gfx/ - läuft" data-compartment="1">Bitmap</text>
+								<text x="0.0" y="32.8" stroke="none" data-name="gfx/ - läuft" data-compartment="1">Muster</text>
+								<text x="0.0" y="50.4" stroke="none" data-name="gfx/ - läuft" data-compartment="1">Schrift</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="core/ - läuft">
+						<g fill="#ffffff" stroke="#000000" data-name="core/ - läuft">
+							<rect x="110.5" y="597.0" height="111.0" width="124.0" data-name="core/ - läuft"></rect>
+							<path d="M110.5 635.0 L234.5 635.0" fill="none" data-name="core/ - läuft"></path>
+						</g>
+						<g transform="translate(110.5, 597)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="core/ - läuft" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="core/ - läuft" data-compartment="0">
+								<text x="52.0" y="15.3" stroke="none" text-anchor="middle" data-name="core/ - läuft" data-compartment="0">core/ - läuft</text>
+								
+							</g>
+						</g>
+						<g transform="translate(110.5, 635)" font-family="Helvetica" font-size="13pt" font-weight="normal" font-style="normal" data-name="core/ - läuft" data-compartment="1">
+							<g transform="translate(10, 10)" fill="#000000" text-align="left" data-name="core/ - läuft" data-compartment="1">
+								<text x="0.0" y="15.3" stroke="none" data-name="core/ - läuft" data-compartment="1">Ereignisse</text>
+								<text x="0.0" y="32.8" stroke="none" data-name="core/ - läuft" data-compartment="1">UTF-8</text>
+								<text x="0.0" y="50.4" stroke="none" data-name="core/ - läuft" data-compartment="1">Zeit</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="plat/ - läuft">
+						<g fill="#ffffff" stroke="#000000" data-name="plat/ - läuft">
+							<rect x="149.5" y="742.0" height="76.0" width="142.0" data-name="plat/ - läuft"></rect>
+							<path d="M149.5 780.0 L291.5 780.0" fill="none" data-name="plat/ - läuft"></path>
+						</g>
+						<g transform="translate(149.5, 742)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="plat/ - läuft" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="plat/ - läuft" data-compartment="0">
+								<text x="61.0" y="15.3" stroke="none" text-anchor="middle" data-name="plat/ - läuft" data-compartment="0">plat/ - läuft</text>
+								
+							</g>
+						</g>
+						<g transform="translate(149.5, 780)" font-family="Helvetica" font-size="13pt" font-weight="normal" font-style="normal" data-name="plat/ - läuft" data-compartment="1">
+							<g transform="translate(10, 10)" fill="#000000" text-align="left" data-name="plat/ - läuft" data-compartment="1">
+								<text x="0.0" y="15.3" stroke="none" data-name="plat/ - läuft" data-compartment="1">13 Funktionen</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="SDL3 - läuft">
+						<g fill="#ffffff" stroke="#000000" data-name="SDL3 - läuft">
+							<rect x="0.0" y="852.0" height="38.0" width="127.0" data-name="SDL3 - läuft"></rect>
+						</g>
+						<g transform="translate(0, 852)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="SDL3 - läuft" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="SDL3 - läuft" data-compartment="0">
+								<text x="53.5" y="15.3" stroke="none" text-anchor="middle" data-name="SDL3 - läuft" data-compartment="0">SDL3 - läuft</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="headless - läuft">
+						<g fill="#ffffff" stroke="#000000" data-name="headless - läuft">
+							<rect x="161.0" y="852.0" height="38.0" width="159.0" data-name="headless - läuft"></rect>
+						</g>
+						<g transform="translate(161, 852)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="headless - läuft" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="headless - läuft" data-compartment="0">
+								<text x="69.5" y="15.3" stroke="none" text-anchor="middle" data-name="headless - läuft" data-compartment="0">headless - läuft</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="ESP32 - geplant">
+						<g fill="#ffffff" stroke="#000000" data-name="ESP32 - geplant">
+							<rect x="354.0" y="852.0" height="38.0" width="159.0" data-name="ESP32 - geplant"></rect>
+						</g>
+						<g transform="translate(354, 852)" font-family="Helvetica" font-size="13pt" font-weight="bold" font-style="normal" data-name="ESP32 - geplant" data-compartment="0">
+							<g transform="translate(10, 10)" fill="#000000" text-align="center" data-name="ESP32 - geplant" data-compartment="0">
+								<text x="69.5" y="15.3" stroke="none" text-anchor="middle" data-name="ESP32 - geplant" data-compartment="0">ESP32 - geplant</text>
+								
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+</svg>

@@ -1,0 +1,122 @@
+= PDA: Ein Taschencomputer zum Selberbauen
+Olav Schettler
+:doctype: book
+:toc: left
+:toclevels: 2
+:sectnums:
+:icons: font
+:lang: de
+:encoding: utf-8
+:source-highlighter: rouge
+:experimental:
+:ebook-format: epub3
+:author: Olav Schettler
+:email: olav@schettler.net
+:revnumber: 0.1
+:revremark: Entwurf, entsteht mit dem Projekt
+:description: Handbuch und Lehrbuch zum PDA-Projekt: ein PIM-Paket im Stil von Macintosh System 1, gebaut in C und Lua, von der ersten Bitmap bis zum eigenen Gerät.
+:keywords: C, Lua, SDL3, ESP32, Bitmapgrafik, Macintosh System 1, Gemtext
+
+[preface]
+== Vorwort
+
+Dieses Buch beschreibt ein Programm, das es zu großen Teilen noch nicht gibt.
+
+Das klingt nach einem schlechten Anfang, ist aber Absicht. Das PDA-Projekt
+entsteht Kapitel für Kapitel, und dieses Handbuch wächst mit. Wer es von vorne
+nach hinten liest, baut ein vollständiges kleines Betriebssystem für
+persönliche Daten: Aufgaben, Kalender, Adressbuch, Notizen, in der Optik des
+ersten Macintosh von 1984, geschrieben in C, erweiterbar in Lua, und am Ende
+auf einem eigenen Gerät mit Sieben-Zoll-Bildschirm.
+
+=== Für wen ist das?
+
+Für dich, wenn du schon einmal programmiert hast und wissen willst, wie die
+Sachen *darunter* funktionieren. Wie kommt ein Buchstabe auf den Bildschirm?
+Was passiert wirklich, wenn sich zwei Fenster überlappen? Warum ist ein
+Dateiformat mit drei Regeln besser als eines mit dreißig?
+
+Du brauchst keine Ausbildung und keinen Abschluss. Du brauchst Neugier, einen
+Rechner und die Bereitschaft, Dinge kaputtzumachen und wieder zu reparieren.
+Ab etwa dreizehn Jahren ist das gut zu schaffen. Wo ein Kapitel schwerer wird,
+steht das vorher dabei.
+
+C und Lua musst du nicht vorher können. C lernst du hier an echtem Code, und
+für Lua gibt es ein eigenes Kapitel, das in einer knappen halben Stunde durch
+die ganze Sprache führt.
+
+=== Was du gebaut haben wirst
+
+Ein Fenstersystem mit überlappenden Fenstern, Menüs und Dialogen. Eine eigene
+Bitmapschrift, Buchstabe für Buchstabe von Hand gezeichnet, mit Umlauten, die
+wirklich wie Umlaute aussehen. Einen Textsatz, der UTF-8 versteht. Zwei
+Dateiparser. Eine Volltextsuche, die „Müller" findet, wenn du „Muller" tippst.
+Und eine Anwendung, die aus einer Datendatei entsteht statt aus Programmcode.
+
+Vor allem aber: eine Vorstellung davon, wie man so etwas *aufteilt*. Das ist
+die Fähigkeit, die bleibt, wenn die Sprache längst eine andere ist.
+
+=== Wie du dieses Buch liest
+
+Die Kapitel bauen aufeinander auf, aber du musst nicht alles in der Reihenfolge
+lesen. Willst du das Programm nur benutzen, reichen die ersten drei Kapitel.
+Interessiert dich, wie ein Fenstersystem funktioniert, spring zu Kapitel 6.
+
+Jedes Kapitel beginnt mit einem Kasten, der sagt, was darin gebaut wird und
+welchen Stand das Projekt dabei hat.
+
+[IMPORTANT]
+.Was es schon gibt und was nicht
+====
+Das Projekt entsteht in siebzehn Schritten, die im Fahrplan `ROADMAP.md`
+stehen. Zurzeit sind die Schritte M1 bis M7 fertig: Grafik, Schrift,
+Plattformschicht, Eingabe, Fenster, Menüs und Dialoge.
+
+Kapitel über spätere Schritte beschreiben, was *geplant* ist. Sie sind mit
+einem Hinweis „Geplant" gekennzeichnet. Du kannst sie lesen, aber noch nicht
+nachbauen — und du sollst wissen, woran du bist. Ein Handbuch, das den
+Unterschied verwischt, ist ärgerlicher als eines, das eine Lücke zugibt.
+====
+
+include::01-einleitung.adoc[leveloffset=+1]
+
+include::02-loslegen.adoc[leveloffset=+1]
+
+include::03-bedienung.adoc[leveloffset=+1]
+
+include::04-aufbau.adoc[leveloffset=+1]
+
+include::05-pixel.adoc[leveloffset=+1]
+
+include::06-schrift.adoc[leveloffset=+1]
+
+include::07-fenster.adoc[leveloffset=+1]
+
+include::08-daten.adoc[leveloffset=+1]
+
+include::09-lua.adoc[leveloffset=+1]
+
+include::10-api.adoc[leveloffset=+1]
+
+include::11-erweitern.adoc[leveloffset=+1]
+
+include::12-testen.adoc[leveloffset=+1]
+
+include::13-geraet.adoc[leveloffset=+1]
+
+include::14-glossar.adoc[leveloffset=+1]
+
+[colophon]
+== Impressum
+
+*PDA: Ein Taschencomputer zum Selberbauen*
+
+Autor: Olav Schettler +
+Kontakt: olav@schettler.net
+
+Macintosh und System 1 sind Marken von Apple Inc. Dieses Projekt ist eine
+eigenständige Nachempfindung ihrer Gestaltung; es enthält keinen Code und
+keine Schriften von Apple. Die Zeichensätze sind eigens für dieses Projekt
+gezeichnet.
+
+_Geschrieben mit AsciiDoc, gebaut mit Asciidoctor._

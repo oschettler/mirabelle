@@ -1,0 +1,312 @@
+== Buchstaben von Hand
+
+Ein Bildschirm mit einem Bit je Pixel kann keine fertige Schriftart aus dem
+Betriebssystem laden und glattziehen lassen — es gibt keine Kurven, keine
+Subpixel, kein Antialiasing. Jeder Buchstabe ist eine feste Anordnung
+schwarzer und weißer Punkte, von Hand gezeichnet. Dieses Kapitel zeigt, wie
+das Projekt das aufschreibt, wie Text daraus entsteht, und wie zwei
+Zeichensatzfehler erst beim Ansehen des laufenden Programms auffielen.
+
+=== Das Zeichensatzformat
+
+Ein Zeichensatz ist eine Textdatei, kein Binärformat. `docs/fnt-format.md`
+beschreibt den Aufbau, `data/fonts/system12-ascii.part` enthält die Glyphen
+selbst. Hier ist eine davon, unverändert aus der Datei:
+
+[source]
+----
+glyph U+0041 width 7        # A
+.......
+.......
+..#....
+.#.#...
+.#.#...
+#...#..
+#####..
+#...#..
+#...#..
+.......
+.......
+.......
+----
+
+`#` ist ein gesetztes Pixel, `.` ein leeres. Jede Zeile der Glyphe entspricht
+einer Bildzeile, jede Spalte einem Pixel. `width 7` sagt zweierlei zugleich:
+sieben Spalten werden gezeichnet, und der Schreibstift rückt danach um sieben
+Pixel weiter — `docs/fnt-format.md` nennt das ausdrücklich: „Breite ist
+Vorschub“. Es gibt keinen eigenen Abstandswert; der Zwischenraum zum nächsten
+Buchstaben steht als leere Spalte rechts in der Glyphe selbst, hier die
+letzte, durchgehend leere Spalte.
+
+`src/gfx/font.h` beschreibt, was daraus zur Übersetzungszeit wird: ein Feld
+von `glyph`-Einträgen, sortiert nach Codepunkt, plus ein gemeinsamer
+Bitblock:
+
+[source,c]
+----
+typedef struct {
+    uint32_t codepoint;
+    uint8_t  width;     /* Spalten und Vorschub */
+    uint8_t  stride;    /* Bytes je Zeile: (width + 7) / 8 */
+    uint32_t offset;    /* Startindex in font.bits */
+} glyph;
+----
+
+`tools/fontc` übersetzt die `.fnt`-Datei einmalig in C-Quelltext, der
+mitgebaut wird — nicht zur Laufzeit gelesen. `docs/fnt-format.md` nennt drei
+Gründe: `gfx/` dürfte sonst Dateien lesen und würde damit die Plattformschicht
+kennen, was die Schichtenregel aus `DESIGN.md` verletzt; erzeugter Code landet
+auf dem ESP32 im Flash statt im knappen Arbeitsspeicher; und niemand will bei
+jedem Programmstart einen Textparser über hundert Glyphen laufen lassen.
+
+=== Die Metrik: wo was sitzt
+
+Alle Glyphen einer Schrift sind gleich hoch — `size 12` — aber diese zwölf
+Zeilen sind nicht gleichbedeutend. `data/fonts/system12.metrics` legt genau
+fest, welche Zeile wofür da ist:
+
+[source]
+----
+#   0   frei für Akzente über Großbuchstaben
+#   1   frei
+#   2   Oberkante Großbuchstaben, Akzente über Kleinbuchstaben
+#   3
+#   4   Oberkante Kleinbuchstaben (x-Höhe)
+#   5
+#   6   Mittelband, hier sitzen Querstriche
+#   7
+#   8   Grundlinie, letzte Zeile des Buchstabenkörpers
+#   9   Unterlängen (g j p q y), Cedille
+#  10   Unterlängen
+#  11   immer leer, das ist der Zeilenabstand
+----
+
+Die *Grundlinie* ist die gedachte Linie, auf der die meisten Buchstaben
+stehen — hier liegt sie unter Zeile 8. Die *x-Höhe* ist die Höhe eines
+kleinen Buchstabens ohne Ober- oder Unterlänge, wie beim `x` selbst; sie
+beginnt bei Zeile 4. Die *Versalhöhe* ist die Höhe eines Großbuchstabens, ab
+Zeile 2. *Oberlängen* wie beim `l` reichen über die x-Höhe hinaus,
+*Unterlängen* wie beim `g` unter die Grundlinie, hier in die Zeilen 9 und 10.
+
+Die Datei sagt auch, wo Punkte und Akzente sitzen: zwei Zeilen über der
+Oberkante des jeweiligen Buchstabens. Bei einem Kleinbuchstaben ist das Zeile
+2, bei einem Großbuchstaben Zeile 0.
+
+==== Eine ehrliche Grenze
+
+Zwischen der Oberkante eines Großbuchstabens (Zeile 2) und dem oberen Rand
+der Glyphe (Zeile 0) liegen nur zwei Zeilen. Ein Trema — zwei Punkte, wie bei
+Ä — braucht genau eine davon; die Regel geht dort auf. Ein Akut, ein Gravis,
+eine Tilde oder ein Ring brauchen aber zwei Zeilen für sich, und das reicht
+nicht. Die Metrikdatei benennt das offen als Grenze, nicht als Versehen:
+
+[source]
+----
+# Diese Regel geht bei Großbuchstaben nicht immer auf, und das ist eine echte
+# Grenze der Metrik, keine Nachlässigkeit. Über einem Großbuchstaben liegen nur
+# zwei freie Zeilen. Ein Trema braucht eine davon, die leere Zeile bleibt also
+# erhalten. Ein Akut, ein Gravis, eine Tilde oder ein Ring brauchen zwei Zeilen
+# und berühren den Buchstaben deshalb zwangsläufig.
+----
+
+Der naheliegende Ausweg — Großbuchstaben eine Zeile niedriger zeichnen —
+wurde bewusst verworfen: sechs Zeilen Versalhöhe lesen sich auf 133 Pixeln je
+Zoll schlechter als sieben, und ein É kommt in einer deutschen Oberfläche
+selten vor, während Großbuchstaben ständig vorkommen. Eine Grenze, die man
+kennt und begründet zurückweist, ist etwas anderes als ein Fehler, der einem
+später als Überraschung wiederbegegnet.
+
+=== UTF-8: warum ein Byte kein Zeichen ist
+
+Ein `ä` ist auf dem Bildschirm ein Zeichen. Im Speicher ist es aber nicht ein
+Byte, sondern zwei — `0xC3 0xA4`. Wer Text byteweise verarbeitet, zerlegt ein
+solches Zeichen in zwei bedeutungslose Hälften. Genau davor warnt der Kopf von
+`src/core/utf8.h`:
+
+[source,c]
+----
+/* Zeichenketten sind im ganzen System UTF-8. Niemals wird ein Byte als Zeichen
+ * behandelt: der Schreibcursor bewegt sich über Codepunkte, sonst zerlegt die
+ * Rücktaste ein ä in ein halbes Zeichen. */
+----
+
+UTF-8 kodiert einen Codepunkt — eine Zahl, die ein Zeichen benennt — in ein
+bis vier Bytes. Wie viele, entscheidet allein das erste Byte:
+
+[cols="1,1,1"]
+|===
+|Erstes Byte |Länge |Bereich
+
+|`0xxxxxxx`
+|1 Byte
+|U+0000 – U+007F (klassisches ASCII)
+
+|`110xxxxx`
+|2 Bytes
+|U+0080 – U+07FF
+
+|`1110xxxx`
+|3 Bytes
+|U+0800 – U+FFFF
+
+|`11110xxx`
+|4 Bytes
+|U+10000 – U+10FFFF
+|===
+
+Jedes Folgebyte beginnt mit `10xxxxxx`. Rechne `ä`, U+00E4, von Hand nach:
+`0xE4` liegt über `0x7F`, also braucht es mindestens zwei Bytes. Binär ist
+U+00E4 gleich `000 11100100`. Für zwei Bytes bleiben elf Nutzbits: fünf im
+ersten (`110xxxxx`), sechs im zweiten (`10xxxxxx`). Aufgeteilt:
+`11100100` wird zu `00011` `100100`. Das erste Byte ist
+`110`+`00011` = `11000011` = `0xC3`, das zweite `10`+`100100` = `10100100` =
+`0xA4`. Genau das prüft `tests/unit/test_utf8.c`:
+
+[source,c]
+----
+n = utf8_encode(0xE4, buf);  /* ä */
+CHECK_EQ(n, 2);
+CHECK_EQ((unsigned char)buf[0], 0xC3);
+CHECK_EQ((unsigned char)buf[1], 0xA4);
+----
+
+`src/core/utf8.c` geht denselben Weg rückwärts. `utf8_next` liest das erste
+Byte, bestimmt daraus die erwartete Länge, und liest dann so viele Folgebytes:
+
+[source,c]
+----
+if (b0 >= 0xC2 && b0 <= 0xDF) {
+    len = 2;
+} else if (b0 >= 0xE0 && b0 <= 0xEF) {
+    len = 3;
+    ...
+----
+
+=== Genau ein Byte vorrücken
+
+Was aber, wenn eine Bytefolge kaputt ist — eine Datei beschädigt, ein
+Programm hat mittendrin abgeschnitten? `utf8_next` liefert dann `U+FFFD`, das
+Ersatzzeichen, und rückt um *genau ein Byte* vor. Der Kommentar über der
+Fallback-Stelle in `src/core/utf8.c` sagt, warum die Anzahl so genau
+festgelegt ist:
+
+[source,c]
+----
+/* Folgebyte als Startbyte oder ungültiges Startbyte: genau ein
+ * Byte überspringen, sonst würde eine Schleife nie terminieren. */
+*p += 1;
+return UTF8_REPLACEMENT;
+----
+
+Stell dir vor, die Funktion würde bei einer ungültigen Folge gar nicht
+vorrücken. Eine Schleife wie `while (*s) cp = utf8_next(&s);` läse dieselbe
+kaputte Stelle wieder und wieder — eine Endlosschleife, ausgelöst von einer
+einzigen beschädigten Datei. Rückt sie stattdessen immer um mindestens ein
+Byte vor, ist jede Schleife über eine endliche Zeichenkette selbst dann
+endlich, wenn der Inhalt Unsinn ist. Das ist derselbe Gedanke wie bei den
+Füllbits aus Kapitel 5: eine kleine, unbedingt eingehaltene Zusage erspart
+an anderer Stelle eine ganze Fehlerklasse — hier nicht falsche Daten, sondern
+ein Programm, das nie mehr aufhört zu laufen.
+
+`utf8_valid` in derselben Datei nutzt genau dieses Verhalten, um Gültigkeit zu
+prüfen, ohne eine zweite Logik zu schreiben: läuft `utf8_next` über eine
+ungültige Stelle, meldet es `U+FFFD` *und* genau ein Byte Vorrückung — ein
+echtes, korrekt kodiertes `U+FFFD` bräuchte drei Bytes. An diesem Unterschied
+erkennt `utf8_valid`, ob es einen erkannten Fehler oder ein echtes
+Ersatzzeichen im Text vor sich hat.
+
+=== Drei Fehler, die erst das Bild verriet
+
+`data/fonts/system12-ascii.part` wurde geprüft, indem jemand die
+Textzeichnung Zeile für Zeile gegen die Vorlage gelesen hat — und trotzdem
+fielen drei Fehler erst auf, als das Programm zum ersten Mal tatsächlich auf
+einem Bildschirm lief:
+
+Beim **t** saß der Querstrich genau in der Mitte, mit gleich langem Stamm
+darüber und darunter — auf dem Bildschirm sah das wie ein Pluszeichen aus,
+nicht wie ein t. „Schreibtisch“ las sich als „Schreib+isch“.
+
+Das **a** hatte keinen geraden rechten Stamm und war von einem **o** nicht zu
+unterscheiden. „aus“ las sich als „ous“.
+
+Und das **Komma** saß auf der Grundlinie statt darunter — es gehört, wie die
+Metrikdatei festhält, in die Zeilen 8 und 9, unter die letzte Zeile des
+Buchstabenkörpers, nicht in die Zeile davor.
+
+Alle drei Fehler waren im rohen ASCII-Auszug der `.fnt`-Datei nicht
+aufgefallen — Punkte und Rauten in einer Textdatei zu lesen, ist etwas
+anderes, als die entstehenden Pixel als Buchstabenform zu erkennen. Erst das
+laufende Programm, tatsächlich angesehen, zeigte den Unterschied.
+
+=== Die Folge: `derived.map`
+
+Das Nachziehen des `a` behob den zweiten Fehler — brachte aber einen eigenen
+Fund mit sich. `ä`, `à` und `å` sind keine eigenen Zeichnungen, sondern das
+`a` mit einem Akzent obendrauf. Als das `a` neu gezeichnet wurde, blieben
+diese drei Buchstaben auf der *alten* Form stehen: „Fräulein“ las sich
+danach als „Fröulein“.
+
+Der Grund liegt darin, dass ein Zeichensatz keine Regel kennt, die sagt
+„dieses Zeichen ist von jenem abgeleitet“ — jede Glyphe ist für sich
+gezeichnet, auch wenn zwei davon eigentlich zusammengehören. Die Lösung ist
+eine eigene Datei, `data/fonts/derived.map`, die genau diese Beziehung
+festhält:
+
+[source]
+----
+U+00E4 U+0061   # ä von a
+U+00E0 U+0061   # à
+U+00E5 U+0061   # å
+...
+U+00F8 U+006F   # ø, mit Durchstrich
+----
+
+Und ein Test, der prüft, dass jedes gesetzte Pixel des Grundbuchstabens auch
+im abgeleiteten Zeichen gesetzt ist — `derived_glyphs_contain_their_base` in
+`tests/unit/test_text.c`:
+
+[source,c]
+----
+for (int y = 0; y < system12.size; y++) {
+    for (int x = 0; x < b->width; x++) {
+        if (glyph_pixel(&system12, b, x, y) &&
+            !glyph_pixel(&system12, d, x, y)) {
+            printf("  U+%04X fehlt ein Pixel des Grundbuchstabens "
+                   "U+%04X bei x %d, y %d\n", dcp, bcp, x, y);
+            CHECK(false);
+----
+
+Geprüft wird eine Obermenge, keine Gleichheit — `ø` und `Ø` fügen dem
+Grundbuchstaben einen Durchstrich hinzu, dürfen also mehr Pixel haben, nur
+nicht weniger. Wird das `o` künftig noch einmal überarbeitet und `ö` dabei
+vergessen, schlägt genau dieser Test fehl, bevor irgendjemand „Fröulein“
+lesen muss.
+
+=== Die Lehre
+
+Ein Test prüft, was man ihm sagt zu prüfen — nicht mehr. Der Zeichenvorrat-Test
+aus Abschnitt 5.2 von `DESIGN.md` hätte gemeldet, wenn ein Zeichen ganz
+gefehlt hätte; er kann nicht sagen, ob ein vorhandenes Zeichen *richtig
+aussieht*. Ob ein t wie ein Pluszeichen wirkt, ist eine Frage, die nur ein
+Auge beantwortet, das die Pixel als Form liest, nicht als Bitmuster. Manche
+Fehler sieht nur ein Auge — und deshalb gehört „das laufende Programm
+tatsächlich ansehen“ genauso zum Testen wie jede automatisierte Prüfung.
+
+=== Zum Ausprobieren
+
+. Suche in `data/fonts/system12-ascii.part` die Glyphe für `U+0067` (`g`) und
+  zeichne sie auf Papier oder in einem Texteditor nach. In welchen Zeilen der
+  Metrik liegt die Unterlänge?
+
+. Kodiere den Codepunkt für `€`, U+20AC, von Hand nach dem Muster aus diesem
+  Kapitel und vergleiche dein Ergebnis mit `utf8_encode_exact_bytes` in
+  `tests/unit/test_utf8.c`.
+
+. Baue dir eine kurze, absichtlich beschädigte UTF-8-Zeichenkette (zum
+  Beispiel ein einzelnes Byte `0xFF`, mitten in ansonsten gültigem Text) und
+  verfolge mit `utf8_next`, wie viele Aufrufe nötig sind, bis die Schleife am
+  Ende ankommt.
+
+. Sieh dir `data/fonts/derived.map` vollständig an und zähle, wie viele
+  abgeleitete Zeichen es gibt. Finde die beiden, die zusätzliche Pixel statt
+  nur eines Akzents hinzufügen, und begründe anhand ihrer Form, warum.

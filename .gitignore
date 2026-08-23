@@ -3,3 +3,4 @@ node_modules/
 package-lock.json
 tests/golden/*.actual.pbm
 build-asan/
+handbuch/output/

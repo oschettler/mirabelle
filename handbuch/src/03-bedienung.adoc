@@ -1,0 +1,291 @@
+== Die Oberfläche bedienen
+
+Starte `./build/pda` und du siehst zwei Fenster über einem grauen,
+schachbrettgemusterten Schreibtisch, dazu eine Menüleiste ganz oben. Dieses
+Kapitel erklärt, wie du damit umgehst — mit der Maus und ganz ohne sie.
+
+=== Fenster
+
+**Verschieben.** Ziehe an der Titelleiste eines Fensters, und es folgt deiner
+Maus — allerdings nicht das Fenster selbst, sondern erst einmal nur sein
+Umriss. Das Fenster springt erst an seine neue Stelle, wenn du die Maustaste
+loslässt. Das ist keine Umsetzungsschwäche, sondern die alte
+System-1-Bedienung, wörtlich genommen aus `DESIGN.md`:
+
+[quote, DESIGN.md, Abschnitt 6.3]
+____
+Beim Ziehen erscheint ein XOR-Umriss; erst beim Loslassen springt das Fenster
+an seinen neuen Platz — historisch korrekt und zugleich der billigste mögliche
+Weg.
+____
+
+Der Grund dafür ist derselbe wie beim Sollbild aus Kapitel 1: Der Bildschirm
+wird bei jedem Bild komplett neu gezeichnet, nichts wird nachträglich
+verschoben oder kopiert. Würde das ganze Fenster bei jeder Mausbewegung an
+seine neue Stelle gezeichnet, müsste jedes Mal auch der komplette Inhalt des
+Fensters neu gezeichnet werden — bei einem Textfeld mit viel Inhalt spürbar
+langsam. Ein Umriss dagegen ist nur eine Linie. In `src/ui/wm.c` sieht das so
+aus:
+
+[source,c]
+----
+if (m->drag != DRAG_NONE) {
+    g->pat  = PAT_BLACK;
+    g->mode = GFX_XOR;
+    gfx_frame_rect(g, m->outline);
+    g->mode = GFX_COPY;
+}
+----
+
+`GFX_XOR` ist derselbe Übertragungsmodus, der in Kapitel 2 (Zeichenprimitive)
+schon den Textcursor blinken ließ: Zweimal denselben Umriss mit XOR gezeichnet
+ergibt wieder das Ursprungsbild. Erst `EV_MOUSE_UP` setzt den tatsächlichen
+Rahmen des Fensters neu, mit `window_set_frame(m->drag_win, m->outline)`.
+
+**Größe ändern.** Unten rechts an jedem aktiven Fenster sitzt ein kleines
+Feld, das Größenfeld. Ziehst du daran, wächst oder schrumpft derselbe Umriss,
+nach denselben Regeln — mit einer Untergrenze, die aus dem Thema kommt
+(`min_w` und `min_h` in `data/themes/desktop.theme`, derzeit 96 mal 48 Pixel),
+damit kein Fenster so klein wird, dass seine Titelleiste nicht mehr passt.
+
+**Nach vorn holen.** Ein Klick auf ein Fenster aktiviert es und holt es an das
+Ende der Fensterliste, die sogenannte z-Liste — dadurch wird es zuletzt und
+damit zuoberst gezeichnet. `wm_activate()` in `src/ui/wm.c` macht nichts
+anderes als das Fenster in dieser Liste nach hinten zu schieben und allen
+Fenstern zu sagen, ob sie jetzt aktiv sind. Nur das aktive Fenster hat die
+gestreifte Titelleiste; alle anderen bleiben leer.
+
+**Schließen.** Ein Klick auf das Feld links in der Titelleiste schließt das
+Fenster. Das klingt trivial, war es aber nicht ganz.
+
+[NOTE]
+.Ein echter Fehler und seine Reparatur
+====
+Als das Schließfeld zum ersten Mal fertig war, stürzte das Programm bei einem
+Klick darauf ab. Die Ursache stand im Zusammenspiel zweier Teile: Die
+Fensterverwaltung (`wm.c`) gibt ein Fenster beim Schließen sofort frei — aber
+die Vorführung (`demo.c`) hielt in ihren eigenen Variablen `w_desk` und
+`w_keys` weiterhin Zeiger auf genau dieses Fenster und zeichnete beim
+nächsten Bild ungerührt weiter hinein. Ein Zugriff auf bereits freigegebenen
+Speicher.
+
+Die Lösung ist eine Rückmeldung: `window_set_on_close()` lässt die Vorführung
+eine Funktion hinterlegen, die aufgerufen wird, kurz bevor ein Fenster
+tatsächlich verschwindet — gleich, ob durch das Schließfeld, durch `wm_close()`
+oder wenn die ganze Fensterverwaltung beendet wird. In `src/demo.c` sieht das
+so aus:
+
+[source,c]
+----
+static void demo_window_closed(window *w, void *user)
+{
+    demo_state *st = user;
+    if (w == st->w_desk) st->w_desk = NULL;
+    if (w == st->w_keys) st->w_keys = NULL;
+}
+----
+
+Ohne diese Rückmeldung hätte jede Anwendung sich selbst merken müssen, wann
+ein Fenster verschwindet — und garantiert hätte irgendwo jemand einen der
+Wege vergessen. Mit ihr gibt es nur einen Weg, und den kann man nicht
+vergessen, weil er der einzige ist. Der Fehler fiel übrigens nicht in der
+normalen Testsuite auf, sondern erst mit dem Adress-Sanitizer aus Kapitel 2 —
+eine grüne Testsuite hatte den Absturz schlicht nicht bemerkt.
+====
+
+=== Menüs
+
+Klick auf „Ablage“ in der Menüleiste, und darunter klappt ein Menü auf. Dafür
+gibt es zwei verschiedene Handbewegungen, und beide funktionieren
+gleichzeitig:
+
+**Durchziehen.** Maustaste über dem Menütitel drücken, ohne loszulassen in das
+Menü hineinfahren, über dem gewünschten Eintrag loslassen. Das ist die
+klassische System-1-Geste: Drücken, Ziehen, Loslassen in einem Zug.
+
+**Kurzer Klick.** Einmal auf den Menütitel klicken und wieder loslassen. Das
+Menü bleibt offen, du kannst in Ruhe hineinfahren und den gewünschten Eintrag
+mit einem zweiten Klick auswählen.
+
+Der Code in `src/ui/menu.c` unterscheidet die beiden nicht daran, wie *lange*
+die Maustaste gedrückt war, sondern nur daran, *wo* sie losgelassen wurde:
+
+[quote, src/ui/menu.c]
+____
+Unterschieden wird an der Stelle, nicht an der Zeit: wurde auf einem Titel
+gedrückt und auf demselben Titel wieder losgelassen, ist der Zeiger nie im
+Menü gewesen.
+____
+
+Das ist mehr als eine Implementierungsdetail. Eine Unterscheidung nach Zeit
+bräuchte eine Schwelle — wie viele Millisekunden gelten noch als „kurz“? —, und
+diese Schwelle müsste auf einem langsamen Gerät großzügiger sein als auf einem
+schnellen Rechner, sonst wirkt jeder Klick auf der Zielhardware wie ein langes
+Drücken. Eine Unterscheidung nach Ort braucht dagegen überhaupt keine Uhr: Sie
+funktioniert auf jedem Gerät gleich, ob es 60 oder 20 Bilder pro Sekunde
+schafft. Das Zielgerät aus `DESIGN.md`, ein Mikrocontroller ohne
+Grafikbeschleuniger, ist genau ein Fall, in dem eine Zeitschwelle zur
+Wackelangelegenheit würde.
+
+Auch dieses Verhalten war nicht von Anfang an da — ursprünglich klappte ein
+Menü nach jedem Loslassen sofort wieder zu, und ein kurzer Klick zum bloßen
+Öffnen war gar nicht möglich. Beide Bedienweisen nebeneinander zu erlauben war
+eine bewusste Nachbesserung, keine Selbstverständlichkeit.
+
+Deaktivierte Einträge — in der Vorführung ist das „Einsetzen“, solange nichts
+in der Zwischenablage liegt — werden grau gerastert und lösen keine Aktion
+aus. Das Muster kommt aus demselben Satz von acht Bytes, der schon den
+Schreibtisch grau macht.
+
+=== Tastatur
+
+Jeder Befehl, den du mit der Maus auslösen kannst, hat auch ein Tastenkürzel.
+Die vollständige Liste steht in `data/keys/default.keys`, einer reinen
+Textdatei:
+
+[source]
+----
+edit.undo             Cmd+Z          global
+record.new            Cmd+N          app
+list.next             Down           list
+field.next            Tab            form
+----
+
+Jede Zeile ist eine Aktion, ein Kürzel und ein *Bereich*. Die wichtigsten
+Kürzel im Überblick:
+
+[cols="2,1,1", options="header"]
+|===
+|Aktion |Taste |Bereich
+
+|Beenden
+|kbd:[Cmd+Q]
+|global
+
+|Widerrufen / Wiederholen
+|kbd:[Cmd+Z] / kbd:[Cmd+Shift+Z]
+|global
+
+|Menüleiste betreten
+|kbd:[F10]
+|global
+
+|Zwischen den vier Anwendungen wechseln
+|kbd:[Cmd+1] bis kbd:[Cmd+4]
+|global
+
+|Neu / Öffnen / Sichern
+|kbd:[Cmd+N] / kbd:[Cmd+O] / kbd:[Cmd+S]
+|app
+
+|Fenster schließen
+|kbd:[Cmd+W]
+|app
+
+|Suchen
+|kbd:[Cmd+F]
+|app
+
+|In einer Liste blättern
+|kbd:[Pfeil auf] / kbd:[Pfeil ab]
+|list
+
+|Datensatz öffnen
+|kbd:[Return]
+|list
+
+|Nächstes / voriges Feld
+|kbd:[Tab] / kbd:[Shift+Tab]
+|form
+
+|Formular bestätigen / abbrechen
+|kbd:[Return] / kbd:[Esc]
+|form
+|===
+
+`Cmd` ist auf dem Mac die Befehlstaste, sonst gleichbedeutend mit `Ctrl` — so
+lässt sich ein Kürzel überall gleich schreiben, auch in dieser Tabelle.
+
+Die vier Bereiche — `global`, `app`, `list`, `form` — sind eine Rangfolge, kein
+Etikett. `keymap_lookup()` in `src/core/keymap.c` sucht zuerst im Bereich, der
+gerade gilt (welches Bedienelement hat den Fokus?), und erst danach, falls
+dort nichts gefunden wurde, im Bereich `global`:
+
+[source,c]
+----
+const char *keymap_lookup(const keymap *km, int key, uint8_t mods, const char *scope)
+{
+    if (scope) {
+        for (size_t i = 0; i < km->count; i++) {
+            const keymap_entry *e = &km->entries[i];
+            if (e->key == key && e->mods == mods && strcmp(e->scope, scope) == 0)
+                return e->action;
+        }
+    }
+    for (size_t i = 0; i < km->count; i++) {
+        const keymap_entry *e = &km->entries[i];
+        if (e->key == key && e->mods == mods && strcmp(e->scope, "global") == 0)
+            return e->action;
+    }
+    return NULL;
+}
+----
+
+Deshalb kann kbd:[Return] in einer Liste etwas anderes tun als in einem
+Formular, obwohl es dieselbe Taste ist: Steht der Fokus auf einer Liste, gilt
+der Eintrag `list.open Return list` — ein Datensatz wird geöffnet. Steht er
+auf einem Formularfeld, gilt stattdessen `form.accept Return form` — das
+Formular wird bestätigt. Beide Zeilen stehen nebeneinander in derselben Datei;
+welche zieht, entscheidet allein, wo du gerade bist.
+
+=== Warum jeder Befehl auch ohne Maus erreichbar sein muss
+
+Das Zielgerät aus `DESIGN.md`, ein Sunton ESP32 mit Touchscreen, hat keine
+Maus und in der Grundausstattung auch keine Tastatur. Trotzdem verlangt der
+Entwurf ausdrücklich das Gegenteil einer bloßen Notlösung:
+
+[quote, DESIGN.md, Abschnitt 6.4]
+____
+Kein Befehl darf nur mit dem Zeiger erreichbar sein — und umgekehrt keiner nur
+mit der Tastatur, weil das Gerät keine hat.
+____
+
+Für dich am Arbeitsplatz zahlt sich das schon jetzt aus: kbd:[F10] betritt die
+Menüleiste, danach bewegen die Pfeiltasten die Hervorhebung, kbd:[Return]
+löst den markierten Eintrag aus, kbd:[Esc] klappt zu. In `src/demo.c`
+entscheidet genau eine Zeile, ob eine gedrückte Taste die Menüleiste betritt
+oder als gewöhnliches Kürzel behandelt wird:
+
+[source,c]
+----
+const char *action = st->km
+    ? keymap_lookup(st->km, e->key, e->mods, "app") : NULL;
+
+if (action && strcmp(action, "menu.enter") == 0) {
+    if (st->mb) menubar_enter(st->mb);
+    break;
+}
+----
+
+Das ist derselbe Mechanismus wie oben, nicht ein zweiter, eigens für die
+Tastatur gebauter Weg. Wer jeden Befehl doppelt umsetzt — einen für die Maus,
+einen für die Tastatur —, vergisst früher oder später einen davon. Wer beide
+über dieselbe Belegungsdatei laufen lässt, kann das gar nicht.
+
+=== Zum Ausprobieren
+
+. Verschiebe ein Fenster mit gedrückter Maustaste ein Stück und beobachte den
+  Umriss, bevor du loslässt. Versuche danach, ein Fenster so weit nach oben zu
+  ziehen, dass es über den oberen Bildschirmrand hinausragt — was passiert,
+  und warum, wenn du dir `clamp_move()` in `src/ui/wm.c` ansiehst?
+
+. Öffne ein Menü einmal durchgezogen und einmal mit zwei kurzen Klicks. Prüfe,
+  ob beide Wege wirklich zum selben Ergebnis führen.
+
+. Drücke kbd:[F10], navigiere nur mit den Pfeiltasten und kbd:[Return] zu
+  „Beenden“, und beobachte, dass sich derselbe Bestätigungsdialog öffnet wie
+  über das Menü mit der Maus.
+
+. Sieh dir `data/keys/default.keys` an und überlege dir ein Kürzel für einen
+  Befehl, der dort noch fehlt, zum Beispiel „Alles auswählen“. In welchem
+  Bereich müsste es stehen, und warum?

@@ -1,0 +1,352 @@
+== Ein Bild aus einzelnen Bits
+
+Bevor irgendetwas auf dem Bildschirm erscheint — ein Fenster, ein Buchstabe,
+ein Menü — muss es diese Frage beantworten: Wie speichert man ein Bild aus
+nichts als schwarzen und weißen Punkten? Dieses Kapitel beantwortet sie, und
+zwar an echtem Code, nicht an einer Skizze davon.
+
+=== Ein Bit je Pixel
+
+Das Projekt entscheidet sich für die denkbar knappste Antwort: jedes Pixel ist
+entweder an oder aus, ein einziges Bit. Kein Grauton, keine Farbe, keine
+Transparenz. `src/gfx/bitmap.h` legt das im Kopf der Datei fest:
+
+[source,c]
+----
+typedef struct {
+    int      w, h;
+    int      stride;   /* Bytes je Zeile: (w + 7) / 8 */
+    uint8_t *bits;
+    bool     owned;    /* true, wenn bitmap_free() den Speicher freigeben soll */
+} bitmap;
+----
+
+`w` und `h` sind Breite und Höhe in Pixeln, `bits` ist der eigentliche
+Speicher: ein Byte-Feld, in dem jedes Bit für ein Pixel steht. Die
+Bitreihenfolge steht ebenfalls im Kopf der Datei, und sie ist eine Festlegung,
+kein Zufall: „das linkeste Pixel einer Zeile sitzt im höchstwertigen Bit des
+ersten Bytes (MSB links)“. `bitmap_get` liest genau danach:
+
+[source,c]
+----
+int bitmap_get(const bitmap *bm, int x, int y)
+{
+    if (x < 0 || y < 0 || x >= bm->w || y >= bm->h) return 0;
+
+    uint8_t byte = bm->bits[(size_t)y * bm->stride + x / 8];
+    return (byte >> (7 - (x & 7))) & 1;
+}
+----
+
+`x / 8` findet das richtige Byte in der Zeile, `x & 7` den Rest — die Position
+innerhalb des Bytes, gezählt von links, deshalb `7 - (x & 7)`. Ein Pixel bei
+`x = 0` sitzt im Bit 7 (dem höchstwertigen), eines bei `x = 7` im Bit 0. Das
+ist MSB links, ausgeschrieben.
+
+=== Warum 800 × 480 genau 48 000 Bytes sind
+
+`stride` ist die Anzahl Bytes je Bildzeile. Eine Zeile mit `w` Pixeln braucht
+`(w + 7) / 8` Bytes — die Aufrundung sorgt dafür, dass auch eine Breite, die
+nicht durch acht teilbar ist, noch hineinpasst. `bitmap_init` in
+`src/gfx/bitmap.c` setzt das genauso:
+
+[source,c]
+----
+bm->stride = (w + 7) / 8;
+----
+
+Für den Bildschirm des Projekts, 800 × 480 Pixel, ist das eine Rechnung, die
+du im Kopf nachvollziehen kannst: 800 ist durch acht teilbar, also
+`stride = 800 / 8 = 100` Bytes je Zeile. Bei 480 Zeilen sind das
+`100 × 480 = 48 000` Bytes für ein volles Bild. `bitmap_bytes` rechnet nichts
+anderes:
+
+[source,c]
+----
+size_t bitmap_bytes(const bitmap *bm)
+{
+    return (size_t)bm->stride * (size_t)bm->h;
+}
+----
+
+48 000 Bytes sind, verglichen mit einem Bild in Farbe, winzig — dieselbe
+Fläche mit einem Byte je Pixel wäre 384 000 Bytes, mit RGB565 fast 770 000.
+Der Unterschied ist kein Detail: `DESIGN.md` nennt genau diese Zahl als Grund,
+warum ein Bit je Pixel „klein genug für den internen SRAM des ESP32“ ist. Eine
+Entwurfsentscheidung im Kapitel 1 wird hier zu einer nachvollziehbaren
+Rechnung.
+
+=== Die Zusicherung über die Füllbits
+
+Wenn `w` nicht durch acht teilbar ist, bleiben am Ende jeder Zeile ein paar
+Bits übrig, die zu keinem Pixel gehören — reiner Füllstoff bis zur nächsten
+Bytegrenze. `bitmap.h` trifft darüber eine Zusage, fett im Kommentar am
+Dateianfang:
+
+[source,c]
+----
+/* Wichtige Zusicherung: die Füllbits am Zeilenende sind IMMER 0. Nur deshalb
+ * dürfen bitmap_equal() und das Schreiben von P4-Dateien direkt über die
+ * Bytes gehen, ohne Pixel für Pixel zu vergleichen. */
+----
+
+Durchgesetzt wird das von einer einzigen Funktion, `mask_padding` in
+`src/gfx/bitmap.c`:
+
+[source,c]
+----
+static void mask_padding(bitmap *bm)
+{
+    int used = bm->w & 7;
+    if (used == 0) return;               /* Zeile endet genau auf Bytegrenze */
+
+    uint8_t keep = (uint8_t)(0xFFu << (8 - used));
+    for (int y = 0; y < bm->h; y++)
+        bm->bits[(size_t)y * bm->stride + bm->stride - 1] &= keep;
+}
+----
+
+Warum lohnt sich das? Ohne diese Zusage müsste jeder Vergleich zweier Bilder
+Pixel für Pixel laufen — bei 800 × 480 wären das 384 000 Einzelvergleiche statt
+48 000 Bytevergleiche. Mit ihr genügt `memcmp`:
+
+[source,c]
+----
+bool bitmap_equal(const bitmap *a, const bitmap *b)
+{
+    if (a->w != b->w || a->h != b->h) return false;
+    return memcmp(a->bits, b->bits, bitmap_bytes(a)) == 0;
+}
+----
+
+Das ist eine kleine, aber lehrreiche Stelle: eine einzige Zusage — „Füllbits
+sind immer 0“ — erspart an zwei Stellen im Projekt jeweils eine ganze Schleife
+über einzelne Pixel. `bitmap_equal` vergleicht Bytes, und `pbm_write_p4` in
+`src/gfx/pbm.c` schreibt den Bildspeicher unverändert in eine Datei:
+
+[source,c]
+----
+bool pbm_write_p4(const char *path, const bitmap *bm)
+{
+    FILE *f = fopen(path, "wb");
+    if (!f) return false;
+
+    fprintf(f, "P4\n%d %d\n", bm->w, bm->h);
+    size_t n = bitmap_bytes(bm);
+    bool   ok = fwrite(bm->bits, 1, n, f) == n;
+
+    return fclose(f) == 0 && ok;
+}
+----
+
+Ein einziger `fwrite`, kein Pixel-für-Pixel-Schreiben. Das ist der ganze Sinn
+der Zusage: eine kleine, an einer einzigen Stelle durchgesetzte Regel erlaubt
+es, an mehreren anderen Stellen einfachen statt komplizierten Code zu
+schreiben.
+
+=== Muster statt Farbe
+
+Ohne Farbe braucht das Projekt trotzdem etwas, das Flächen unterscheidbar
+macht — der Schreibtisch soll grau wirken, ein deaktivierter Menüeintrag
+schraffiert. Die Lösung heißt Muster: eine 8 × 8-Bit-Kachel, die sich über die
+Fläche wiederholt. `src/gfx/pattern.h`:
+
+[source,c]
+----
+typedef struct {
+    uint8_t rows[8];
+} pattern;
+
+static inline int pattern_bit(const pattern *p, int x, int y)
+{
+    return (p->rows[(unsigned)y & 7u] >> (7 - ((unsigned)x & 7u))) & 1;
+}
+----
+
+`x & 7` und `y & 7` sorgen dafür, dass sich das Muster alle acht Pixel
+wiederholt, ganz unabhängig davon, wie groß die Fläche ist. `PAT_GRAY50` in
+`src/gfx/pattern.c` ist das Schachbrett, mit dem System 1 seinen Schreibtisch
+zeichnet:
+
+[source,c]
+----
+/* Schachbrett: jede Zeile das Komplement der vorigen. */
+const pattern PAT_GRAY50 = { { 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55 } };
+----
+
+`0xAA` ist `10101010`, `0x55` ist `01010101` — jede Zeile das genaue
+Gegenteil der vorigen, und daraus wird ein Schachbrettmuster.
+
+Entscheidend ist, *wo* das Muster ausgewertet wird. `draw_pixel` in
+`src/gfx/draw.c` fragt das Musterbit erst ab, nachdem die Koordinate schon ins
+Zielbild verschoben ist:
+
+[source,c]
+----
+static void draw_pixel(gc *g, int x, int y)
+{
+    int ix = x + g->origin.x;
+    int iy = y + g->origin.y;
+
+    blend_at(g, ix, iy, pattern_bit(&g->pat, ix, iy));
+}
+----
+
+Das Muster haftet also am *Zielbild*, nicht am gezeichneten Objekt. Ein
+graues Rechteck sieht an jeder Stelle des Bildschirms exakt gleich aus, und
+verschiebt sich ein Fenster über den Schreibtisch, flimmert das Schachbrett
+darunter nicht.
+
+=== Übertragungsmodi statt Alphakanal
+
+Statt eines Alphakanals — der beschreibt, wie durchsichtig eine neue Farbe
+über einer alten liegt — kennt das Projekt fünf Übertragungsmodi. Sie
+bestimmen, wie ein Musterbit mit dem vorhandenen Pixel verrechnet wird:
+
+[source,c]
+----
+typedef enum {
+    GFX_COPY,      /* ziel = quelle */
+    GFX_OR,        /* ziel = ziel | quelle */
+    GFX_XOR,       /* ziel = ziel ^ quelle */
+    GFX_CLEAR,     /* ziel = ziel & ~quelle */
+    GFX_NOTCOPY    /* ziel = ~quelle */
+} gfx_mode;
+----
+
+Alle laufen durch dieselbe kleine Funktion, `apply_mode` in `src/gfx/draw.c`:
+
+[source,c]
+----
+static int apply_mode(gfx_mode mode, int dstbit, int srcbit)
+{
+    switch (mode) {
+    case GFX_COPY:    return srcbit;
+    case GFX_OR:      return dstbit | srcbit;
+    case GFX_XOR:     return dstbit ^ srcbit;
+    case GFX_CLEAR:   return dstbit & !srcbit;
+    case GFX_NOTCOPY: return !srcbit;
+    }
+    return srcbit;
+}
+----
+
+Von diesen fünf ist einer der interessanteste: `GFX_XOR`. Exklusiv-Oder hat
+eine Eigenschaft, die die anderen vier nicht haben — sie ist ihre eigene
+Umkehrung. Ein Pixel, zweimal mit demselben Wert per XOR verändert, landet
+wieder beim Ausgangswert: `x ^ v ^ v = x`, für jedes Bit `v`. Anders gesagt:
+
+** derselbe Aufruf zeichnet und löscht wieder.**
+
+Genau darauf beruhen zwei Dinge im Projekt. Der Fensterumriss, der beim
+Ziehen erscheint, wird bei jeder Mausbewegung an der alten Stelle mit XOR
+gelöscht und an der neuen mit XOR neu gezeichnet — kein Zurückkopieren eines
+gesicherten Hintergrunds nötig. Und der Schreibcursor blinkt auf dieselbe
+Art: einmal zeichnen, warten, noch einmal derselbe Aufruf, weg ist er.
+
+`tests/unit/test_draw.c` hält genau diese Eigenschaft fest:
+
+[source,c]
+----
+/* Trägt das Fensterziehen: derselbe XOR-Aufruf zweimal angewandt stellt den
+ * Ausgangszustand exakt wieder her. */
+TEST(xor_twice_restores_original)
+{
+    ...
+    g.mode = GFX_XOR;
+    g.pat  = PAT_GRAY25;
+    gfx_fill_rect(&g, rect_make(3, 3, 10, 10));
+    gfx_fill_rect(&g, rect_make(3, 3, 10, 10));
+
+    CHECK(bitmap_equal(&bm, &vorher));
+----
+
+Zwei identische Aufrufe, und das Bild ist wieder das von vorher. Kapitel 7
+zeigt, wie die Fensterverwaltung genau das für den Ziehumriss nutzt.
+
+=== Clipping: eine Stelle prüft es
+
+Ein Zeichenzustand (`gc`) trägt neben Muster und Modus auch ein Rechteck,
+`clip` — den Bereich, außerhalb dessen nichts gezeichnet werden darf. Das ist
+wichtig, sobald ein Fenster seinen Inhalt in ein größeres Bild einfügt: die
+Anwendung darf nicht über den Rand ihres Fensters hinausmalen können.
+
+Interessant ist, *wo* diese Prüfung stattfindet. Jede Zeichenprimitive —
+`gfx_line`, `gfx_fill_rect`, `gfx_frame_oval` und so weiter — läuft am Ende
+über denselben gemeinsamen Setzpunkt, `set_pixel` in `src/gfx/draw.c`:
+
+[source,c]
+----
+/* Der gemeinsame Setzpunkt: alle Koordinaten hier sind schon Bildkoordinaten
+ * (origin bereits addiert). Jede Primitive läuft am Ende hier durch, deshalb
+ * gibt es nur eine einzige Stelle, die den Clip prüft. */
+static void set_pixel(gc *g, int ix, int iy, int value)
+{
+    if (!rect_contains(g->clip, ix, iy)) return;
+    bitmap_set(g->dst, ix, iy, value);
+}
+----
+
+Das ist keine zufällige Nebenwirkung, sondern Absicht: würde jede Primitive
+ihre eigene Randbehandlung schreiben, gäbe es so viele Gelegenheiten für einen
+Clipping-Fehler wie es Primitive gibt. So gibt es genau eine.
+
+=== Die Testlücke, die ein Mutationstest fand
+
+Ein Mutationstest verändert absichtlich eine Zeile im geprüften Code — vertauscht
+zum Beispiel ein `+` gegen ein `-` — und schaut, ob wenigstens ein Test
+danach fehlschlägt. Bleibt die Testsuite grün, hat sie diese Zeile gar nicht
+wirklich geprüft.
+
+Genau das passierte beim Test, der beweisen sollte, dass ein Muster am
+Zielbild haftet und nicht am gezeichneten Objekt — der Eigenschaft aus
+weiter oben in diesem Kapitel. Der ursprüngliche Test verschob dasselbe
+Rechteck über zwei verschiedene `origin`-Werte und verglich die Ergebnisse.
+Der Kommentar in `tests/unit/test_draw.c` erzählt, was dabei auffiel:
+
+[source,c]
+----
+/* Die Verschiebung muss die Musterphase tatsächlich verändern können, sonst
+ * prüft der Test nichts. Bei PAT_GRAY50 ist das Bit (x+y) & 1, also ist das
+ * Muster gegen jede Verschiebung mit gerader Quersumme invariant. Deshalb
+ * (3,4) mit ungerader Summe - und zur Sicherheit ein zweiter Durchgang mit
+ * PAT_HATCH, dessen Phase auch waagerecht wandert. */
+----
+
+Das Schachbrettmuster `PAT_GRAY50` setzt ein Bit genau dann, wenn `(x + y)`
+ungerade ist. Verschiebt man das Zeichenziel um zum Beispiel `(2, 2)`, ändert
+sich `x + y` an jeder Stelle um vier — eine gerade Zahl. Das Schachbrett sieht
+danach exakt gleich aus wie vorher, verschoben oder nicht. Ein Test, der
+zufällig eine solche Verschiebung wählt, vergleicht zwei Bilder, die aus dem
+falschen Grund übereinstimmen: nicht weil das Muster korrekt am Zielbild
+haftet, sondern weil das Schachbrettmuster gegen genau diese Art Verschiebung
+blind ist. Selbst ein Fehler, der das Muster fälschlich am Objekt statt am
+Ziel verankert hätte, wäre unentdeckt geblieben.
+
+Die Reparatur ist im Testcode selbst zu sehen: eine Verschiebung mit
+*ungerader* Quersumme, dazu testweise ein zweites Muster, `PAT_HATCH`, dessen
+Phase auch bei geraden Verschiebungen wandert. Das ist eine der lehrreichsten
+Stellen im Projekt, weil sie zeigt, dass ein grüner Test allein nichts
+beweist — er beweist nur, dass die gewählten Eingaben nicht durch den Fehler
+gefallen sind. Ob sie das tatsächlich könnten, ist eine eigene Frage.
+
+=== Zum Ausprobieren
+
+. Rechne von Hand nach, wie viele Bytes eine Bitmap mit 37 × 10 Pixeln
+  braucht. Prüfe deine Rechnung, indem du `bitmap_init` und `bitmap_bytes` aus
+  `src/gfx/bitmap.c` aufrufst.
+
+. Schreibe ein kleines Testprogramm, das ein 8 × 8-Bild mit `PAT_HATCH`
+  einmal bei `origin = (0, 0)` und einmal bei `origin = (8, 0)` füllt.
+  Vergleiche die Ergebnisse mit `bitmap_equal` — sie sollten gleich sein, denn
+  eine Verschiebung um genau eine Musterbreite ändert die Phase nicht. Finde
+  dann eine Verschiebung, bei der `PAT_HATCH` *nicht* invariant ist.
+
+. Zeichne ein Rechteck einmal mit `GFX_COPY` und einmal mit `GFX_XOR` auf ein
+  bereits gefülltes Bild, und vergleiche das Ergebnis. Wende danach den
+  XOR-Aufruf ein zweites Mal an — wie im Test `xor_twice_restores_original`
+  aus `tests/unit/test_draw.c`.
+
+. Setze `gc_clip` auf ein kleines Rechteck und rufe `gfx_fill_oval` mit einem
+  viel größeren Rechteck auf. Prüfe mit `bitmap_get`, dass tatsächlich kein
+  Pixel außerhalb des Clips gesetzt wurde.

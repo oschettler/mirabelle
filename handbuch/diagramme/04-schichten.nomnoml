@@ -1,0 +1,32 @@
+#direction: down
+#spacing: 34
+#padding: 10
+#font: Helvetica
+#fontSize: 13
+#lineWidth: 1
+#edges: hard
+#stroke: #000000
+#fill: #ffffff
+#title: Die Schichten und was heute schon läuft
+
+[Anwendungen (Lua) - geplant|Aufgaben; Kalender; Kontakte; Notizen]
+[Lua-API - geplant|window(); store.find(); print()]
+[ui/ - läuft|Fenster; Menüs; Dialoge]
+[store/ - geplant|Datensätze; Suche]
+[gfx/ - läuft|Bitmap; Muster; Schrift]
+[core/ - läuft|Ereignisse; UTF-8; Zeit]
+[plat/ - läuft|13 Funktionen]
+
+[Anwendungen (Lua) - geplant] -> [Lua-API - geplant]
+[Lua-API - geplant] -> [ui/ - läuft]
+[Lua-API - geplant] -> [store/ - geplant]
+[ui/ - läuft] -> [gfx/ - läuft]
+[ui/ - läuft] -> [core/ - läuft]
+[store/ - geplant] -> [core/ - läuft]
+[gfx/ - läuft] -> [core/ - läuft]
+[core/ - läuft] -> [plat/ - läuft]
+[store/ - geplant] -> [plat/ - läuft]
+
+[plat/ - läuft] -> [SDL3 - läuft]
+[plat/ - läuft] -> [headless - läuft]
+[plat/ - läuft] -> [ESP32 - geplant]

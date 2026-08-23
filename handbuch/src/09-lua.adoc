@@ -1,0 +1,385 @@
+== Lua in einer halben Stunde
+
+[NOTE]
+.Geplant
+====
+Lua wird in Schritt M13 eingebaut. Gebaut sind zurzeit M1 bis M7. Dieses
+Kapitel bringt dir die Sprache trotzdem schon bei — sie ist klein genug, dass
+sich das an einem Nachmittag lohnt, und du kannst alles darin mit dem
+Lua-Programm auf deinem Rechner ausprobieren.
+====
+
+Lua ist eine kleine Sprache. Das ist keine Höflichkeitsfloskel: die gesamte
+Sprachbeschreibung passt in ein dünnes Heft, und der Übersetzer samt Bibliothek
+ist unter 300 Kilobyte groß. Genau deshalb steckt Lua in Spielen, in Routern,
+in Kameras — und in diesem Projekt, wo er später auf einem Mikrocontroller
+laufen soll, der nicht viel Platz hat.
+
+Wenn du schon eine andere Sprache kannst, wirst du die meisten Ideen
+wiedererkennen. Lies dieses Kapitel in einem Rutsch, probier die Beispiele aus,
+und komm später zum Nachschlagen zurück.
+
+=== Ausprobieren
+
+Auf den meisten Systemen bekommst du Lua mit einem Befehl:
+
+[source,bash]
+----
+brew install lua        # macOS
+apt install lua5.4      # Debian, Ubuntu
+----
+
+Danach startest du die interaktive Eingabe mit `lua`. Was du dort tippst, wird
+sofort ausgeführt. Mit kbd:[Strg+D] kommst du wieder heraus.
+
+[source,lua]
+----
+> print("Grüße aus Köln")
+Grüße aus Köln
+----
+
+=== Werte
+
+Lua kennt acht Arten von Werten. Sechs davon brauchst du dauernd:
+
+[source,lua]
+----
+local nichts   = nil          -- "es gibt nichts"
+local ja       = true         -- Wahrheitswert
+local zahl     = 42           -- Zahl, ganz
+local kommazahl = 3.5         -- Zahl, mit Komma
+local text     = "Müller"     -- Zeichenkette
+local tabelle  = {}           -- Tabelle, dazu gleich mehr
+----
+
+Zwei Dinge fallen auf, wenn du von C kommst.
+
+**Es gibt nur einen Zahlentyp**, jedenfalls fast: Lua unterscheidet intern
+zwischen ganzen Zahlen und Kommazahlen, rechnet aber ohne dein Zutun damit.
+`7 // 2` ergibt `3` (ganzzahlige Teilung), `7 / 2` ergibt `3.5`.
+
+**`nil` ist ein echter Wert**, kein Fehler. Eine Variable, die es nicht gibt,
+hat den Wert `nil`. Das ist praktisch und gelegentlich tückisch — Tippfehler in
+Namen fallen dadurch nicht sofort auf.
+
+=== Variablen: schreib immer `local`
+
+[source,lua]
+----
+local name = "Käthe"     -- gilt nur hier
+zahl = 42                -- gilt ÜBERALL im ganzen Programm
+----
+
+Ohne `local` legt Lua eine globale Variable an. Das ist selten das, was du
+willst, und in einem größeren Programm eine Quelle stiller Fehler: zwei
+Programmteile benutzen denselben Namen und überschreiben sich gegenseitig.
+
+Gewöhn dir `local` an, bis es weh tut. Es ist die wichtigste Angewohnheit in
+dieser Sprache.
+
+=== Verzweigungen und Schleifen
+
+[source,lua]
+----
+if zahl > 40 then
+    print("groß")
+elseif zahl > 20 then
+    print("mittel")
+else
+    print("klein")
+end
+----
+
+Beachte: `then`, `else`, `end`. Keine geschweiften Klammern. Der Block endet
+immer mit `end`.
+
+`false` und `nil` gelten als unwahr. **Alles andere ist wahr**, auch die Null
+und die leere Zeichenkette. Wer aus C kommt, stolpert hier genau einmal:
+
+[source,lua]
+----
+if 0 then print("das wird gedruckt") end     -- 0 ist wahr!
+----
+
+Schleifen gibt es in drei Formen:
+
+[source,lua]
+----
+for i = 1, 5 do             -- von 1 bis 5, einschließlich
+    print(i)
+end
+
+for i = 10, 1, -2 do        -- rückwärts in Zweierschritten
+    print(i)
+end
+
+local n = 0
+while n < 3 do
+    n = n + 1
+end
+
+repeat
+    n = n - 1
+until n == 0                -- läuft mindestens einmal
+----
+
+Es gibt kein `n++` und kein `n += 1`. Schreib `n = n + 1`.
+
+=== Zeichenketten
+
+[source,lua]
+----
+local vorname = "Käthe"
+local nachname = "Müller"
+
+print(vorname .. " " .. nachname)    -- Verbinden mit ..
+print(#nachname)                     -- 7 — Achtung, siehe unten!
+print(string.upper(vorname))         -- KÄTHE
+print(string.sub(nachname, 1, 3))    -- Mül... nein, siehe unten
+----
+
+[WARNING]
+.Lua zählt Bytes, nicht Zeichen
+====
+`#nachname` liefert *7*, obwohl „Müller" sechs Buchstaben hat. Das `ü` braucht
+in UTF-8 zwei Bytes, und Lua zählt Bytes.
+
+Das ist derselbe Fallstrick, um den sich in diesem Projekt `src/core/utf8.c`
+kümmert, und der Grund, warum die Rücktaste dort einen Codepunkt entfernt und
+nicht ein Byte. In Lua hilft die Bibliothek `utf8`:
+
+[source,lua]
+----
+print(utf8.len("Müller"))     -- 6, so ist es richtig
+----
+====
+
+Mehrzeilige Zeichenketten schreibst du in doppelte eckige Klammern:
+
+[source,lua]
+----
+local text = [[
+Erste Zeile
+Zweite Zeile
+]]
+----
+
+=== Tabellen: das einzige Sammelgefäß
+
+Lua hat genau eine zusammengesetzte Datenstruktur: die Tabelle. Sie ist Liste
+und Wörterbuch zugleich, und aus ihr baut man alles andere.
+
+Als Liste:
+
+[source,lua]
+----
+local farben = { "schwarz", "weiß" }
+
+print(farben[1])          -- schwarz — Lua zählt ab 1, nicht ab 0!
+print(#farben)            -- 2
+table.insert(farben, "grau")
+----
+
+[IMPORTANT]
+.Lua zählt ab eins
+====
+Das ist der Unterschied, der dich am häufigsten erwischen wird, wenn du aus C
+kommst. `farben[1]` ist das erste Element. `farben[0]` ist `nil`.
+====
+
+Als Wörterbuch:
+
+[source,lua]
+----
+local aufgabe = {
+    titel    = "Milch kaufen",
+    faellig  = "2026-08-25",
+    erledigt = false,
+}
+
+print(aufgabe.titel)          -- Milch kaufen
+print(aufgabe["titel"])       -- dasselbe, ausführlich geschrieben
+aufgabe.prioritaet = 2        -- Feld einfach dazuschreiben
+aufgabe.faellig = nil         -- und wieder entfernen
+----
+
+Beides zugleich geht auch — dieselbe Tabelle kann nummerierte und benannte
+Einträge haben. Genau davon macht dieses Projekt Gebrauch: eine Schemadatei
+ist eine Tabelle mit benannten Feldern, von denen eines eine Liste ist.
+
+Durchlaufen:
+
+[source,lua]
+----
+for i, farbe in ipairs(farben) do      -- nur die nummerierten, der Reihe nach
+    print(i, farbe)
+end
+
+for schluessel, wert in pairs(aufgabe) do   -- alle, Reihenfolge ungewiss
+    print(schluessel, wert)
+end
+----
+
+`ipairs` für Listen, `pairs` für Wörterbücher. Bei `pairs` ist die Reihenfolge
+nicht festgelegt — verlass dich nie darauf.
+
+=== Funktionen
+
+[source,lua]
+----
+local function flaeche(breite, hoehe)
+    return breite * hoehe
+end
+
+print(flaeche(3, 4))          -- 12
+----
+
+Funktionen sind gewöhnliche Werte. Du kannst sie in Variablen ablegen, als
+Argument weitergeben und aus Funktionen zurückgeben:
+
+[source,lua]
+----
+local function zweimal(f, x)
+    return f(f(x))
+end
+
+print(zweimal(function(n) return n + 1 end, 5))   -- 7
+----
+
+Zwei Bequemlichkeiten, die du oft sehen wirst:
+
+[source,lua]
+----
+-- Mehrere Rückgabewerte
+local function teile(a, b)
+    return a // b, a % b
+end
+local ganz, rest = teile(17, 5)     -- 3 und 2
+
+-- Fehlende Argumente sind nil, überzählige werden verworfen
+flaeche(3)        -- hoehe ist nil -> Fehler beim Multiplizieren
+----
+
+=== Tabellen mit Verhalten
+
+Wenn eine Tabelle Funktionen enthält, kannst du sie mit einem Doppelpunkt
+aufrufen. Der Doppelpunkt reicht die Tabelle selbst als erstes Argument
+weiter, und dieses Argument heißt `self`:
+
+[source,lua]
+----
+local zaehler = { wert = 0 }
+
+function zaehler:hoch()
+    self.wert = self.wert + 1
+end
+
+zaehler:hoch()
+print(zaehler.wert)      -- 1
+----
+
+`zaehler:hoch()` ist nur eine kürzere Schreibweise für
+`zaehler.hoch(zaehler)`. Mehr steckt nicht dahinter. Wer schon Objekte aus
+anderen Sprachen kennt: das ist alles, was Lua dazu mitbringt — den Rest baut
+man sich bei Bedarf aus Tabellen.
+
+Genau in dieser Form sind die Widgets dieses Projekts gedacht: eine Tabelle mit
+vier Funktionen.
+
+[source,lua]
+----
+local knopf = {
+    beschriftung = "OK",
+
+    mess = function(self)
+        return text_width(self.beschriftung) + 12, 18
+    end,
+
+    zeichne = function(self, g, r)
+        rect(r.x, r.y, r.w, r.h)
+        print(self.beschriftung, r.x + 6, r.y + 4)
+    end,
+}
+----
+
+=== Module
+
+Eine Lua-Datei, die eine Tabelle zurückgibt, ist ein Modul:
+
+[source,lua]
+----
+-- datei: rechnen.lua
+local M = {}
+
+function M.verdoppeln(x)
+    return x * 2
+end
+
+return M
+----
+
+[source,lua]
+----
+-- woanders
+local rechnen = require("rechnen")
+print(rechnen.verdoppeln(21))
+----
+
+Genau so sehen die Schemadateien dieses Projekts aus: eine Datei, die eine
+Tabelle zurückgibt. Nichts weiter.
+
+=== Was Lua nicht hat
+
+Manchmal ist das Fehlende aufschlussreicher als das Vorhandene.
+
+Kein `switch`. Kein `continue` (aber `goto` mit einer Marke, was fast nie nötig
+ist). Keine Klassen, keine Vererbung, keine Sichtbarkeitsregeln wie `private`.
+Keine eingebauten Datenstrukturen außer der Tabelle. Keine Typprüfung vor dem
+Lauf.
+
+Das ist der Grund, warum die Sprache in ein dünnes Heft passt. Und es ist der
+Grund, warum sie in ein Projekt wie dieses gehört: was in einem Programm
+kompliziert werden darf, soll die *Anwendung* sein, nicht die Sprache, in der
+man sie schreibt.
+
+=== Häufige Stolpersteine
+
+[cols="1,3"]
+|===
+|Stolperstein |Was dahintersteckt
+
+|`farben[0]` ist `nil`
+|Lua zählt ab 1.
+
+|`if 0 then` ist wahr
+|Nur `false` und `nil` sind unwahr.
+
+|`#"Müller"` ist 7
+|`#` zählt Bytes. Nimm `utf8.len`.
+
+|Eine Variable ist plötzlich überall bekannt
+|`local` vergessen.
+
+|`a = b` kopiert die Tabelle nicht
+|Tabellen werden über einen Verweis weitergegeben, wie Zeiger in C. `a` und `b` sind danach dieselbe Tabelle.
+
+|`nil`-Fehler tief im Programm
+|Ein Tippfehler in einem Feldnamen. Lua meldet ihn nicht, er liefert einfach `nil`.
+|===
+
+=== Zum Ausprobieren
+
+. Schreib eine Funktion `zaehle_zeichen(text)`, die die Zahl der Zeichen
+  liefert — nicht der Bytes. Prüf sie mit `"Grüße"`, das sind fünf Zeichen und
+  sieben Bytes.
+
+. Bau eine Tabelle, die eine Aufgabe darstellt (Titel, Fälligkeit, erledigt),
+  und schreib eine Funktion, die sie als eine Zeile Text ausgibt. Achte darauf,
+  dass sie auch dann etwas Sinnvolles ausgibt, wenn ein Feld `nil` ist.
+
+. Schreib `map(liste, f)`, das eine neue Liste liefert, in der `f` auf jedes
+  Element angewandt wurde. Zwei Zeilen genügen.
+
+. Sieh dir in `DESIGN.md` Abschnitt 10 die Schemadatei `task.lua` an. Du solltest
+  sie jetzt Zeile für Zeile lesen können. Welche Einträge sind Listen, welche
+  Wörterbücher?

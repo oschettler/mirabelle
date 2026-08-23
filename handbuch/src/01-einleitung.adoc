@@ -1,0 +1,173 @@
+== Worum es geht
+
+Du baust in diesem Buch ein PIM-Paket. Die Abkürzung steht für „Personal
+Information Management“ — persönliche Informationsverwaltung — und meint vier
+kleine Anwendungen, die die meisten Menschen kennen: eine Aufgabenliste, einen
+Kalender, ein Adressbuch und eine Notizsammlung. Nichts davon ist neu erfunden.
+Was an diesem Projekt interessant ist, ist nicht *was* es tut, sondern *wie* es
+gebaut ist.
+
+Das Vorbild für die Optik ist der erste Macintosh von 1984, genauer: System 1,
+seine allererste Systemsoftware. Fenster mit gestreifter Titelleiste, Menüs,
+die von oben herunterklappen, ein Schreibtisch aus grauem Schachbrettmuster.
+Kein Zufall und keine Schwärmerei — dahinter steckt eine technische
+Entscheidung, die für dieses Projekt aus gutem Grund wieder Sinn ergibt.
+
+=== Ein Bild aus lauter Ja und Nein
+
+System 1 kannte keine Graustufen. Jedes Pixel auf dem Bildschirm des
+Macintosh 128K war entweder schwarz oder weiß, ein einziges Bit. Genau das tut
+auch dieses Projekt, und zwar nicht aus Nostalgie. `DESIGN.md` sagt es so:
+
+[quote, DESIGN.md, Abschnitt 1]
+____
+1 Bit pro Pixel ist eine Entwurfsentscheidung, keine Nostalgie. Sie passt zu
+System 1 und hält den Bildspeicher bei 800 × 480 auf 48 000 Bytes — klein
+genug für den internen SRAM des ESP32.
+____
+
+Rechne kurz nach, was das bedeutet. Das Zielgerät hat 800 mal 480 Pixel, das
+sind 384 000 Pixel. Bei einem Bit je Pixel sind das 384 000 geteilt durch acht,
+also 48 000 Bytes — ein Bildspeicher, der bequem in den internen,
+schnellen Arbeitsspeicher eines Mikrocontrollers passt, ganz ohne den
+langsameren externen Speicher anzurühren. Mit acht Bit Graustufen wären es
+384 000 Bytes, mit sechzehn Bit Farbe (dem Format, das der Bildschirm des
+Geräts tatsächlich versteht) 768 000 Bytes. Letzteres passt eben *nicht* mehr
+in den internen Speicher — dazu mehr in Kapitel 4, wenn es um die
+Plattformschicht geht.
+
+Der Bildschirm des Zielgeräts kann übrigens sehr wohl Farbe. Was einfarbig
+bleibt, ist der *Kern* des Programms — alles, was Fenster zeichnet, Text
+setzt, Muster anwendet. Die Plattformschicht bildet Schwarz und Weiß erst ganz
+am Ende auf zwei einstellbare Farbwerte ab, damit der Bildschirm zum Beispiel
+einen ruhigen Papierton statt hartem Weiß zeigen kann. Der Kern selbst weiß
+davon nichts. Das ist ein Muster, das dir in diesem Buch noch oft begegnet:
+eine Vereinfachung oben, eine kleine, gut versteckte Zusatzarbeit unten.
+
+Ein Seiteneffekt, den du schon in diesem Buch zu spüren bekommst: Ein Bild aus
+Nullen und Einsen lässt sich als Text schreiben. Ein „Sollbild“ — ein Bild, mit
+dem das Programm bei jedem Test verglichen wird — sieht so aus:
+
+[source]
+----
+P1
+232 16
+0000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000
+...
+----
+
+Das ist ein Ausschnitt aus `tests/golden/text_umlauts.pbm`, im Format P1
+(„Portable Bitmap“, die lesbare ASCII-Variante). Jede Ziffer ist ein Pixel.
+Wenn sich an einem Textsatz oder einem Fensterrahmen etwas ändert, zeigt
+`git diff` genau, welche Pixel betroffen sind — Zeile für Zeile, lesbar wie
+ein Quelltext. Mit Graustufen oder gar Farbe gäbe es das nicht: Ein Byte pro
+Pixel ergäbe eine Zahlenwüste, in der niemand mehr erkennt, was sich geändert
+hat.
+
+=== Fünf Leitplanken
+
+`DESIGN.md` beginnt mit fünf Regeln, aus denen sich fast jede spätere
+Entscheidung ableiten lässt. Sie stehen in einer Rangfolge: Bei einem
+Zielkonflikt gewinnt die weiter oben stehende Regel. Das hier ist das Herz
+dieses Buches — merk sie dir, sie kommen in jedem Kapitel wieder vor.
+
+**1. Einfach, nicht clever.** Wenn eine Lösung mit zwanzig Zeilen 95 Prozent so
+gut ist wie eine mit zweihundert, wird die mit zwanzig genommen. Eine
+Optimierung braucht eine Messung als Begründung, keine Vermutung. Das klingt
+selbstverständlich, ist es aber nicht: Es ist verlockend, eine Lösung zu bauen,
+die auch noch den Fall abdeckt, den es vielleicht nie geben wird. Diese Regel
+sagt: erst wenn es ihn wirklich gibt.
+
+**2. Datengetrieben.** Wer eine Aufgabenliste um ein Feld erweitern will,
+schreibt eine Datenzeile, keinen Code. Du wirst das in diesem Buch mehrfach
+sehen: Tastenbelegung, Farbthema und Sprachtexte sind schon jetzt einfache
+Textdateien, die das Programm beim Start liest — `data/keys/default.keys`,
+`data/themes/desktop.theme`, `data/lang/de.strings`. Kein einziges dieser drei
+Worte steht fest im C-Quelltext.
+
+**3. Generisch.** Aufgaben, Termine, Kontakte und Notizen sind im Kern
+dasselbe: Sammlungen von Datensätzen mit Feldern. Mehr dazu gleich.
+
+**4. Testbar ohne Bildschirm.** Der gesamte Kern zeichnet in eine Bitmap im
+Speicher, nichts weiter. Ob diese Bitmap am Ende auf einem SDL3-Fenster, auf
+dem Bildschirm des Geräts oder gar nirgendwo landet, ist eine Frage der
+Plattformschicht — der Kern bekommt davon nichts mit. Deshalb lässt sich
+praktisch alles, von Fensterrahmen bis zu ganzen Bedienabläufen, ohne Fenster,
+ohne Grafikkarte und mit immer demselben Ergebnis prüfen. Das ist der Grund,
+warum du in Kapitel 2 schon `make test` laufen lassen kannst, lange bevor du
+je ein Fenster gesehen hast.
+
+**5. Portabel.** Zwischen dem Kern und der Außenwelt liegt eine einzige,
+schmale Schicht. Kapitel 4 zeigt sie im Detail.
+
+Die ersten beiden Regeln lohnen es, sich einzuprägen, weil sie sich manchmal zu
+widersprechen scheinen: „einfach“ will wenig Code, „datengetrieben“ will eine
+weitere Datei. Der Widerspruch löst sich auf, wenn man bedenkt, wofür die
+Datei steht — sie ersetzt eine Verzweigung im Code, die sonst mit jeder neuen
+Sprache, jedem neuen Tastaturlayout wieder auftauchen würde. Die Datei ist der
+einfachere Weg, nicht der aufwendigere.
+
+=== Was ist ein PIM?
+
+Ein PIM-Paket verwaltet die immer gleichen vier Dinge: Dinge, die zu tun sind
+(Aufgaben), Dinge, die einen Termin haben (Kalender), Menschen, mit denen man
+zu tun hat (Kontakte), und Gedanken, die man festhalten will (Notizen). Was
+diese vier auf den ersten Blick trennt, ist nur die Form der Daten. Was sie
+verbindet, hat Regel 3 oben schon genannt: Alle vier sind Sammlungen von
+Datensätzen mit benannten Feldern. Eine Aufgabe hat einen Titel, ein
+Fälligkeitsdatum, eine Priorität. Ein Kontakt hat einen Namen, eine
+Telefonnummer, eine Adresse. Unterschiedliche Felder, derselbe Aufbau.
+
+Aus dieser Beobachtung folgt ein Plan, der so im Fahrplan des Projekts steht:
+
+[quote, ROADMAP.md, Meilenstein M11]
+____
+Aufgaben, Kontakte und Notizen entstehen aus je einer Schemadatei, ohne eine
+Zeile Programmcode.
+____
+
+Anstatt drei fast identischer Anwendungen zu schreiben — eine für Aufgaben,
+eine für Kontakte, eine für Notizen —, entsteht eine einzige, allgemeine
+Anwendung, die von einer kleinen Beschreibungsdatei gesteuert wird: welche
+Felder es gibt, welchen Typ sie haben, wie die Liste sortiert wird. Nur der
+Kalender bekommt eine eigene Ansicht mit Monatsraster und Wochenspalten dazu —
+ein Kalender ohne Wochenübersicht wäre kein Kalender, und diesen einen
+Sonderfall in die allgemeine Beschreibung zu pressen wäre am Ende komplizierter
+als eine eigene Ansicht zu schreiben.
+
+[NOTE]
+.Noch nicht gebaut
+====
+Diese Schemadateien und die allgemeine Anwendung, die sie liest, gehören zu
+den Meilensteinen M9 bis M13 und existieren im Repository noch nicht. Was du
+gerade liest, ist der Plan aus `DESIGN.md`, nicht bereits lauffähiger Code.
+Die Kapitel 5 bis 7 dieses Buches — Grafik, Schrift, Fenster — beschreiben
+dagegen etwas, das schon läuft.
+====
+
+Bis dahin ist genug zu tun. Bevor eine Anwendung überhaupt einen Buchstaben
+zeigen kann, braucht sie einen Bildspeicher, eine Möglichkeit, Linien und
+Rechtecke hineinzuzeichnen, eine Schrift mit Umlauten, ein Fenster, das sich
+verschieben lässt, und Menüs, die sich bedienen lassen — mit der Maus und ganz
+ohne sie. Genau diese Reihenfolge geht das Buch auch: von den Pixeln nach
+oben.
+
+=== Zum Ausprobieren
+
+. Rechne nach: Wie viele Bytes braucht ein Bildspeicher von 800 mal 480 Pixeln
+  bei einem Bit je Pixel, bei acht Bit Graustufen und bei sechzehn Bit Farbe
+  (RGB565)? Vergleiche deine Werte mit den Zahlen aus diesem Kapitel und aus
+  `DESIGN.md`, Abschnitt 12.3.
+
+. Öffne `tests/golden/text_umlauts.pbm` in einem einfachen Texteditor. Es ist
+  eine reine Textdatei. Kannst du im Zeilenmuster erkennen, wo ein Buchstabe
+  aufhört und der nächste beginnt?
+
+. Lies `DESIGN.md`, Abschnitt 0, im Original. Ordne die fünf Leitplanken nach
+  deiner eigenen Einschätzung, welche du für die wichtigste hältst, und
+  vergleiche danach mit der Rangfolge im Dokument. Wo stimmst du zu, wo nicht?
+
+. Sieh dir `ROADMAP.md` an und zähle: Wie viele der siebzehn Meilensteine sind
+  laut Kapitel-Kasten am Anfang von `00-master.adoc` schon fertig, wie viele
+  stehen noch aus?
