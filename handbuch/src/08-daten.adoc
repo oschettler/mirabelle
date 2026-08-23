@@ -284,7 +284,7 @@ return {
     { name="priority", kind="choice", label="field.priority", values={1,2,3,4,5} },
     { name="done",     kind="bool",   label="field.done" },
     { name="category", kind="choice", label="field.category", values_from="categories" },
-    { name="body",     kind="richtext", label="field.notes" },
+    { name="body",     kind="gemtext", label="field.notes" },
   },
   views = {
     list = { columns={"done","title","due"}, sort="due", group_by="category" },
