@@ -90,4 +90,31 @@ widget *checkbox_create(const theme *th, const catalog *cat,
 bool    checkbox_value(const widget *w);
 void    checkbox_set_value(widget *w, bool value);
 
+/* Liste.
+ *
+ * Die Einträge gehören dem Aufrufer und müssen die Liste überleben; sie werden
+ * nicht kopiert. Für die Anwendungen dieses Projekts kommen sie ohnehin aus
+ * dem Speicher und liegen dort ohnehin.
+ *
+ * Gescrollt wird zeilenweise, und die Liste sorgt selbst dafür, dass die
+ * Auswahl sichtbar bleibt. Ein Rollbalken kommt später; bis dahin genügt das
+ * Mausrad und die Tastatur. */
+widget *list_create(const theme *th, const catalog *cat);
+
+/* keys sind Katalogschlüssel, count ihre Anzahl. Setzt die Auswahl auf den
+ * ersten Eintrag, oder auf -1 bei leerer Liste. */
+void list_set_items(widget *w, const char *const *keys, int count);
+
+int  list_count(const widget *w);
+int  list_selected(const widget *w);        /* -1, wenn nichts ausgewählt ist */
+void list_select(widget *w, int index);     /* außerhalb: bleibt, wie es war */
+
+/* true, WENN seit dem letzten Aufruf ein Eintrag geöffnet wurde - per
+ * Doppelklick oder Return - und setzt den Merker dabei zurück. Genau einmal
+ * je Ereignis abfragen, wie bei button_was_pressed. */
+bool list_was_opened(widget *w);
+
+/* Erster sichtbarer Eintrag; für Tests und einen späteren Rollbalken. */
+int list_top(const widget *w);
+
 #endif /* PDA_UI_WIDGET_H */

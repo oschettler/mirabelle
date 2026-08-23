@@ -88,6 +88,8 @@ add_library(pda_ui
     src/ui/dialog.c
     src/ui/widget.c
     src/ui/panel.c
+    src/ui/widget_list.c
+    src/ui/textbuf.c
 )
 target_link_libraries(pda_ui PUBLIC pda_gfx pda_core)
 
@@ -134,7 +136,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
@@ -153,6 +155,12 @@ foreach(name IN LISTS PDA_TESTS)
 endforeach()
 
 target_link_libraries(test_fontc PRIVATE pda_fontc)
+
+target_link_libraries(test_textbuf PRIVATE pda_ui)
+
+target_link_libraries(test_list PRIVATE pda_ui pda_fonts)
+target_compile_definitions(test_list
+    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 target_link_libraries(test_panel PRIVATE pda_ui pda_fonts)
 target_compile_definitions(test_panel
