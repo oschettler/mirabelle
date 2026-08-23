@@ -27,10 +27,23 @@ gezeichnet wird, sag, welches Problem das löst.
 Pfad. Erfinde keinen Beispielcode, der so nicht im Projekt steht — die Leserin
 soll ihn wiederfinden und ausprobieren können.
 
-**Fehlschläge gehören dazu.** Wo im Projekt etwas schiefging und repariert
-wurde, erzähl es. Das ist der lehrreichste Teil. Beispiele: das `t`, das wie
-ein Pluszeichen aussah; der Zeiger auf ein Thema, das nicht mehr existierte;
-der Test, der wegen zweier Knöpfe gar nichts prüfen konnte.
+**Kein Erlebnisbericht.** Schreib so, als sei die Umsetzung einem Entwurf aus
+einem Guss gefolgt. Die Leserin will wissen, wie es *ist* und warum es so
+richtig ist — nicht, auf welchen Umwegen wir dorthin gelangt sind. Kein „erst
+war es falsch, dann haben wir gemerkt", kein „daraufhin entstand".
+
+Das ist kein Beschönigen. Die Einsicht hinter einem behobenen Fehler gehört
+sehr wohl ins Buch, aber als **Regel**, nicht als Anekdote:
+
+- Nicht: „Als das `a` neu gezeichnet wurde, blieben `ä` und `å` auf der alten
+  Form stehen, und ‚Fräulein' las sich als ‚Fröulein'. Daraufhin entstand
+  `derived.map`."
+- Sondern: „Ein Akzentbuchstabe ist der Grundbuchstabe plus Akzent, nie eine
+  eigene Zeichnung. `derived.map` hält jede Ableitung fest, und ein Test prüft,
+  dass jedes Pixel des Grundbuchstabens im abgeleiteten Zeichen gesetzt ist —
+  sonst driften sie beim nächsten Nachzeichnen auseinander."
+
+Die zweite Fassung ist kürzer, sagt mehr und altert nicht.
 
 **Sag, was noch nicht existiert.** Kapitel über M8 und später beschreiben
 Geplantes. Setz oben einen Hinweis:
