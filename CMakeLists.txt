@@ -70,6 +70,7 @@ add_library(pda_ui
     src/ui/theme.c
     src/ui/window.c
     src/ui/wm.c
+    src/ui/menu.c
 )
 target_link_libraries(pda_ui PUBLIC pda_gfx pda_core)
 
@@ -116,19 +117,29 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
                  ${CMAKE_CURRENT_SOURCE_DIR})
+set_tests_properties(no_hardcoded_text PROPERTIES TIMEOUT 30)
 
 foreach(name IN LISTS PDA_TESTS)
     add_executable(test_${name} tests/unit/test_${name}.c)
     target_link_libraries(test_${name} PRIVATE pda_testsupport)
     add_test(NAME ${name} COMMAND test_${name})
+
+    # Ein hängender Test ist schlimmer als ein fehlschlagender: ohne Grenze
+    # blockiert er den ganzen Lauf, statt sich zu melden. Unsere Tests brauchen
+    # Sekundenbruchteile, dreißig Sekunden sind also reichlich Luft.
+    set_tests_properties(${name} PROPERTIES TIMEOUT 30)
 endforeach()
 
 target_link_libraries(test_fontc PRIVATE pda_fontc)
+
+target_link_libraries(test_menu PRIVATE pda_ui pda_fonts)
+target_compile_definitions(test_menu
+    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 target_link_libraries(test_wm PRIVATE pda_ui pda_fonts)
 target_compile_definitions(test_wm
