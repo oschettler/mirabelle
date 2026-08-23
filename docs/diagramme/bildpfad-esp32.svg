@@ -1,4 +1,5 @@
 <svg version="1.1" baseProfile="full" width="841.0" height="666.0" viewBox="0 0 841 666" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+	<rect x="0" y="0" width="841" height="666" fill="#ffffff"/>
 	<title >Bildpfad auf dem ESP32-8048S070C</title>
 	<desc >#direction: down
 	#spacing: 24
@@ -28,7 +29,7 @@
 	</desc>
 	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="normal" font-style="normal">
 		<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="round" stroke="#000000">
-			<g stroke="transparent" fill="transparent">
+			<g stroke="none" fill="none">
 				<rect x="0.0" y="0.0" height="666.0" width="841.0" stroke="none"></rect>
 			</g>
 			<g transform="translate(9, 9)" fill="#000000">

@@ -15,6 +15,7 @@
 #include "plat/plat.h"
 #include "ui/dialog.h"
 #include "ui/menu.h"
+#include "ui/panel.h"
 #include "ui/theme.h"
 #include "ui/wm.h"
 
@@ -25,6 +26,7 @@ typedef struct {
     const keymap  *km;
     const catalog *cat;
     window       *w_desk;
+    panel        *form;
     window       *w_keys;
     char          typed[256];
     char          last_action[64];

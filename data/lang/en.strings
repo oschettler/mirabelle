@@ -61,3 +61,9 @@ date.format              = %Y-%m-%d
 time.format              = %H:%M
 week.start               = 0
 weekday.short            = Mo Tu We Th Fr Sa Su
+
+# --- Demo form --------------------------------------------------------------
+form.status              = Status
+form.name                = Name
+form.done                = Done
+form.notes               = Note

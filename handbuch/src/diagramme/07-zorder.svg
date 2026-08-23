@@ -1,4 +1,5 @@
 <svg version="1.1" baseProfile="full" width="659.6" height="314.0" viewBox="0 0 659.5957446808511 314" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+	<rect x="0" y="0" width="659.5957446808511" height="314" fill="#ffffff"/>
 	<desc >#direction: down
 	#spacing: 26
 	#padding: 9
@@ -25,7 +26,7 @@
 	</desc>
 	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="bold" font-style="normal">
 		<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="round" stroke="#000000">
-			<g stroke="transparent" fill="transparent">
+			<g stroke="none" fill="none">
 				<rect x="0.0" y="0.0" height="314.0" width="659.6" stroke="none"></rect>
 			</g>
 			<g transform="translate(82.09574468085107, 9)" fill="#000000">

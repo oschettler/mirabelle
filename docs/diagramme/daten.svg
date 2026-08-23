@@ -1,4 +1,5 @@
 <svg version="1.1" baseProfile="full" width="700.5" height="500.0" viewBox="0 0 700.5 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+	<rect x="0" y="0" width="700.5" height="500" fill="#ffffff"/>
 	<title >Die Dateien sind die Wahrheit, SQLite ist Index</title>
 	<desc >#direction: down
 	#spacing: 24
@@ -27,7 +28,7 @@
 	</desc>
 	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="normal" font-style="normal">
 		<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="round" stroke="#000000">
-			<g stroke="transparent" fill="transparent">
+			<g stroke="none" fill="none">
 				<rect x="0.0" y="0.0" height="500.0" width="700.5" stroke="none"></rect>
 			</g>
 			<g transform="translate(155, 9)" fill="#000000">

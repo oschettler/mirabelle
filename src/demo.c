@@ -18,6 +18,7 @@
 #include "core/utf8.h"
 #include "gfx/pattern.h"
 #include "gfx/text.h"
+#include "ui/widget.h"
 
 extern const font system12;
 
@@ -130,7 +131,7 @@ bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
 
     st->w_keys = wm_open(st->m, rect_make(screen_w / 2 - 250, top, 240, 150),
                          T(cat, "window.keys"), WIN_NORMAL);
-    st->w_desk = wm_open(st->m, rect_make(screen_w / 2 - 80, top + 70, 300, 170),
+    st->w_desk = wm_open(st->m, rect_make(screen_w / 2 - 80, top + 40, 330, 250),
                          T(cat, "window.desk"), WIN_NORMAL);
 
     if (!st->w_keys || !st->w_desk) {
@@ -140,11 +141,35 @@ bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
 
     window_set_on_close(st->w_keys, demo_window_closed, st);
     window_set_on_close(st->w_desk, demo_window_closed, st);
+
+    /* Ein echtes Formular im Schreibtischfenster: Beschriftung links, Element
+     * rechts. Tab wandert durch die Elemente, der Fokus wohnt im Panel. */
+    st->form = panel_create(th, cat);
+    if (!st->form) {
+        demo_free(st);
+        return false;
+    }
+    panel_set_layout(st->form, LAYOUT_FORM, 6, 8);
+
+    if (!panel_add(st->form, label_create(th, cat, "form.name")) ||
+        !panel_add(st->form, text_field_create(th, cat)) ||
+        !panel_add(st->form, label_create(th, cat, "form.status")) ||
+        !panel_add(st->form, checkbox_create(th, cat, "form.done", false)) ||
+        !panel_add(st->form, label_create(th, cat, "form.notes")) ||
+        !panel_add(st->form, text_area_create(th, cat))) {
+        demo_free(st);
+        return false;
+    }
+
+    panel_focus_next(st->form);
     return true;
 }
 
 void demo_free(demo_state *st)
 {
+    if (st->form) panel_destroy(st->form);
+    st->form = NULL;
+
     if (st->dlg) dialog_close(st->dlg);
     if (st->mb)  menubar_free(st->mb);
     if (st->m)   wm_destroy(st->m);
@@ -207,6 +232,28 @@ void demo_event(demo_state *st, const event *e)
         }
     }
 
+    /* Tastatur und Klicks im Schreibtischfenster gehen an das Formular, wenn
+     * dieses Fenster aktiv ist. Was es nicht will, geht weiter. */
+    if (st->form && st->w_desk && wm_active(st->m) == st->w_desk) {
+        rect cr = window_content_rect(st->w_desk);
+        event local = *e;
+        bool  positional = (e->kind == EV_MOUSE_DOWN || e->kind == EV_MOUSE_UP ||
+                            e->kind == EV_MOUSE_MOVE || e->kind == EV_WHEEL);
+
+        if (positional) {
+            if (!rect_contains(cr, e->x, e->y)) goto to_wm;
+            local.x -= cr.x;
+            local.y -= cr.y;
+        }
+
+        const char *act = NULL;
+        if (panel_event(st->form, &local, &act)) {
+            if (act) demo_run_action(st, act);
+            return;
+        }
+    }
+
+to_wm:
     /* Erst die Fensterverwaltung. Was sie verbraucht hat - Aktivieren,
      * Verschieben, Vergrößern, Schließen - sieht die Anwendung nie. */
     if (st->m && wm_event(st->m, e)) {
@@ -289,10 +336,8 @@ static void draw_desk_window(const demo_state *st, window *w)
     gfx_clear(&g);
     g.pat = PAT_BLACK;
 
-    rect r = { 0, 0, 0, 0 };
-    r.w = window_content_rect(w).w;
-
-    int y = 4 + system12.ascent;
+    rect cr = window_content_rect(w);
+    int  y  = 4 + system12.ascent;
     gfx_text(&g, &system12, 8, y, T(st->cat, "demo.greeting"));
     y += 16;
 
@@ -302,28 +347,15 @@ static void draw_desk_window(const demo_state *st, window *w)
     const char *one[] = { action };
     if (Tf(st->cat, "demo.action", info, sizeof info, one, 1))
         gfx_text(&g, &system12, 8, y, info);
-    y += 13;
+    y += 16;
 
-    char bx[16], by[16], bn[16];
-    snprintf(bx, sizeof bx, "%d", st->click_x);
-    snprintf(by, sizeof by, "%d", st->click_y);
-    snprintf(bn, sizeof bn, "%d", st->click_count);
-    const char *three[] = { bx, by, bn };
-    if (Tf(st->cat, "demo.click", info, sizeof info, three, 3))
-        gfx_text(&g, &system12, 8, y, info);
-    y += 13;
-
-    gfx_text(&g, &system12, 8, y, T(st->cat, "demo.hint"));
-    y += 20;
-
-    gfx_hline(&g, 8, y - system12.ascent - 4, r.w - 16);
-    gfx_text(&g, &system12, 8, y, st->typed);
-
-    /* Schreibmarke, mit XOR gezeichnet - derselbe Aufruf löscht sie wieder. */
-    g.mode = GFX_XOR;
-    gfx_fill_rect(&g, rect_make(8 + text_width(&system12, st->typed),
-                                y - system12.ascent, 1, system12.size));
-    g.mode = GFX_COPY;
+    /* Das Formular bekommt den Rest des Fensters. Das Layout muss vor dem
+     * Zeichnen laufen, weil sich die Fenstergröße geändert haben kann. */
+    if (st->form) {
+        rect area = rect_make(0, y - system12.ascent, cr.w, cr.h - (y - system12.ascent));
+        panel_layout(st->form, area);
+        panel_draw(st->form, &g);
+    }
 }
 
 void demo_draw(demo_state *st, gc *g)
