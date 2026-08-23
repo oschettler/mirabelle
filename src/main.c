@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "core/i18n.h"
 #include "core/keymap.h"
 #include "demo.h"
 #include "gfx/bitmap.h"
@@ -51,9 +52,13 @@ int main(int argc, char **argv)
     if (!theme_load(&th, PDA_THEME_PATH, err, sizeof err))
         fprintf(stderr, "Thema: %s\n", err);
 
+    catalog *cat = i18n_load(PDA_LANG_PATH, err, sizeof err);
+    if (!cat) fprintf(stderr, "Textkatalog: %s\n", err);
+
     demo_state st;
-    if (!demo_init(&st, km, &th, w, h)) {
+    if (!demo_init(&st, km, cat, &th, w, h)) {
         bitmap_free(&fb);
+        i18n_free(cat);
         keymap_free(km);
         plat_shutdown();
         return 1;
@@ -65,6 +70,7 @@ int main(int argc, char **argv)
         bool ok = pbm_write_p4(shot, &fb);
         demo_free(&st);
         bitmap_free(&fb);
+        i18n_free(cat);
         keymap_free(km);
         plat_shutdown();
         return ok ? 0 : 1;
@@ -81,6 +87,7 @@ int main(int argc, char **argv)
 
     demo_free(&st);
     bitmap_free(&fb);
+    i18n_free(cat);
     keymap_free(km);
     plat_shutdown();
     return 0;

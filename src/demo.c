@@ -39,8 +39,8 @@ static void backspace_codepoint(char *buf)
     *(char *)p = '\0';
 }
 
-bool demo_init(demo_state *st, const keymap *km, const theme *th,
-               int screen_w, int screen_h)
+bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
+               const theme *th, int screen_w, int screen_h)
 {
     static theme fallback;
     if (!th) {
@@ -50,6 +50,7 @@ bool demo_init(demo_state *st, const keymap *km, const theme *th,
 
     memset(st, 0, sizeof *st);
     st->km      = km;
+    st->cat     = cat;
     st->running = true;
 
     st->m = wm_create(th, screen_w, screen_h);
@@ -57,10 +58,10 @@ bool demo_init(demo_state *st, const keymap *km, const theme *th,
 
     st->w_keys = wm_open(st->m, rect_make(screen_w / 2 - 210, screen_h / 2 - 130,
                                           240, 150),
-                         "Kürzel", WIN_NORMAL);
+                         T(cat, "window.keys"), WIN_NORMAL);
     st->w_desk = wm_open(st->m, rect_make(screen_w / 2 - 60, screen_h / 2 - 40,
                                           300, 170),
-                         "Schreibtisch", WIN_NORMAL);
+                         T(cat, "window.desk"), WIN_NORMAL);
 
     if (!st->w_keys || !st->w_desk) {
         demo_free(st);
@@ -167,21 +168,27 @@ static void draw_desk_window(const demo_state *st, window *w)
     r.w = window_content_rect(w).w;
 
     int y = 4 + system12.ascent;
-    gfx_text(&g, &system12, 8, y, "Grüße aus Köln, Fräulein Müller!");
+    gfx_text(&g, &system12, 8, y, T(st->cat, "demo.greeting"));
     y += 16;
 
-    char info[96];
-    snprintf(info, sizeof info, "Aktion: %s",
-             st->last_action[0] ? st->last_action : "(noch keine)");
-    gfx_text(&g, &system12, 8, y, info);
+    char info[128];
+    const char *action = st->last_action[0]
+        ? st->last_action : T(st->cat, "demo.action.none");
+    const char *one[] = { action };
+    if (Tf(st->cat, "demo.action", info, sizeof info, one, 1))
+        gfx_text(&g, &system12, 8, y, info);
     y += 13;
 
-    snprintf(info, sizeof info, "Klick: %d, %d  (%dx)",
-             st->click_x, st->click_y, st->click_count);
-    gfx_text(&g, &system12, 8, y, info);
+    char bx[16], by[16], bn[16];
+    snprintf(bx, sizeof bx, "%d", st->click_x);
+    snprintf(by, sizeof by, "%d", st->click_y);
+    snprintf(bn, sizeof bn, "%d", st->click_count);
+    const char *three[] = { bx, by, bn };
+    if (Tf(st->cat, "demo.click", info, sizeof info, three, 3))
+        gfx_text(&g, &system12, 8, y, info);
     y += 13;
 
-    gfx_text(&g, &system12, 8, y, "Ziehen Sie die Titelleiste.");
+    gfx_text(&g, &system12, 8, y, T(st->cat, "demo.hint"));
     y += 20;
 
     gfx_hline(&g, 8, y - system12.ascent - 4, r.w - 16);

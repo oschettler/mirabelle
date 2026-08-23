@@ -57,7 +57,8 @@ if(TARGET PkgConfig::SDL3)
     add_executable(pda src/main.c)
     target_compile_definitions(pda
         PRIVATE PDA_KEYMAP_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/keys/default.keys"
-                PDA_THEME_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/themes/desktop.theme")
+                PDA_THEME_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/themes/desktop.theme"
+                PDA_LANG_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/lang/de.strings")
     target_link_libraries(pda PRIVATE pda_demo pda_plat_sdl3 pda_fonts)
 else()
     message(STATUS "SDL3 nicht gefunden - das Programm wird nicht gebaut, Tests laufen trotzdem")
@@ -116,6 +117,10 @@ target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
 set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n)
+
+add_test(NAME no_hardcoded_text
+         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
+                 ${CMAKE_CURRENT_SOURCE_DIR})
 
 foreach(name IN LISTS PDA_TESTS)
     add_executable(test_${name} tests/unit/test_${name}.c)

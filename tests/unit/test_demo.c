@@ -12,6 +12,7 @@
 
 #include "core/keymap.h"
 #include "demo.h"
+#include "core/i18n.h"
 #include "ui/theme.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
@@ -38,11 +39,15 @@ static keymap *load_keys(void)
  * Das Thema liegt hier bewusst auf dem Stapel: wm_create legt eine Kopie an,
  * der Aufrufer muss es also nicht überleben. Diese Zusage gilt seit dem Fehler,
  * den genau diese Funktion einmal ausgelöst hat. */
+/* Ein Katalog für alle Tests. Ohne ihn erschienen statt der Texte deren
+ * Schlüssel - das Sollbild wäre dann nicht das, was der Nutzer sieht. */
+static catalog *g_cat;
+
 static bool start(demo_state *st, const keymap *km)
 {
     theme th;
     theme_defaults(&th);
-    return demo_init(st, km, &th, 800, 480);
+    return demo_init(st, km, g_cat, &th, 800, 480);
 }
 
 static void type_text(demo_state *st, const char *utf8)
@@ -245,6 +250,11 @@ TEST(golden_demo_after_input)
 
 int main(void)
 {
+    char path[512], err[512] = "";
+    snprintf(path, sizeof path, "%s/lang/de.strings", PDA_DATA_DIR);
+    g_cat = i18n_load(path, err, sizeof err);
+    if (!g_cat) printf("Katalog nicht ladbar: %s\n", err);
+
     RUN(typing_accumulates_text);
     RUN(backspace_removes_a_codepoint_not_a_byte);
     RUN(escape_stops_the_loop);
@@ -254,5 +264,6 @@ int main(void)
     RUN(plain_letter_is_not_a_shortcut);
     RUN(mouse_click_is_recorded_with_count);
     RUN(golden_demo_after_input);
+    i18n_free(g_cat);
     return test_summary();
 }
