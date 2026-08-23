@@ -28,7 +28,6 @@ typedef struct {
     window       *w_desk;
     panel        *form;
     window       *w_keys;
-    char          typed[256];
     char          last_action[64];
     int           click_x, click_y, click_count;
     bool          running;

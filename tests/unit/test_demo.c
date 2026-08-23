@@ -14,6 +14,8 @@
 #include "demo.h"
 #include "core/i18n.h"
 #include "ui/theme.h"
+#include "ui/panel.h"
+#include "ui/widget.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
 #include "support/golden.h"
@@ -50,6 +52,17 @@ static bool start(demo_state *st, const keymap *km)
     return demo_init(st, km, g_cat, &th, 800, 480);
 }
 
+/* Der Text landet seit M8 im Textfeld des Formulars, nicht mehr in einem
+ * eigenen Puffer der Vorführung. Das erste Feld mit Fokus ist das Namensfeld. */
+static const char *form_text(demo_state *st)
+{
+    for (int i = 0; i < panel_count(st->form); i++) {
+        widget *w = panel_at(st->form, i);
+        if (w->wants_focus && w->focused) return text_widget_value(w);
+    }
+    return NULL;
+}
+
 static void type_text(demo_state *st, const char *utf8)
 {
     event e = { .kind = EV_TEXT };
@@ -74,7 +87,7 @@ TEST(typing_accumulates_text)
     type_text(&st, "ß");
     type_text(&st, "e");
 
-    CHECK_STR(st.typed, "Grüße");
+    CHECK_STR(form_text(&st), "Grüße");
     CHECK(st.running);
 
     demo_free(&st);
@@ -90,18 +103,18 @@ TEST(backspace_removes_a_codepoint_not_a_byte)
     type_text(&st, "ä");
     type_text(&st, "ö");
     type_text(&st, "ü");
-    CHECK_EQ(strlen(st.typed), 6u);
+    CHECK_EQ(strlen(form_text(&st)), 6u);
 
     press(&st, KEY_BACKSPACE, 0);
-    CHECK_STR(st.typed, "äö");
-    CHECK_EQ(strlen(st.typed), 4u);
+    CHECK_STR(form_text(&st), "äö");
+    CHECK_EQ(strlen(form_text(&st)), 4u);
 
     press(&st, KEY_BACKSPACE, 0);
     press(&st, KEY_BACKSPACE, 0);
-    CHECK_STR(st.typed, "");
+    CHECK_STR(form_text(&st), "");
 
     press(&st, KEY_BACKSPACE, 0);   /* auf leerem Text darf nichts passieren */
-    CHECK_STR(st.typed, "");
+    CHECK_STR(form_text(&st), "");
 
     demo_free(&st);
 }
@@ -144,12 +157,14 @@ TEST(shortcuts_come_from_the_keymap)
     press(&st, 's', MOD_CMD);
     CHECK_STR(st.last_action, "record.save");
 
+    /* Cmd+Z geht seit M8 an das fokussierte Textfeld, das sein eigenes
+     * Widerrufen führt - und das ist richtig so. Die Belegung sieht es gar
+     * nicht mehr, solange ein Textfeld den Fokus hat. */
+    type_text(&st, "x");
+    CHECK_STR(form_text(&st), "x");
     press(&st, 'z', MOD_CMD);
-    CHECK_STR(st.last_action, "edit.undo");
-
-    /* Cmd+Shift+Z ist ein anderes Kürzel als Cmd+Z. */
-    press(&st, 'z', MOD_CMD | MOD_SHIFT);
-    CHECK_STR(st.last_action, "edit.redo");
+    CHECK_STR(form_text(&st), "");
+    CHECK_STR(st.last_action, "record.save");   /* unverändert */
 
     /* Beenden fragt seit M7 modal nach, statt sofort zu schließen. Erst die
      * Antwort auf den Dialog beendet wirklich. */
@@ -252,7 +267,7 @@ TEST(golden_demo_after_input)
      * das Sollbild klein und im Diff lesbar; der ganze Schreibtisch wäre als
      * Text rund 750 kB. */
     bitmap win;
-    REQUIRE(bitmap_copy_rect(&win, &fb, rect_make(300, 170, 250, 190)));
+    REQUIRE(bitmap_copy_rect(&win, &fb, rect_make(320, 100, 250, 190)));
     CHECK(golden_check("demo_after_input", &win));
 
     bitmap_free(&win);

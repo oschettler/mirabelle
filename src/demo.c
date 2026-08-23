@@ -15,7 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "core/utf8.h"
 #include "gfx/pattern.h"
 #include "gfx/text.h"
 #include "ui/widget.h"
@@ -69,24 +68,6 @@ static bool demo_is_enabled(const char *action, void *user)
 {
     (void)user;
     return !(action && strcmp(action, "edit.paste") == 0);
-}
-
-/* Hängt einen Codepunkt als UTF-8 an, solange Platz ist. */
-static void append_text(char *buf, size_t cap, const char *utf8)
-{
-    size_t len = strlen(buf), add = strlen(utf8);
-    if (len + add + 1 <= cap) memcpy(buf + len, utf8, add + 1);
-}
-
-/* Entfernt den letzten Codepunkt, nicht das letzte Byte. */
-static void backspace_codepoint(char *buf)
-{
-    const char *end = buf + strlen(buf);
-    const char *p   = end;
-
-    if (p == buf) return;
-    utf8_prev(buf, &p);
-    *(char *)p = '\0';
 }
 
 /* Die Fensterverwaltung schließt ein Fenster selbst, sobald der Nutzer das
@@ -287,14 +268,9 @@ to_wm:
             break;
         }
 
-        if (e->key == KEY_ESCAPE)         st->running = false;
-        else if (e->key == KEY_BACKSPACE) backspace_codepoint(st->typed);
+        if (e->key == KEY_ESCAPE) st->running = false;
         break;
     }
-
-    case EV_TEXT:
-        append_text(st->typed, sizeof st->typed - 1, e->text);
-        break;
 
     default:
         break;

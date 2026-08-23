@@ -55,6 +55,15 @@ void panel_set_layout(panel *p, layout_kind kind, int gap, int pad)
 
 bool panel_add(panel *p, widget *w)
 {
+    /* Das Widget auf die Themakopie des Panels umhängen.
+     *
+     * Beim Anlegen bekam es den Zeiger des Aufrufers, und der zeigt oft auf
+     * eine lokale Variable, die gleich darauf verschwindet. Genau daran ist
+     * dieses Projekt schon dreimal hängengeblieben: erst bei wm_create, dann
+     * bei menubar_create, dann hier. Wer ein Thema aufnimmt, kopiert es und
+     * hängt alles darauf um - das ist die Regel. */
+    w->th = &p->th;
+
     if (p->count == p->cap) {
         int      newcap = p->cap ? p->cap * 2 : 8;
         widget **items  = realloc(p->items, (size_t)newcap * sizeof *items);

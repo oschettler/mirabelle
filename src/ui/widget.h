@@ -46,7 +46,14 @@ typedef struct {
 
 struct widget {
     const widget_class *cls;
-    const theme        *th;    /* zeigt auf das Thema des Panels, das es besitzt */
+    /* Zeigt auf die Themakopie des Panels, sobald das Widget aufgenommen
+     * wurde - panel_add hängt es dorthin um. Bis dahin auf das, was beim
+     * Anlegen übergeben wurde.
+     *
+     * Ein Thema wird nie als Zeiger festgehalten, sondern immer kopiert, und
+     * alles hängt an der Kopie. Diese Regel gibt es, weil das Gegenteil hier
+     * dreimal zu Abstürzen geführt hat. */
+    const theme        *th;
     const catalog      *cat;
 
     rect  frame;               /* setzt das Layout */
