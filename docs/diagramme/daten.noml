@@ -7,16 +7,18 @@
 #edges: hard
 #stroke: #000000
 #fill: #ffffff
-#title: Markdown ist die Wahrheit, SQLite ist Index
+#title: Die Dateien sind die Wahrheit, SQLite ist Index
 
-[Markdown-Dateien|Front Matter + Text; die Wahrheit]
+[Gemtext-Dateien|Front Matter + Gemtext; die Wahrheit]
 [index.db|records; records_fts5; jederzeit löschbar]
 [Abfrage als Datenstruktur|store.find; store.search]
 [Schemadatei|task.lua; contact.lua]
 [Generischer Browser|Liste; Formular; Menüs]
+[Gemtext-Darsteller|Notizen UND Spartan-Browser]
 
-[Markdown-Dateien] -- Scan über mtime + Größe --> [index.db]
+[Gemtext-Dateien] -- Scan über mtime + Größe --> [index.db]
 [index.db] -> [Abfrage als Datenstruktur]
 [Abfrage als Datenstruktur] -> [Generischer Browser]
 [Schemadatei] -> [Generischer Browser]
-[Generischer Browser] -- schreibt --> [Markdown-Dateien]
+[Generischer Browser] -- schreibt --> [Gemtext-Dateien]
+[Gemtext-Dateien] -> [Gemtext-Darsteller]
