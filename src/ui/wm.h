@@ -41,6 +41,13 @@ void wm_draw(wm *m, gc *g);
  * dann darf die Anwendung es nicht noch einmal sehen. */
 bool wm_event(wm *m, const event *e);
 
+/* Thema und Schirmgröße der Verwaltung. Wer etwas in ihre Welt zeichnet -
+ * etwa ein Dialog - holt sich die Maße hier, statt sie erneut aus einer Datei
+ * zu laden oder zu erraten. Das Thema gehört der Verwaltung und lebt so lange
+ * wie sie. */
+const theme *wm_theme(const wm *m);
+void         wm_screen_size(const wm *m, int *w, int *h);
+
 window  *wm_active(const wm *m);
 void     wm_activate(wm *m, window *w);
 int      wm_count(const wm *m);

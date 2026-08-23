@@ -1,13 +1,10 @@
 /* Siehe dialog.h für den Vertrag.
  *
- * Ein Dialog kennt weder Bildschirmgröße noch Thema aus erster Hand - beides
- * steht nicht in der öffentlichen Schnittstelle von wm.h. Die Bildschirmgröße
- * ist nach Entscheidung D-9 ohnehin überall 800 x 480, deshalb steht sie hier
- * fest. Das Thema wird genauso geladen wie überall sonst im Projekt, über
- * PDA_DATA_DIR mit theme_defaults() als Rückfallebene (vgl. main.c,
- * tests/unit/test_wm.c). Für das Zeichnen selbst reicht das schon zur
- * Öffnungszeit berechnete Zahlenmaterial - dialog_draw lädt danach nichts
- * mehr von der Platte.
+ * Thema und Bildschirmgröße holt der Dialog über wm_theme() und
+ * wm_screen_size() von der Fensterverwaltung, in deren Welt er ja auftaucht.
+ * Er lädt also keine Datei und rät keine Größe. Eine frühere Fassung tat
+ * beides und band den Dialog damit an einen Pfad und an eine Zahl, die auf
+ * einem zweiten Gerät falsch wäre.
  */
 #include "ui/dialog.h"
 
@@ -23,10 +20,6 @@
 
 extern const font system12;
 
-#ifndef PDA_DATA_DIR
-#define PDA_DATA_DIR "data"
-#endif
-
 /* Vorgaben aus dem Meilensteintext, keine Thema-Werte. */
 #define DIALOG_WRAP_MAX_W 280
 #define DIALOG_MAX_LINES  6
@@ -35,8 +28,6 @@ extern const font system12;
 
 /* D-9: die logische Bildschirmgröße ist auf Arbeitsplatz und Gerät immer
  * dieselbe - wm.h liefert sie nirgends öffentlich, deshalb steht sie hier. */
-#define DIALOG_SCREEN_W 800
-#define DIALOG_SCREEN_H 480
 
 struct dialog {
     wm     *m;
@@ -53,14 +44,6 @@ struct dialog {
     int focus;
     int result;
 };
-
-static void load_dialog_theme(theme *th)
-{
-    char path[512], err[256] = "";
-    snprintf(path, sizeof path, "%s/themes/desktop.theme", PDA_DATA_DIR);
-    if (!theme_load(th, path, err, sizeof err))
-        theme_defaults(th);
-}
 
 /* Bricht text an ASCII-Leerzeichen auf höchstens max_w Pixel breite Zeilen um,
  * höchstens DIALOG_MAX_LINES Stück. Passt der Rest danach nicht mehr, wird er
@@ -132,7 +115,7 @@ dialog *dialog_open(wm *m, const catalog *cat,
         snprintf(d->button_label[i], DIALOG_LABEL_MAX, "%s", T(cat, button_keys[i]));
 
     theme th;
-    load_dialog_theme(&th);
+    th = *wm_theme(m);
     d->dialog_pad = th.dialog_pad;
 
     int max_line_w = 0;
@@ -164,8 +147,10 @@ dialog *dialog_open(wm *m, const catalog *cat,
 
     int frame_w = content_w + 2 * th.border;
     int frame_h = content_h + th.titlebar_h + th.border;
-    int frame_x = (DIALOG_SCREEN_W - frame_w) / 2;
-    int frame_y = (DIALOG_SCREEN_H - frame_h) / 2;
+    int screen_w = 0, screen_h = 0;
+    wm_screen_size(m, &screen_w, &screen_h);
+    int frame_x = (screen_w - frame_w) / 2;
+    int frame_y = (screen_h - frame_h) / 2;
 
     d->win = wm_open(m, rect_make(frame_x, frame_y, frame_w, frame_h), "", WIN_MODAL);
     if (!d->win) {

@@ -97,6 +97,17 @@ void wm_draw(wm *m, gc *g)
     }
 }
 
+const theme *wm_theme(const wm *m)
+{
+    return &m->th;
+}
+
+void wm_screen_size(const wm *m, int *w, int *h)
+{
+    if (w) *w = m->screen_w;
+    if (h) *h = m->screen_h;
+}
+
 window *wm_active(const wm *m)
 {
     for (int i = 0; i < m->count; i++)
