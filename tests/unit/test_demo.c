@@ -12,6 +12,7 @@
 
 #include "core/keymap.h"
 #include "demo.h"
+#include "ui/theme.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
 #include "support/golden.h"
@@ -30,6 +31,20 @@ static keymap *load_keys(void)
     return km;
 }
 
+/* Die Vorführung öffnet ab M6 Fenster, braucht also einen Schirm und ein
+ * Thema. Die Maße kommen aus den Voreinstellungen, damit der Test nicht von
+ * der Themendatei abhängt.
+ *
+ * Das Thema liegt hier bewusst auf dem Stapel: wm_create legt eine Kopie an,
+ * der Aufrufer muss es also nicht überleben. Diese Zusage gilt seit dem Fehler,
+ * den genau diese Funktion einmal ausgelöst hat. */
+static bool start(demo_state *st, const keymap *km)
+{
+    theme th;
+    theme_defaults(&th);
+    return demo_init(st, km, &th, 800, 480);
+}
+
 static void type_text(demo_state *st, const char *utf8)
 {
     event e = { .kind = EV_TEXT };
@@ -46,7 +61,7 @@ static void press(demo_state *st, int key, uint8_t mods)
 TEST(typing_accumulates_text)
 {
     demo_state st;
-    demo_init(&st, NULL);
+    REQUIRE(start(&st, NULL));
 
     type_text(&st, "G");
     type_text(&st, "r");
@@ -56,6 +71,8 @@ TEST(typing_accumulates_text)
 
     CHECK_STR(st.typed, "Grüße");
     CHECK(st.running);
+
+    demo_free(&st);
 }
 
 /* Die Rücktaste entfernt ein Zeichen, nicht ein Byte. Ohne das bliebe von
@@ -63,7 +80,7 @@ TEST(typing_accumulates_text)
 TEST(backspace_removes_a_codepoint_not_a_byte)
 {
     demo_state st;
-    demo_init(&st, NULL);
+    REQUIRE(start(&st, NULL));
 
     type_text(&st, "ä");
     type_text(&st, "ö");
@@ -80,26 +97,32 @@ TEST(backspace_removes_a_codepoint_not_a_byte)
 
     press(&st, KEY_BACKSPACE, 0);   /* auf leerem Text darf nichts passieren */
     CHECK_STR(st.typed, "");
+
+    demo_free(&st);
 }
 
 TEST(escape_stops_the_loop)
 {
     demo_state st;
-    demo_init(&st, NULL);
+    REQUIRE(start(&st, NULL));
 
     CHECK(st.running);
     press(&st, KEY_ESCAPE, 0);
     CHECK(!st.running);
+
+    demo_free(&st);
 }
 
 TEST(quit_event_stops_the_loop)
 {
     demo_state st;
-    demo_init(&st, NULL);
+    REQUIRE(start(&st, NULL));
 
     event e = { .kind = EV_QUIT };
     demo_event(&st, &e);
     CHECK(!st.running);
+
+    demo_free(&st);
 }
 
 TEST(shortcuts_come_from_the_keymap)
@@ -108,7 +131,7 @@ TEST(shortcuts_come_from_the_keymap)
     REQUIRE(km != NULL);
 
     demo_state st;
-    demo_init(&st, km);
+    REQUIRE(start(&st, km));
 
     press(&st, 'n', MOD_CMD);
     CHECK_STR(st.last_action, "record.new");
@@ -128,6 +151,7 @@ TEST(shortcuts_come_from_the_keymap)
     CHECK_STR(st.last_action, "app.quit");
     CHECK(!st.running);
 
+    demo_free(&st);
     keymap_free(km);
 }
 
@@ -137,7 +161,7 @@ TEST(unknown_shortcut_leaves_last_action_alone)
     REQUIRE(km != NULL);
 
     demo_state st;
-    demo_init(&st, km);
+    REQUIRE(start(&st, km));
 
     press(&st, 'n', MOD_CMD);
     CHECK_STR(st.last_action, "record.new");
@@ -145,6 +169,7 @@ TEST(unknown_shortcut_leaves_last_action_alone)
     press(&st, 'j', MOD_CMD | MOD_ALT);   /* nicht belegt */
     CHECK_STR(st.last_action, "record.new");
 
+    demo_free(&st);
     keymap_free(km);
 }
 
@@ -155,18 +180,19 @@ TEST(plain_letter_is_not_a_shortcut)
     REQUIRE(km != NULL);
 
     demo_state st;
-    demo_init(&st, km);
+    REQUIRE(start(&st, km));
 
     press(&st, 'n', 0);
     CHECK_STR(st.last_action, "");
 
+    demo_free(&st);
     keymap_free(km);
 }
 
 TEST(mouse_click_is_recorded_with_count)
 {
     demo_state st;
-    demo_init(&st, NULL);
+    REQUIRE(start(&st, NULL));
 
     event e = { .kind = EV_MOUSE_DOWN, .x = 137, .y = 42,
                 .button = 1, .clicks = 2 };
@@ -175,6 +201,8 @@ TEST(mouse_click_is_recorded_with_count)
     CHECK_EQ(st.click_x, 137);
     CHECK_EQ(st.click_y, 42);
     CHECK_EQ(st.click_count, 2);
+
+    demo_free(&st);
 }
 
 TEST(golden_demo_after_input)
@@ -183,7 +211,7 @@ TEST(golden_demo_after_input)
     REQUIRE(km != NULL);
 
     demo_state st;
-    demo_init(&st, km);
+    REQUIRE(start(&st, km));
 
     press(&st, 'f', MOD_CMD);
     event click = { .kind = EV_MOUSE_DOWN, .x = 240, .y = 300,
@@ -200,16 +228,18 @@ TEST(golden_demo_after_input)
     REQUIRE(bitmap_init(&fb, 800, 480));
     gc g;
     gc_init(&g, &fb);
-    demo_draw(&st, &g, 800, 480);
+    demo_draw(&st, &g);
 
-    /* Nur das Fenster, nicht der ganze Schreibtisch: als Ausschnitt bleibt das
-     * Sollbild klein und im Diff lesbar. */
+    /* Der Bereich, in dem sich beide Fenster überlappen. Als Ausschnitt bleibt
+     * das Sollbild klein und im Diff lesbar; der ganze Schreibtisch wäre als
+     * Text rund 750 kB. */
     bitmap win;
-    REQUIRE(bitmap_copy_rect(&win, &fb, rect_make(210, 150, 250, 190)));
+    REQUIRE(bitmap_copy_rect(&win, &fb, rect_make(300, 170, 250, 190)));
     CHECK(golden_check("demo_after_input", &win));
 
     bitmap_free(&win);
     bitmap_free(&fb);
+    demo_free(&st);
     keymap_free(km);
 }
 

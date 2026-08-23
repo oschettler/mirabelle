@@ -55,17 +55,27 @@ if(TARGET PkgConfig::SDL3)
 
     add_executable(pda src/main.c)
     target_compile_definitions(pda
-        PRIVATE PDA_KEYMAP_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/keys/default.keys")
+        PRIVATE PDA_KEYMAP_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/keys/default.keys"
+                PDA_THEME_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/themes/desktop.theme")
     target_link_libraries(pda PRIVATE pda_demo pda_plat_sdl3 pda_fonts)
 else()
     message(STATUS "SDL3 nicht gefunden - das Programm wird nicht gebaut, Tests laufen trotzdem")
 endif()
 
+# --- Oberfläche --------------------------------------------------------------
+
+add_library(pda_ui
+    src/ui/theme.c
+    src/ui/window.c
+    src/ui/wm.c
+)
+target_link_libraries(pda_ui PUBLIC pda_gfx pda_core)
+
 # --- Die Vorführung ----------------------------------------------------------
 # Getrennt von main.c, damit sie ohne SDL und ohne Bildschirm geprüft werden kann.
 
 add_library(pda_demo src/demo.c)
-target_link_libraries(pda_demo PUBLIC pda_gfx pda_core)
+target_link_libraries(pda_demo PUBLIC pda_ui pda_gfx pda_core)
 target_include_directories(pda_demo PUBLIC src)
 
 # --- Werkzeuge ---------------------------------------------------------------
@@ -104,7 +114,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm)
 
 foreach(name IN LISTS PDA_TESTS)
     add_executable(test_${name} tests/unit/test_${name}.c)
@@ -113,6 +123,10 @@ foreach(name IN LISTS PDA_TESTS)
 endforeach()
 
 target_link_libraries(test_fontc PRIVATE pda_fontc)
+
+target_link_libraries(test_wm PRIVATE pda_ui pda_fonts)
+target_compile_definitions(test_wm
+    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 target_link_libraries(test_demo PRIVATE pda_demo pda_fonts)
 target_compile_definitions(test_demo

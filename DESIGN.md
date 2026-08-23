@@ -478,18 +478,21 @@ Zusatzaufwand: von hinten nach vorn zeichnen, von vorn nach hinten treffen.
 Titelleiste, Schließfeld, Größenfeld, Rollbalken und Trefferflächen kommen aus
 einer Beschreibung, nicht aus verstreuten Zahlen im Code:
 
-```lua
--- data/themes/desktop.lua       -- data/themes/touch.lua weicht ab:
-return {                         --   titlebar_h = 32
-  titlebar_h  = 20,              --   close_box   = 24
-  close_box   = 11,              --   hit_slop    = 16
-  border      = 1,               --   scrollbar_w = 32
-  scrollbar_w = 15,              --   font        = "system16"
-  hit_slop    = 0,
-  font        = "system12",
-  stripe_gap  = 2,
-}
 ```
+# data/themes/desktop.theme      # data/themes/touch.theme weicht ab:
+titlebar_h    20                 #   titlebar_h  32
+close_box     11                 #   close_box   24
+border         1                 #   hit_slop    16
+stripe_gap     2                 #   font        system16
+hit_slop       0
+font          system12
+```
+
+Das Thema ist eine flache Schlüssel-Wert-Datei wie die Tastenbelegung, kein
+Lua. Es enthält nur Zahlen und Namen, also braucht es keine Sprache — und es
+muss ab M6 lesbar sein, während Lua erst in M13 dazukommt. Für die Schemata in
+Abschnitt 10 ist Lua dagegen richtig: die haben verschachtelte Strukturen und
+Listen.
 
 Ein Thema ist damit die Antwort auf „großer Finger statt spitzer Mauszeiger“, und
 zwar ohne Verzweigung im Zeichencode.

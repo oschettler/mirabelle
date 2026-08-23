@@ -1,119 +1,25 @@
-/* Die Vorführung aus M4 und M5: Zustand, Ereignisse, Zeichnen.
+/* Die Vorführung aus M4 bis M6.
  *
- * Ab M6 übernimmt die Fensterverwaltung, was hier noch von Hand gezeichnet
- * wird. Bis dahin zeigt dieses Programm, dass die Schichten zusammenspielen:
- * Plattform, Grafik, Zeichensatz und die Ereignisse.
+ * Sie öffnet drei Fenster und füllt deren Inhalt; Rahmen, z-Ordnung,
+ * Aktivierung und Ziehen macht die Fensterverwaltung. Was hier bleibt, ist
+ * das, was eine Anwendung wirklich tut: Inhalt zeichnen und auf Ereignisse
+ * reagieren, die die Verwaltung nicht selbst verbraucht hat.
  *
- * Der getippte Text wird angezeigt, und das ist Absicht. Wer hier auf einer
+ * Der getippte Text wird angezeigt, und das ist Absicht. Wer auf einer
  * deutschen Tastatur ä eingibt, über AltGr ein € oder über die Tottaste ´
  * gefolgt von a ein á, sieht sofort, ob Entscheidung D-2 trägt.
  */
+
+#include "demo.h"
 
 #include <stdio.h>
 #include <string.h>
 
 #include "core/utf8.h"
-#include "gfx/bitmap.h"
-#include "gfx/draw.h"
 #include "gfx/pattern.h"
 #include "gfx/text.h"
-#include "plat/plat.h"
-
-#include "demo.h"
 
 extern const font system12;
-
-#define TITLEBAR_H 20
-#define CLOSE_BOX  11
-
-/* Rahmen im Stil von System 1: gestreifte Titelleiste, Schließfeld links,
- * einfache Linie außen. */
-static void draw_window_frame(gc *g, rect r, const char *title, bool active)
-{
-    g->pat  = PAT_WHITE;
-    g->mode = GFX_COPY;
-    gfx_fill_rect(g, r);
-
-    g->pat = PAT_BLACK;
-    gfx_frame_rect(g, r);
-    gfx_hline(g, r.x, r.y + TITLEBAR_H, r.w);
-
-    if (active) {
-        /* Streifen: jede zweite Zeile der Titelleiste. */
-        for (int y = r.y + 3; y < r.y + TITLEBAR_H - 3; y += 2)
-            gfx_hline(g, r.x + 1, y, r.w - 2);
-
-        rect box = rect_make(r.x + 6, r.y + (TITLEBAR_H - CLOSE_BOX) / 2,
-                             CLOSE_BOX, CLOSE_BOX);
-        g->pat = PAT_WHITE;
-        gfx_fill_rect(g, box);
-        g->pat = PAT_BLACK;
-        gfx_frame_rect(g, box);
-    }
-
-    int tw = text_width(&system12, title);
-    int tx = r.x + (r.w - tw) / 2;
-    int ty = r.y + (TITLEBAR_H - system12.size) / 2 + system12.ascent;
-
-    /* Der Titel bekommt Luft, damit die Streifen ihn nicht auffressen. */
-    g->pat = PAT_WHITE;
-    gfx_fill_rect(g, rect_make(tx - 5, r.y + 1, tw + 10, TITLEBAR_H - 2));
-    g->pat = PAT_BLACK;
-    gfx_text(g, &system12, tx, ty, title);
-}
-
-void demo_draw(const demo_state *st, gc *g, int w, int h)
-{
-    const char *typed = st->typed;
-
-    g->pat  = PAT_GRAY50;
-    g->mode = GFX_COPY;
-    gfx_clear(g);
-
-    rect win = rect_make(w / 2 - 190, h / 2 - 90, 380, 180);
-    draw_window_frame(g, win, "Schreibtisch", true);
-
-    g->pat = PAT_BLACK;
-    int y = win.y + TITLEBAR_H + 10 + system12.ascent;
-
-    gfx_text(g, &system12, win.x + 12, y, "Grüße aus Köln, Fräulein Müller!");
-    y += 16;
-
-    /* Die Kürzel kommen aus derselben Datei wie die Auswertung. Was hier
-     * steht, kann deshalb gar nicht von dem abweichen, was die Taste tut. */
-    static const char *shown[] = { "record.new", "record.save", "search.open",
-                                   "edit.undo", "app.quit" };
-    for (size_t i = 0; i < sizeof shown / sizeof shown[0]; i++) {
-        char line[96], keys[32];
-        if (st->km && keymap_describe(st->km, shown[i], keys, sizeof keys))
-            snprintf(line, sizeof line, "%-14s %s", shown[i], keys);
-        else
-            snprintf(line, sizeof line, "%-14s -", shown[i]);
-        gfx_text(g, &system12, win.x + 12, y, line);
-        y += 13;
-    }
-    y += 6;
-
-    char info[96];
-    snprintf(info, sizeof info, "Aktion: %s",
-             st->last_action[0] ? st->last_action : "(noch keine)");
-    gfx_text(g, &system12, win.x + 12, y, info);
-    y += 13;
-
-    snprintf(info, sizeof info, "Klick: %d, %d  (%dx)",
-             st->click_x, st->click_y, st->click_count);
-    gfx_text(g, &system12, win.x + 12, y, info);
-    y += 20;
-
-    gfx_hline(g, win.x + 12, y - system12.ascent - 4, win.w - 24);
-    gfx_text(g, &system12, win.x + 12, y, typed);
-
-    /* Schreibmarke, mit XOR gezeichnet - derselbe Aufruf löscht sie wieder. */
-    g->mode = GFX_XOR;
-    gfx_fill_rect(g, rect_make(win.x + 12 + text_width(&system12, typed),
-                               y - system12.ascent, 1, system12.size));
-    g->mode = GFX_COPY;
-}
 
 /* Hängt einen Codepunkt als UTF-8 an, solange Platz ist. */
 static void append_text(char *buf, size_t cap, const char *utf8)
@@ -133,21 +39,63 @@ static void backspace_codepoint(char *buf)
     *(char *)p = '\0';
 }
 
-
-void demo_init(demo_state *st, const keymap *km)
+bool demo_init(demo_state *st, const keymap *km, const theme *th,
+               int screen_w, int screen_h)
 {
+    static theme fallback;
+    if (!th) {
+        theme_defaults(&fallback);
+        th = &fallback;
+    }
+
     memset(st, 0, sizeof *st);
     st->km      = km;
     st->running = true;
+
+    st->m = wm_create(th, screen_w, screen_h);
+    if (!st->m) return false;
+
+    st->w_keys = wm_open(st->m, rect_make(screen_w / 2 - 210, screen_h / 2 - 130,
+                                          240, 150),
+                         "Kürzel", WIN_NORMAL);
+    st->w_desk = wm_open(st->m, rect_make(screen_w / 2 - 60, screen_h / 2 - 40,
+                                          300, 170),
+                         "Schreibtisch", WIN_NORMAL);
+
+    if (!st->w_keys || !st->w_desk) {
+        demo_free(st);
+        return false;
+    }
+    return true;
+}
+
+void demo_free(demo_state *st)
+{
+    if (st->m) wm_destroy(st->m);
+    st->m      = NULL;
+    st->w_keys = NULL;
+    st->w_desk = NULL;
 }
 
 void demo_event(demo_state *st, const event *e)
 {
-    switch (e->kind) {
-    case EV_QUIT:
+    if (e->kind == EV_QUIT) {
         st->running = false;
-        break;
+        return;
+    }
 
+    /* Erst die Fensterverwaltung. Was sie verbraucht hat - Aktivieren,
+     * Verschieben, Vergrößern, Schließen - sieht die Anwendung nie. */
+    if (st->m && wm_event(st->m, e)) {
+        if (e->kind == EV_MOUSE_DOWN) {
+            st->click_x     = e->x;
+            st->click_y     = e->y;
+            st->click_count = e->clicks;
+        }
+        return;
+    }
+
+    switch (e->kind) {
     case EV_MOUSE_DOWN:
         st->click_x     = e->x;
         st->click_y     = e->y;
@@ -178,4 +126,79 @@ void demo_event(demo_state *st, const event *e)
     default:
         break;
     }
+}
+
+/* Zeigt die Kürzel aus der Belegung. Sie kommen aus derselben Datei wie die
+ * Auswertung; was hier steht, kann deshalb gar nicht von dem abweichen, was
+ * die Taste tut. */
+static void draw_keys_window(const demo_state *st, window *w)
+{
+    static const char *shown[] = { "record.new", "record.save", "search.open",
+                                   "edit.undo", "edit.redo", "app.quit" };
+    gc g;
+    window_gc(w, &g);
+    g.pat  = PAT_WHITE;
+    g.mode = GFX_COPY;
+    gfx_clear(&g);
+    g.pat = PAT_BLACK;
+
+    int y = 4 + system12.ascent;
+    for (size_t i = 0; i < sizeof shown / sizeof shown[0]; i++) {
+        char line[96], keys[32];
+        if (st->km && keymap_describe(st->km, shown[i], keys, sizeof keys))
+            snprintf(line, sizeof line, "%-13s %s", shown[i], keys);
+        else
+            snprintf(line, sizeof line, "%-13s -", shown[i]);
+        gfx_text(&g, &system12, 8, y, line);
+        y += 13;
+    }
+}
+
+static void draw_desk_window(const demo_state *st, window *w)
+{
+    gc g;
+    window_gc(w, &g);
+    g.pat  = PAT_WHITE;
+    g.mode = GFX_COPY;
+    gfx_clear(&g);
+    g.pat = PAT_BLACK;
+
+    rect r = { 0, 0, 0, 0 };
+    r.w = window_content_rect(w).w;
+
+    int y = 4 + system12.ascent;
+    gfx_text(&g, &system12, 8, y, "Grüße aus Köln, Fräulein Müller!");
+    y += 16;
+
+    char info[96];
+    snprintf(info, sizeof info, "Aktion: %s",
+             st->last_action[0] ? st->last_action : "(noch keine)");
+    gfx_text(&g, &system12, 8, y, info);
+    y += 13;
+
+    snprintf(info, sizeof info, "Klick: %d, %d  (%dx)",
+             st->click_x, st->click_y, st->click_count);
+    gfx_text(&g, &system12, 8, y, info);
+    y += 13;
+
+    gfx_text(&g, &system12, 8, y, "Ziehen Sie die Titelleiste.");
+    y += 20;
+
+    gfx_hline(&g, 8, y - system12.ascent - 4, r.w - 16);
+    gfx_text(&g, &system12, 8, y, st->typed);
+
+    /* Schreibmarke, mit XOR gezeichnet - derselbe Aufruf löscht sie wieder. */
+    g.mode = GFX_XOR;
+    gfx_fill_rect(&g, rect_make(8 + text_width(&system12, st->typed),
+                                y - system12.ascent, 1, system12.size));
+    g.mode = GFX_COPY;
+}
+
+void demo_draw(demo_state *st, gc *g)
+{
+    if (!st->m) return;
+
+    draw_keys_window(st, st->w_keys);
+    draw_desk_window(st, st->w_desk);
+    wm_draw(st->m, g);
 }

@@ -1,0 +1,19 @@
+# Thema für den Arbeitsplatz: Mauszeiger, also kleine Bedienelemente und
+# keine zusätzliche Trefferfläche.
+#
+# Für das Gerät gibt es in M15 ein zweites Thema. Dort sind Titelleiste und
+# Felder größer, und hit_slop vergrößert die Trefferfläche, ohne dass die
+# gezeichnete Fläche wächst - ein Finger ist rund 9 mm breit, das sind auf dem
+# Panel etwa 47 Pixel.
+
+titlebar_h    20
+border         1
+close_box     11
+grow_box      15
+box_margin     5
+stripe_gap     2
+title_pad      6
+hit_slop       0
+min_w         96
+min_h         48
+font          system12
