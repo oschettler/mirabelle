@@ -21,6 +21,55 @@
 
 extern const font system12;
 
+/* Die Menüs sind Daten. Jeder Eintrag nennt nur einen Katalogschlüssel für
+ * seinen Text und den Namen einer Aktion - das Kürzel daneben erzeugt die
+ * Leiste selbst aus der Belegungsdatei. */
+static const menu_item file_items[] = {
+    { "menu.file.new",   "record.new"   },
+    { "menu.file.open",  "record.open"  },
+    { "menu.file.save",  "record.save"  },
+    { NULL,              NULL           },
+    { "menu.file.close", "window.close" },
+    { "menu.file.quit",  "app.quit"     },
+};
+
+static const menu_item edit_items[] = {
+    { "menu.edit.undo",  "edit.undo"  },
+    { "menu.edit.redo",  "edit.redo"  },
+    { NULL,              NULL         },
+    { "menu.edit.cut",   "edit.cut"   },
+    { "menu.edit.copy",  "edit.copy"  },
+    { "menu.edit.paste", "edit.paste" },
+};
+
+static const menu_item view_items[] = {
+    { "menu.view.tasks",    "app.tasks"    },
+    { "menu.view.calendar", "app.calendar" },
+    { "menu.view.contacts", "app.contacts" },
+    { "menu.view.notes",    "app.notes"    },
+};
+
+static const menu_item special_items[] = {
+    { "menu.special.search", "search.open" },
+    { NULL,                  NULL          },
+    { "menu.special.about",  "app.about"   },
+};
+
+static const menu demo_menus[] = {
+    { "menu.file",    file_items,    6 },
+    { "menu.edit",    edit_items,    6 },
+    { "menu.view",    view_items,    4 },
+    { "menu.special", special_items, 3 },
+};
+
+/* Einsetzen ist gesperrt, solange nichts in der Zwischenablage liegt. Der
+ * Eintrag wird dadurch grau gerastert und lässt sich nicht auslösen. */
+static bool demo_is_enabled(const char *action, void *user)
+{
+    (void)user;
+    return !(action && strcmp(action, "edit.paste") == 0);
+}
+
 /* Hängt einen Codepunkt als UTF-8 an, solange Platz ist. */
 static void append_text(char *buf, size_t cap, const char *utf8)
 {
@@ -56,11 +105,22 @@ bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
     st->m = wm_create(th, screen_w, screen_h);
     if (!st->m) return false;
 
-    st->w_keys = wm_open(st->m, rect_make(screen_w / 2 - 210, screen_h / 2 - 130,
-                                          240, 150),
+    st->mb = menubar_create(demo_menus,
+                            (int)(sizeof demo_menus / sizeof demo_menus[0]),
+                            cat, km, th);
+    if (!st->mb) {
+        demo_free(st);
+        return false;
+    }
+    menubar_set_enabled_fn(st->mb, demo_is_enabled, NULL);
+
+    /* Unterhalb der Menüleiste: die liegt immer oben und würde sonst
+     * Titelleisten verdecken. */
+    int top = menubar_height(st->mb) + 20;
+
+    st->w_keys = wm_open(st->m, rect_make(screen_w / 2 - 250, top, 240, 150),
                          T(cat, "window.keys"), WIN_NORMAL);
-    st->w_desk = wm_open(st->m, rect_make(screen_w / 2 - 60, screen_h / 2 - 40,
-                                          300, 170),
+    st->w_desk = wm_open(st->m, rect_make(screen_w / 2 - 80, top + 70, 300, 170),
                          T(cat, "window.desk"), WIN_NORMAL);
 
     if (!st->w_keys || !st->w_desk) {
@@ -72,10 +132,40 @@ bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
 
 void demo_free(demo_state *st)
 {
-    if (st->m) wm_destroy(st->m);
+    if (st->dlg) dialog_close(st->dlg);
+    if (st->mb)  menubar_free(st->mb);
+    if (st->m)   wm_destroy(st->m);
+
+    st->dlg    = NULL;
+    st->mb     = NULL;
     st->m      = NULL;
     st->w_keys = NULL;
     st->w_desk = NULL;
+}
+
+/* Führt eine Aktion aus, gleich ob sie aus einem Menü oder von einem Kürzel
+ * kommt. Beide Wege landen hier - sonst könnten sie auseinanderlaufen. */
+static void demo_run_action(demo_state *st, const char *action)
+{
+    if (!action) return;
+    snprintf(st->last_action, sizeof st->last_action, "%s", action);
+
+    if (strcmp(action, "app.quit") == 0) {
+        /* Nicht sofort beenden, sondern modal nachfragen - das zeigt den
+         * Dialog im Zusammenspiel. */
+        const char *args[] = { T(st->cat, "window.desk") };
+        const char *btns[] = { "button.cancel", "button.discard" };
+        st->dlg = dialog_open(st->m, st->cat, "dialog.discard.body",
+                              args, 1, btns, 2);
+        if (!st->dlg) st->running = false;
+    } else if (strcmp(action, "window.close") == 0) {
+        window *w = wm_active(st->m);
+        if (w) {
+            if (w == st->w_keys) st->w_keys = NULL;
+            if (w == st->w_desk) st->w_desk = NULL;
+            wm_close(st->m, w);
+        }
+    }
 }
 
 void demo_event(demo_state *st, const event *e)
@@ -83,6 +173,29 @@ void demo_event(demo_state *st, const event *e)
     if (e->kind == EV_QUIT) {
         st->running = false;
         return;
+    }
+
+    /* Ein offener Dialog hat Vorrang vor allem anderen. */
+    if (st->dlg) {
+        dialog_event(st->dlg, e);
+
+        int r = dialog_result(st->dlg);
+        if (r != DIALOG_OPEN) {
+            dialog_close(st->dlg);
+            st->dlg = NULL;
+            if (r == 1) st->running = false;   /* verworfen: beenden */
+        }
+        return;
+    }
+
+    /* Dann die Menüleiste: sie liegt oben und bekommt deshalb den Klick
+     * zuerst. Was sie nicht will, reicht sie weiter. */
+    if (st->mb) {
+        const char *action = NULL;
+        if (menubar_event(st->mb, e, 800, &action)) {
+            demo_run_action(st, action);
+            return;
+        }
     }
 
     /* Erst die Fensterverwaltung. Was sie verbraucht hat - Aktivieren,
@@ -109,9 +222,12 @@ void demo_event(demo_state *st, const event *e)
         const char *action = st->km
             ? keymap_lookup(st->km, e->key, e->mods, "app") : NULL;
 
+        if (action && strcmp(action, "menu.enter") == 0) {
+            if (st->mb) menubar_enter(st->mb);
+            break;
+        }
         if (action) {
-            snprintf(st->last_action, sizeof st->last_action, "%s", action);
-            if (strcmp(action, "app.quit") == 0) st->running = false;
+            demo_run_action(st, action);
             break;
         }
 
@@ -205,7 +321,12 @@ void demo_draw(demo_state *st, gc *g)
 {
     if (!st->m) return;
 
-    draw_keys_window(st, st->w_keys);
-    draw_desk_window(st, st->w_desk);
+    if (st->w_keys) draw_keys_window(st, st->w_keys);
+    if (st->w_desk) draw_desk_window(st, st->w_desk);
+    if (st->dlg)    dialog_draw(st->dlg);
+
     wm_draw(st->m, g);
+
+    /* Die Menüleiste zuletzt: sie liegt immer über allem. */
+    if (st->mb) menubar_draw(st->mb, g, g->dst->w);
 }

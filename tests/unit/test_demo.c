@@ -151,9 +151,22 @@ TEST(shortcuts_come_from_the_keymap)
     press(&st, 'z', MOD_CMD | MOD_SHIFT);
     CHECK_STR(st.last_action, "edit.redo");
 
+    /* Beenden fragt seit M7 modal nach, statt sofort zu schließen. Erst die
+     * Antwort auf den Dialog beendet wirklich. */
     CHECK(st.running);
     press(&st, 'q', MOD_CMD);
     CHECK_STR(st.last_action, "app.quit");
+    CHECK(st.running);
+    CHECK(st.dlg != NULL);
+
+    press(&st, KEY_ESCAPE, 0);          /* abgebrochen */
+    CHECK(st.dlg == NULL);
+    CHECK(st.running);
+
+    press(&st, 'q', MOD_CMD);
+    REQUIRE(st.dlg != NULL);
+    press(&st, KEY_RETURN, 0);          /* Voreinstellung: verwerfen */
+    CHECK(st.dlg == NULL);
     CHECK(!st.running);
 
     demo_free(&st);

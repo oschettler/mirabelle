@@ -15,7 +15,8 @@ struct menubar {
     int            count;
     const catalog *cat;
     const keymap  *km;
-    const theme   *th;
+    theme          th;   /* Kopie: die Leiste besitzt ihr Thema, damit kein
+                          * Aufrufer es überleben muss - siehe wm_create */
 
     menu_enabled_fn enabled_fn;
     void           *enabled_user;
@@ -43,7 +44,7 @@ static bool item_is_selectable(const menubar *mb, const menu_item *it)
 static int menu_title_width(const menubar *mb, int index)
 {
     const char *text = T(mb->cat, mb->menus[index].key);
-    return text_width(&system12, text) + 2 * mb->th->menu_pad;
+    return text_width(&system12, text) + 2 * mb->th.menu_pad;
 }
 
 static rect menu_title_rect(const menubar *mb, int index)
@@ -51,7 +52,7 @@ static rect menu_title_rect(const menubar *mb, int index)
     int x = 0;
     for (int i = 0; i < index; i++)
         x += menu_title_width(mb, i);
-    return rect_make(x, 0, menu_title_width(mb, index), mb->th->menubar_h);
+    return rect_make(x, 0, menu_title_width(mb, index), mb->th.menubar_h);
 }
 
 static int dropdown_width(const menubar *mb, int menu_index)
@@ -73,15 +74,15 @@ static int dropdown_width(const menubar *mb, int menu_index)
         }
     }
 
-    return max_text + mb->th->menu_gap + max_short + 2 * mb->th->menu_pad;
+    return max_text + mb->th.menu_gap + max_short + 2 * mb->th.menu_pad;
 }
 
 static rect dropdown_rect(const menubar *mb)
 {
     rect title = menu_title_rect(mb, mb->open_index);
     int  w     = dropdown_width(mb, mb->open_index);
-    int  h     = mb->menus[mb->open_index].count * mb->th->menu_item_h;
-    return rect_make(title.x, mb->th->menubar_h, w, h);
+    int  h     = mb->menus[mb->open_index].count * mb->th.menu_item_h;
+    return rect_make(title.x, mb->th.menubar_h, w, h);
 }
 
 static int hit_title(const menubar *mb, int x, int y)
@@ -96,14 +97,14 @@ static int hit_item(const menubar *mb, int x, int y)
     rect dd = dropdown_rect(mb);
     if (!rect_contains(dd, x, y)) return -1;
 
-    int index = (y - dd.y) / mb->th->menu_item_h;
+    int index = (y - dd.y) / mb->th.menu_item_h;
     if (index < 0 || index >= mb->menus[mb->open_index].count) return -1;
     return index;
 }
 
 static bool in_bar(const menubar *mb, int screen_w, int x, int y)
 {
-    return rect_contains(rect_make(0, 0, screen_w, mb->th->menubar_h), x, y);
+    return rect_contains(rect_make(0, 0, screen_w, mb->th.menubar_h), x, y);
 }
 
 /* --- Hervorhebung mit der Tastatur ------------------------------------------- */
@@ -190,7 +191,7 @@ menubar *menubar_create(const menu *menus, int count, const catalog *cat,
     mb->count      = count;
     mb->cat        = cat;
     mb->km         = km;
-    mb->th         = th;
+    mb->th          = *th;
     mb->open       = false;
     mb->open_index = 0;
     mb->highlight  = -1;
@@ -211,7 +212,7 @@ void menubar_set_enabled_fn(menubar *mb, menu_enabled_fn fn, void *user)
 
 int menubar_height(const menubar *mb)
 {
-    return mb->th->menubar_h;
+    return mb->th.menubar_h;
 }
 
 bool menubar_is_open(const menubar *mb)
@@ -236,7 +237,7 @@ void menubar_dismiss(menubar *mb)
 
 static void draw_dropdown(const menubar *mb, gc *g)
 {
-    const theme *th = mb->th;
+    const theme *th = &mb->th;
     const menu  *m  = &mb->menus[mb->open_index];
     rect         dd = dropdown_rect(mb);
 
@@ -282,7 +283,7 @@ static void draw_dropdown(const menubar *mb, gc *g)
 
 void menubar_draw(menubar *mb, gc *g, int screen_w)
 {
-    const theme *th = mb->th;
+    const theme *th = &mb->th;
 
     g->pat  = PAT_WHITE;
     g->mode = GFX_COPY;

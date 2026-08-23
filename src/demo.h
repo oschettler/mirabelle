@@ -13,11 +13,15 @@
 #include "core/keymap.h"
 #include "gfx/draw.h"
 #include "plat/plat.h"
+#include "ui/dialog.h"
+#include "ui/menu.h"
 #include "ui/theme.h"
 #include "ui/wm.h"
 
 typedef struct {
     wm            *m;
+    menubar       *mb;
+    dialog        *dlg;
     const keymap  *km;
     const catalog *cat;
     window       *w_desk;
