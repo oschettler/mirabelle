@@ -530,10 +530,10 @@ Quelle: [docs/diagramme/daten.noml](docs/diagramme/daten.noml)
 ```
 ~/PDA/
   vault.conf
-  Aufgaben/20260822T151400-a3f9.md
-  Termine/20260822T093000-7c21.md
-  Kontakte/20260819T112233-0f5e.md
-  Notizen/20260820T201500-b8d4.md
+  Aufgaben/20260822T151400-a3f9.gmi
+  Termine/20260822T093000-7c21.gmi
+  Kontakte/20260819T112233-0f5e.gmi
+  Notizen/20260820T201500-b8d4.gmi
   index.db          -- ableitbar, jederzeit löschbar
 ```
 
