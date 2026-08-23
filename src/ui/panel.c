@@ -363,14 +363,11 @@ bool panel_event(panel *p, const event *e, const char **out_action)
 
     /* Nach jedem weitergereichten Ereignis alle Knöpfe abfragen - genau
      * einmal je Widget, sonst geht der Merker verloren (siehe panel.h).
-     *
-     * HINWEIS auf eine fehlende Schnittstelle: widget.h bietet keine
-     * Möglichkeit, von einem widget* auf den Aktionsnamen zurückzuschließen,
-     * den button_create beim Erzeugen entgegengenommen hat - etwa ein
-     * `const char *button_action(const widget *w)`. Ohne eine solche
-     * Funktion kann *out_action hier nicht befüllt werden, auch wenn ein
-     * Knopf feuert. */
-    for (int i = 0; i < p->count; i++) button_was_pressed(p->items[i]);
+     * button_was_pressed verträgt auch Nicht-Knöpfe und liefert dann false. */
+    for (int i = 0; i < p->count; i++) {
+        if (button_was_pressed(p->items[i]) && out_action)
+            *out_action = button_action(p->items[i]);
+    }
 
     return consumed;
 }

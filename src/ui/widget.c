@@ -215,8 +215,20 @@ void button_set_default(widget *w, bool is_default)
     ((button_widget *)w)->is_default = is_default;
 }
 
+/* Ein Panel reicht seine Elemente durch, ohne ihre Klassen zu kennen. Beide
+ * Knopf-Abfragen müssen deshalb aushalten, dass man sie auf eine Beschriftung
+ * oder ein Kästchen anwendet - sonst lesen sie hinter deren Struktur hinaus.
+ * Genau das ist beim Zusammenbau von M8 passiert und vom Sanitizer gefunden
+ * worden, während der gewöhnliche Bau grün blieb. */
+static bool is_button(const widget *w)
+{
+    return w && w->cls == &button_class;
+}
+
 bool button_was_pressed(widget *w)
 {
+    if (!is_button(w)) return false;
+
     button_widget *bw = (button_widget *)w;
     bool           p  = bw->pressed;
     bw->pressed = false;
@@ -225,6 +237,7 @@ bool button_was_pressed(widget *w)
 
 const char *button_action(const widget *w)
 {
+    if (!is_button(w)) return NULL;
     return ((const button_widget *)w)->action;
 }
 

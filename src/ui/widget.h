@@ -35,6 +35,11 @@ typedef struct {
     /* true, wenn verarbeitet. Das Widget darf sich auf w->frame verlassen. */
     bool (*event)(widget *w, const event *e);
 
+    /* Gibt NUR zurück, was die Klasse zusätzlich belegt hat - etwa einen
+     * Textpuffer. Das Widget selbst gibt widget_destroy() frei.
+     *
+     * Wer hier free(w) schreibt, gibt zweimal frei. Klassen, die außer der
+     * eigenen Struktur nichts belegen, lassen dieses Feld einfach NULL. */
     void (*destroy)(widget *w);
 } widget_class;
 
