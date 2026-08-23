@@ -17,7 +17,7 @@
 	[store/|Datensätze; Markdown + Front Matter; Index; Abfragen; Suche]
 	[gfx/|Bitmap; Muster; Übertragungsmodi; Zeichensätze; UTF-8-Textsatz]
 	[core/|Ereignisse; UTF-8; Sortierung; Zeit]
-	[plat/|zwölf Funktionen; Bild zeigen; Ereignis holen; Zeit; Dateien]
+	[plat/|dreizehn Funktionen; Bild zeigen; Ereignis holen; Zeit; Dateien]
 	
 	[apps/ (Lua)] -&gt; [Lua-API]
 	[Lua-API] -&gt; [ui/]
@@ -55,13 +55,13 @@
 					<path d="M125.8 655.8 L132.2 655.5 L130.4 649.3 L136.3 658.4 Z"></path>
 					<path d="M186.8 753.0 L186.8 768.0 L188.7 778.1" fill="none"></path>
 					<path d="M183.8 773.9 L188.7 778.1 L191.7 772.4 L189.6 783.0 Z"></path>
-					<path d="M347.7 606.0 L350.5 621.0 L350.5 694.5 L350.5 768.0 L285.4 803.9" fill="none"></path>
-					<path d="M287.8 797.9 L285.4 803.9 L291.7 805.0 L281.0 806.3 Z"></path>
-					<path d="M124.0 893.5 L57.0 931.0 L57.0 941.0" fill="none"></path>
+					<path d="M347.7 606.0 L350.5 621.0 L350.5 694.5 L350.5 768.0 L296.9 797.5" fill="none"></path>
+					<path d="M299.3 791.6 L296.9 797.5 L303.2 798.6 L292.5 799.9 Z"></path>
+					<path d="M112.5 899.9 L57.0 931.0 L57.0 941.0" fill="none"></path>
 					<path d="M53.0 936.0 L57.0 941.0 L61.0 936.0 L57.0 946.0 Z"></path>
 					<path d="M202.5 916.0 L202.5 931.0 L202.5 941.0" fill="none"></path>
 					<path d="M198.5 936.0 L202.5 941.0 L206.5 936.0 L202.5 946.0 Z"></path>
-					<path d="M281.0 889.5 L362.5 931.0 L362.5 941.0" fill="none"></path>
+					<path d="M292.5 895.3 L362.5 931.0 L362.5 941.0" fill="none"></path>
 					<path d="M358.5 936.0 L362.5 941.0 L366.5 936.0 L362.5 946.0 Z"></path>
 					<g data-name="apps/ (Lua)">
 						<g fill="#ffffff" stroke="#000000" data-name="apps/ (Lua)">
@@ -195,18 +195,18 @@
 					</g>
 					<g data-name="plat/">
 						<g fill="#ffffff" stroke="#000000" data-name="plat/">
-							<rect x="124.0" y="783.0" height="133.0" width="157.0" data-name="plat/"></rect>
-							<path d="M124.0 817.0 L281.0 817.0" fill="none" data-name="plat/"></path>
+							<rect x="112.5" y="783.0" height="133.0" width="180.0" data-name="plat/"></rect>
+							<path d="M112.5 817.0 L292.5 817.0" fill="none" data-name="plat/"></path>
 						</g>
-						<g transform="translate(124, 783)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="plat/" data-compartment="0">
+						<g transform="translate(112.5, 783)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="plat/" data-compartment="0">
 							<g transform="translate(9, 9)" fill="#000000" text-align="center" data-name="plat/" data-compartment="0">
-								<text x="69.5" y="14.1" stroke="none" text-anchor="middle" data-name="plat/" data-compartment="0">plat/</text>
+								<text x="81.0" y="14.1" stroke="none" text-anchor="middle" data-name="plat/" data-compartment="0">plat/</text>
 								
 							</g>
 						</g>
-						<g transform="translate(124, 817)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="plat/" data-compartment="1">
+						<g transform="translate(112.5, 817)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="plat/" data-compartment="1">
 							<g transform="translate(9, 9)" fill="#000000" text-align="left" data-name="plat/" data-compartment="1">
-								<text x="0.0" y="14.1" stroke="none" data-name="plat/" data-compartment="1">zwölf Funktionen</text>
+								<text x="0.0" y="14.1" stroke="none" data-name="plat/" data-compartment="1">dreizehn Funktionen</text>
 								<text x="0.0" y="30.3" stroke="none" data-name="plat/" data-compartment="1">Bild zeigen</text>
 								<text x="0.0" y="46.5" stroke="none" data-name="plat/" data-compartment="1">Ereignis holen</text>
 								<text x="0.0" y="62.7" stroke="none" data-name="plat/" data-compartment="1">Zeit</text>

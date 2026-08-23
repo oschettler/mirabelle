@@ -52,7 +52,7 @@ void plat_headless_set_time(uint32_t ms)
     s_now = ms;
 }
 
-/* --- Die zwölf Funktionen ------------------------------------------------ */
+/* --- Die dreizehn Funktionen --------------------------------------------- */
 
 bool plat_init(const plat_config *cfg)
 {

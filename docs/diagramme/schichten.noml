@@ -15,7 +15,7 @@
 [store/|Datensätze; Markdown + Front Matter; Index; Abfragen; Suche]
 [gfx/|Bitmap; Muster; Übertragungsmodi; Zeichensätze; UTF-8-Textsatz]
 [core/|Ereignisse; UTF-8; Sortierung; Zeit]
-[plat/|zwölf Funktionen; Bild zeigen; Ereignis holen; Zeit; Dateien]
+[plat/|dreizehn Funktionen; Bild zeigen; Ereignis holen; Zeit; Dateien]
 
 [apps/ (Lua)] -> [Lua-API]
 [Lua-API] -> [ui/]

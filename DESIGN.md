@@ -28,7 +28,7 @@ Rangfolge: bei Zweifeln gewinnt die weiter oben stehende Regel.
    Speicher. SDL3 zeigt diese Bitmap nur an. Deshalb lässt sich praktisch alles
    — Fensterrahmen, Menüs, Umlaute, ganze Bedienabläufe — kopfüber,
    deterministisch und pixelgenau prüfen.
-5. **Portabel.** Zwischen Kern und Außenwelt liegt eine Schicht aus zwölf
+5. **Portabel.** Zwischen Kern und Außenwelt liegt eine Schicht aus dreizehn
    Funktionen. SDL3 und der ESP32-S3 sind zwei Implementierungen davon, mehr nicht.
 
 ---
@@ -148,14 +148,21 @@ size_t     plat_read(plat_file *f, void *buf, size_t n);
 size_t     plat_write(plat_file *f, const void *buf, size_t n);
 void       plat_close(plat_file *f);
 bool       plat_list(const char *dir, plat_dirent *out, int cap, int *count);
+bool       plat_mkdir(const char *path);   /* true auch, wenn es schon da ist */
 ```
 
-Zwölf Funktionen. `plat_headless` schreibt `plat_present` in eine Bitmap, liest
-Ereignisse aus einem Testskript und bildet Dateien auf ein temporäres Verzeichnis
-ab — deshalb laufen fast alle Tests ohne Fenster und ohne Grafikkarte.
+Dreizehn Funktionen. `plat_headless` schreibt `plat_present` in eine Bitmap,
+liest Ereignisse aus einer Warteschlange, die der Test füllt, und lässt die Uhr
+stillstehen, bis jemand sie stellt — deshalb laufen fast alle Tests ohne Fenster
+und ohne Grafikkarte, und jeder Lauf ist gleich.
+
+Beim Entwurf standen hier zwölf Funktionen; `plat_mkdir` kam in M4 dazu, weil
+der Vault in M9 Verzeichnisse anlegen muss. Die Zahl ist keine Zusage, wohl aber
+die Größenordnung: diese Schicht bleibt klein genug, dass eine Portierung
+überschaubar ist.
 
 **Touch wächst diese Schicht nicht.** Ein Fingertipp ist ein Mausereignis mit
-`button = 1`; nur ein Merker `pointer_is_touch` sagt der Oberfläche, dass es
+`button = 1`; nur ein Merker `is_touch` am Ereignis sagt der Oberfläche, dass es
 keinen Hover-Zustand gibt.
 
 ---
@@ -731,7 +738,7 @@ zu je 16 Bytes: ein Quellbyte wird acht Pixel, ein `memcpy` pro Byte.
 
 **Entscheidung D-5 bleibt damit unangetastet.** Die Optimierung sitzt vollständig
 in der Plattformschicht; `gfx/` und `ui/` erfahren nichts davon. Genau dafür gibt
-es die zwölf Funktionen — das ist der erste echte Beleg, dass die Schichtung trägt.
+es die dreizehn Funktionen — das ist der erste echte Beleg, dass die Schichtung trägt.
 
 Gegen Reißen bekommt `esp_lcd_rgb_panel` Bounce-Puffer im internen RAM. Die
 bewährten Werte stehen in Abschnitt 12.6 und sind aus einem laufenden Port auf
@@ -914,5 +921,5 @@ Zeichenkette im Quelltext.
 | D-7 | Ein generischer Browser plus Schemadateien | Drei der vier Anwendungen entstehen ohne Code |
 | D-8 | Eigener Mini-YAML-Parser statt Bibliothek | 150 Zeilen, lehrreich, keine Abhängigkeit |
 | D-9 | 800 × 480 auf beiden Zielen, Vergrößerung nur in der Anzeige | Was du entwickelst, ist pixelgenau was das Gerät zeigt; Sollbilder gelten für beide Seiten. Auf derselben Platine unabhängig bestätigt (12.2) |
-| D-10 | Touch ist ein Zeiger ohne Hover, Trefferflächen kommen aus dem Thema | Die Plattformschicht bleibt bei zwölf Funktionen |
+| D-10 | Touch ist ein Zeiger ohne Hover, Trefferflächen kommen aus dem Thema | Die Plattformschicht wächst dadurch nicht |
 | D-11 | Bildschirmtastatur ist ein gewöhnliches Fenster | Erzeugt normale Ereignisse; der Rest des Systems merkt nichts. Eine externe Tastatur über USB oder BLE ist damit kein Sonderfall, sondern derselbe Weg (12.5) |
