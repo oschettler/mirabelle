@@ -1,0 +1,163 @@
+== Glossar
+
+Bitmap:: Ein Bild, das nicht aus Farbwerten besteht, sondern aus einzelnen
+Bits — je Pixel eins, an oder aus. `src/gfx/bitmap.h` definiert die Bitmap
+des Projekts mit Breite, Höhe, Stride und einem Byte-Feld. Kapitel 5 leitet
+her, warum ein Bit je Pixel für dieses Gerät genügt und wie klein das Ergebnis
+dadurch wird.
+
+Bitreihenfolge:: Die Festlegung, welches Bit eines Bytes zu welchem Pixel
+gehört. Das Projekt legt sie im Kopf von `bitmap.h` fest: das linkeste Pixel
+einer Zeile sitzt im höchstwertigen Bit des ersten Bytes, kurz MSB links. Ohne
+diese Festlegung wüsste keine Funktion, wie sie ein einzelnes Pixel in einem
+Byte findet.
+
+Clipping:: Das Beschränken des Zeichnens auf ein Rechteck, den Clip. Ein
+Fenster darf seinen Inhalt nicht über den eigenen Rand hinaus malen — dafür
+sorgt Clipping. Im Projekt prüft eine einzige Funktion, `set_pixel` in
+`src/gfx/draw.c`, den Clip für jede Zeichenprimitive, damit es nicht so viele
+Gelegenheiten für einen Clipping-Fehler gibt wie es Primitive gibt.
+
+Codepunkt:: Die Zahl, die ein einzelnes Zeichen im Unicode-Zeichensatz
+eindeutig benennt — der Buchstabe „ü“ hat zum Beispiel den Codepunkt 252. Eine
+Glyphe im Projekt ist immer nach ihrem Codepunkt sortiert und wird darüber
+gefunden, nicht über ein Byte aus UTF-8.
+
+Front Matter:: Ein Block typisierter Felder am Anfang eines Datensatzes, vor
+dem eigentlichen Text. Gemtext selbst kennt kein Metadatenkonzept, deshalb
+trägt das Projekt Front Matter als eigenen, bewusst winzigen Abschnitt vor dem
+Text nach — `DESIGN.md` nennt das Entscheidung D-12 und erklärt, warum es kein
+vorformatierter Block innerhalb von Gemtext sein sollte.
+
+Gemtext:: Ein sehr einfaches Text-Auszeichnungsformat, ursprünglich aus dem
+Gemini-Protokoll, mit wenigen Zeilenarten wie Überschrift, Aufzählung und
+Link. Das Projekt speichert die Textkörper seiner Datensätze als Gemtext, weil
+das Format klein genug ist, um es auf einem Mikrocontroller vollständig selbst
+zu interpretieren, ohne den Umfang von Markdown mitzuschleppen.
+
+Glyphe:: Das gezeichnete Bild eines einzelnen Zeichens innerhalb einer
+Schrift. `src/gfx/font.h` beschreibt eine Glyphe mit Codepunkt, Breite und
+einem Index in den gemeinsamen Bitblock der Schrift — alle Glyphen einer
+Schrift sind gleich hoch, aber unterschiedlich breit.
+
+Grundlinie:: Die gedachte Linie, auf der die Buchstaben einer Textzeile
+stehen, ohne dass Unterlängen wie beim „g“ darüberhinaus zählen. `font.h`
+nennt den Abstand von der Oberkante bis zur Grundlinie `ascent`, „Zeilen
+oberhalb der Grundlinie“.
+
+Headless:: Ein Aufbau des Programms ohne Bildschirm und ohne Eingabegeräte,
+nur mit einer Bitmap als Ausgabe. `plat_headless.c` erlaubt es, den ganzen
+Kern des Projekts — Fensterrahmen, Menüs, Umlaute, ganze Bedienabläufe — in
+Tests zu prüfen, ohne dass echte Hardware angeschlossen sein muss.
+
+Kerning:: Der Feinschliff, bei dem der Abstand zwischen zwei *bestimmten*
+Buchstaben — etwa „A“ und „V“ — enger gesetzt wird als zwischen anderen
+Paaren, weil ihre Formen sonst zu viel Luft zwischeneinander lassen. Das
+Projekt kennt kein Kerning, und das ist Absicht: `src/gfx/font.h` sieht dafür
+keinen Platz vor, die Breite einer Glyphe ist zugleich ihr fester Vorschub zum
+nächsten Zeichen, unabhängig davon, welches Zeichen folgt. Für eine kleine
+Bitmap-Schrift auf einem kleinen Bildschirm ist der optische Gewinn gering,
+der Preis an Speicher und Rechenzeit auf einem Mikrocontroller aber real —
+jedes Zeichenpaar bräuchte einen eigenen Korrekturwert.
+
+Modaler Dialog:: Ein Fenster mit dem Merkmal `WIN_MODAL`, das die
+Fensterverwaltung dazu bringt, alle Eingaben ausschließlich an dieses eine
+Fenster zu leiten, bis es geschlossen wird. Ein Dialog im Projekt ist ein
+gewöhnliches Fenster mit genau diesem Merkmal, kein eigener Fenstertyp.
+
+Mutationstest:: Ein absichtlich in den Code eingebauter Fehler, mit dem
+geprüft wird, ob wenigstens ein Test darauf anspricht. Bleibt die Testsuite
+grün, hat sie den betroffenen Code nicht wirklich geprüft. Kapitel 12
+beschreibt mehrere Mutationstests, die genau das im Projekt aufgedeckt haben.
+
+Muster:: Eine 8 × 8-Bit-Kachel, die sich über eine Fläche wiederholt und ohne
+Farbe Flächen unterscheidbar macht — etwa den grauen Schreibtisch oder einen
+gesperrten Menüeintrag. `src/gfx/pattern.h` definiert die Kachel, `PAT_GRAY50`
+in `pattern.c` ist das bekannteste Beispiel, ein Schachbrett.
+
+PBM:: Portable Bitmap, ein einfaches Dateiformat für Schwarzweißbilder mit
+zwei Varianten: P1 als Text, ein Zeichen je Pixel, und P4 binär, ein Bit je
+Pixel. Das Projekt benutzt beide für Sollbilder — P1 für kleine Ausschnitte,
+weil `git diff` sie lesbar anzeigt, P4 für Vollbilder, weil P1 dort um ein
+Vielfaches größer wäre.
+
+Sanitizer:: Ein vom Compiler eingebautes Werkzeug, das zur Laufzeit
+mitprotokolliert, welcher Speicher gerade gültig ist, und einen Zugriff auf
+bereits freigegebenen Speicher sofort meldet. `make asan` baut das Projekt mit
+Address- und UB-Sanitizer und deckte damit einen Absturz auf, den die normale
+Testsuite nicht bemerkt hatte.
+
+Schreibtisch:: Die Fläche im Hintergrund, vor der alle Fenster liegen, im
+Original als Desktop bezeichnet. Im Projekt ist er ein Schachbrettmuster mit
+fünfzig Prozent Deckung, `PAT_GRAY50`, gezeichnet bevor die Fensterliste von
+hinten nach vorn über ihn gelegt wird.
+
+Sollbild:: Ein gespeichertes Bild, mit dem ein Test das tatsächlich gezeichnete
+Bild vergleicht. Stimmen beide überein, gilt der Test als bestanden. `make
+test ACCEPT=1` schreibt ein neues Sollbild, wenn eine Änderung tatsächlich
+gewollt war — aber nur, nachdem jemand das neue Bild angesehen hat.
+
+Stride:: Die Anzahl Bytes, die eine einzelne Bildzeile in einer Bitmap
+belegt, mit Aufrundung auf die nächste ganze Bytezahl. `bitmap_init` in
+`src/gfx/bitmap.c` setzt `stride = (w + 7) / 8`, damit auch eine Breite, die
+nicht durch acht teilbar ist, noch in ganze Bytes passt.
+
+Textkatalog:: Eine Sammlung aller sichtbaren Oberflächentexte, nach Sprache
+getrennt, mit einem Schlüssel je Text — im Projekt liegt der deutsche Katalog
+in `data/lang/de.strings`. Die Funktionen `T`, `Tf` und `Tn` holen einen Text
+über seinen Schlüssel; kein sichtbarer Text darf stattdessen fest im
+C-Quelltext stehen, das erzwingt `tests/no_hardcoded_text.sh`.
+
+Thema:: Eine flache Schlüssel-Wert-Datei mit Maßen und Trefferflächen für die
+Fensterverwaltung — Titelleistenhöhe, Randbreite, `hit_slop` und ähnliches.
+`data/themes/desktop.theme` ist das Thema für die Maus; ein zweites, größer
+bemessenes, ist für den berührungsempfindlichen Bildschirm des Zielgeräts
+vorgesehen. Ein Thema ist bewusst keine Lua-Datei, sondern nur Zahlen und
+Namen, die auch ohne Programmierkenntnisse lesbar bleiben.
+
+Trefferfläche:: Der Bereich, in dem ein Klick oder eine Berührung ein
+Bedienelement auslöst. Er muss nicht mit der gezeichneten Fläche
+übereinstimmen — `hit_slop` im Thema lässt die Trefferfläche über die
+gezeichnete Fläche hinaus wachsen, wichtig für einen Finger, der ungenauer
+trifft als ein Mauszeiger.
+
+Übertragungsmodus:: Die Regel, wie ein neu gezeichnetes Pixel mit dem bereits
+vorhandenen verrechnet wird, anstelle eines Alphakanals. `gfx_mode` in
+`src/gfx/draw.c` kennt fünf davon, darunter `GFX_XOR`, dessen Besonderheit
+Kapitel 5 ausführlich behandelt: zweimal angewendet stellt es den
+Ausgangszustand exakt wieder her.
+
+UTF-8:: Eine Kodierung, die einen Unicode-Codepunkt als eine Folge von ein bis
+vier Bytes darstellt und dabei mit reinem ASCII abwärtskompatibel bleibt. Das
+Projekt liest seine Quelltexte, seinen Textkatalog und seine Datensätze
+durchgehend als UTF-8 und wandelt beim Zeichnen jeden gelesenen Codepunkt in
+die passende Glyphe um.
+
+Vault:: Das Verzeichnis, in dem alle Datensätze eines Nutzers als Gemtext-
+Dateien mit Front Matter liegen, zusammen mit einer `vault.conf` und einem
+SQLite-Index für die Suche. Die Grundordner eines Vaults werden einmalig beim
+Anlegen gesetzt und danach nicht mehr automatisch verändert.
+
+Widget:: Ein einzelnes Bedienelement innerhalb eines Fensters, etwa ein
+Textfeld oder ein Knopf. `DESIGN.md` beschreibt jedes Widget als eine Tabelle
+von vier Funktionen — Zeichnen, Ereignisse annehmen, Größe berechnen und so
+weiter — statt als eigenen, fest verdrahteten Typ.
+
+XOR:: Exklusiv-Oder, eine Verknüpfung, bei der das Ergebnis genau dann 1 ist,
+wenn sich die beiden Eingaben unterscheiden. Sie ist ihre eigene Umkehrung:
+derselbe Wert zweimal per XOR angewendet stellt den ursprünglichen Zustand
+wieder her. Das Projekt nutzt das für den Fensterumriss beim Ziehen und für
+den blinkenden Schreibcursor — einmal zeichnen, ein zweites Mal derselbe
+Aufruf, und die Stelle ist wieder wie vorher.
+
+z-Ordnung:: Die Reihenfolge, in der Fenster übereinanderliegen, von hinten
+nach vorn. Sie bestimmt zweierlei: von hinten nach vorn wird gezeichnet, von
+vorn nach hinten wird auf einen Treffer geprüft. Beide Richtungen müssen genau
+umgekehrt zueinander sein, sonst würde ein Klick ein Fenster treffen, das gar
+nicht obenauf liegt.
+
+Zeichenvorrat:: Die Menge aller Codepunkte, für die eine Schrift tatsächlich
+eine Glyphe besitzt. Ein Zeichen außerhalb des Zeichenvorrats einer Schrift
+kann nicht gezeichnet werden — deshalb muss jede Schrift des Projekts
+mindestens die deutschen Umlaute und das scharfe S enthalten, nicht nur
+reines ASCII.
