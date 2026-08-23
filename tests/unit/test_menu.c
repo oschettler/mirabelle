@@ -226,6 +226,70 @@ TEST(click_elsewhere_closes_without_action)
     fixture_free(&f);
 }
 
+/* Kurzer Klick auf den Titel: das Menü bleibt offen, damit der Nutzer in Ruhe
+ * hineinfahren kann. Erst ein Klick auf einen Eintrag löst aus. */
+TEST(short_click_keeps_menu_open)
+{
+    fixture f;
+    REQUIRE(fixture_init(&f, 2));
+
+    int tx = title_x(&f.th, f.cat, test_menus, 0) + 5;
+
+    const char *action;
+    REQUIRE(send_mouse(f.mb, EV_MOUSE_DOWN, tx, 5, &action));
+    CHECK(send_mouse(f.mb, EV_MOUSE_UP, tx, 5, &action));
+
+    CHECK(menubar_is_open(f.mb));
+    CHECK(action == NULL);
+
+    fixture_free(&f);
+}
+
+/* Und danach auswählen: hinfahren, drücken, loslassen. */
+TEST(click_on_item_after_short_click_triggers)
+{
+    fixture f;
+    REQUIRE(fixture_init(&f, 2));
+
+    int tx = title_x(&f.th, f.cat, test_menus, 0) + 5;
+    int iy = item_center_y(&f.th, 1);   /* "Öffnen" */
+
+    const char *action;
+    REQUIRE(send_mouse(f.mb, EV_MOUSE_DOWN, tx, 5, &action));
+    REQUIRE(send_mouse(f.mb, EV_MOUSE_UP, tx, 5, &action));
+    REQUIRE(menubar_is_open(f.mb));
+
+    REQUIRE(send_mouse(f.mb, EV_MOUSE_MOVE, tx, iy, &action));
+    REQUIRE(send_mouse(f.mb, EV_MOUSE_DOWN, tx, iy, &action));
+    CHECK(send_mouse(f.mb, EV_MOUSE_UP, tx, iy, &action));
+
+    CHECK_STR(action, "record.open");
+    CHECK(!menubar_is_open(f.mb));
+
+    fixture_free(&f);
+}
+
+/* Noch einmal auf denselben Titel klappt wieder zu - sonst wäre ein
+ * offengehaltenes Menü nur über einen Klick daneben loszuwerden. */
+TEST(second_click_on_same_title_closes)
+{
+    fixture f;
+    REQUIRE(fixture_init(&f, 2));
+
+    int tx = title_x(&f.th, f.cat, test_menus, 0) + 5;
+
+    const char *action;
+    REQUIRE(send_mouse(f.mb, EV_MOUSE_DOWN, tx, 5, &action));
+    REQUIRE(send_mouse(f.mb, EV_MOUSE_UP, tx, 5, &action));
+    REQUIRE(menubar_is_open(f.mb));
+
+    CHECK(send_mouse(f.mb, EV_MOUSE_DOWN, tx, 5, &action));
+    CHECK(!menubar_is_open(f.mb));
+    CHECK(action == NULL);
+
+    fixture_free(&f);
+}
+
 TEST(drag_over_item_and_release_returns_its_action)
 {
     fixture f;
@@ -472,6 +536,9 @@ int main(void)
 
     RUN(click_on_title_opens_menu);
     RUN(click_elsewhere_closes_without_action);
+    RUN(short_click_keeps_menu_open);
+    RUN(click_on_item_after_short_click_triggers);
+    RUN(second_click_on_same_title_closes);
     RUN(drag_over_item_and_release_returns_its_action);
     RUN(release_over_separator_returns_no_action);
     RUN(release_over_disabled_item_returns_no_action);

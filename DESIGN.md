@@ -1,7 +1,7 @@
 # PDA — Systementwurf
 
 Ein PalmOS-inspiriertes PIM-Paket (Aufgaben, Kalender, Kontakte, Notizen) mit der
-Optik von Macintosh System 1, einer Picotron-artigen API, Markdown+SQLite als
+Optik von Macintosh System 1, einer Picotron-artigen API, Gemtext+SQLite als
 Speicher und Lua als Erweiterungssprache.
 
 **Status:** Entwurf, noch kein Code. Dieses Dokument ist die Referenz für die
@@ -26,7 +26,7 @@ Rangfolge: bei Zweifeln gewinnt die weiter oben stehende Regel.
    vier Schemadateien gesteuert wird, nicht vier Anwendungen.
 4. **Testbar ohne Bildschirm.** Der gesamte Kern zeichnet in eine Bitmap im
    Speicher. SDL3 zeigt diese Bitmap nur an. Deshalb lässt sich praktisch alles
-   — Fensterrahmen, Menüs, Umlaute, ganze Bedienabläufe — kopfüber,
+   — Fensterrahmen, Menüs, Umlaute, ganze Bedienabläufe — headless,
    deterministisch und pixelgenau prüfen.
 5. **Portabel.** Zwischen Kern und Außenwelt liegt eine Schicht aus dreizehn
    Funktionen. SDL3 und der ESP32-S3 sind zwei Implementierungen davon, mehr nicht.
@@ -99,7 +99,7 @@ src/
   core/    event.c  str.c  utf8.c  collate.c  time.c  i18n.c
   gfx/     bitmap.c  draw.c  pattern.c  font.c  text.c
   ui/      wm.c  window.c  menu.c  dialog.c  widget.c  layout.c  focus.c  osk.c
-  store/   record.c  frontmatter.c  markdown.c  vault.c  index_sqlite.c  query.c
+  store/   record.c  frontmatter.c  gemtext.c  vault.c  index_sqlite.c  query.c
   lua/     api_gfx.c  api_input.c  api_window.c  api_store.c  api_sys.c
   plat/    plat.h  plat_sdl3.c  plat_esp32.c  plat_headless.c
   main.c
@@ -537,9 +537,9 @@ Quelle: [docs/diagramme/daten.noml](docs/diagramme/daten.noml)
   index.db          -- ableitbar, jederzeit löschbar
 ```
 
-Ein Datensatz ist eine Markdown-Datei mit Front Matter:
+Ein Datensatz ist eine Gemtext-Datei mit Front Matter:
 
-```markdown
+```
 ---
 type: task
 title: Milch kaufen
@@ -549,7 +549,41 @@ done: false
 tags: [Besorgung, Küche]
 ---
 Beim Bäcker nebenan gibt es auch Brötchen für Fräulein Müller.
+
+## Zutaten
+
+* Milch, 1,5 %
+* Brötchen
+
+=> gemini://example.org/rezepte/  Wo das Rezept herkam
 ```
+
+**Entscheidung D-12: der Textkörper ist Gemtext, nicht Markdown.** Gemtext ist
+das Format, das SPARTAN:// und Gemini ausliefern. Drei Gründe, und der dritte
+ist der eigentliche:
+
+1. **Es ist winzig.** Drei Kernzeilentypen (Text, Verweis `=>`, Umschalter
+   ` ``` ` für vorformatierten Text), drei optionale (Überschriften `#`, `##`,
+   `###`, Listenpunkte `* `, Zitate `>`). Keine Auszeichnung im Fließtext, kein
+   Kursiv, kein Fett, keine verschachtelten Listen. Der Parser braucht **ein
+   einziges Bit Zustand** — normal oder vorformatiert — und kommt mit einem
+   Durchlauf von oben nach unten aus. Ein Markdown-Ausschnitt wäre ein
+   Vielfaches davon, und wo man ihn abschneidet, wäre Geschmackssache.
+2. **Es ist zeilenorientiert.** Jede Zeile steht für sich, Umbruch macht der
+   Darsteller. Das passt genau zu einem Bildschirm, dessen Breite sich zwischen
+   Arbeitsplatz und Gerät nicht ändert, aber dessen Fenster der Nutzer zieht.
+3. **Der Notizen-Darsteller und der SPARTAN-Browser aus M17 sind dieselbe
+   Funktion.** Eine Notiz anzeigen und eine abgerufene Seite anzeigen ist
+   derselbe Vorgang. Mit Markdown hätten wir zwei Darsteller gebraucht und
+   irgendwann zwei verschiedene Vorstellungen davon, was eine Überschrift ist.
+
+Umgekehrt gilt: eine Notiz über SPARTAN auszuliefern heißt, das Front Matter zu
+überspringen und den Rest unverändert zu senden. Keine Umwandlung, kein
+Zwischenformat.
+
+Die Dateiendung ist `.gmi`, wie in der Gemini-Welt üblich. Der Medientyp ist
+`text/gemini`, und weil unsere Kataloge ohnehin deutsch sind, wird beim
+Ausliefern `lang=de` mitgegeben.
 
 **Entscheidung D-3: SQLite ist ausschließlich Index, niemals Quelle.** `index.db`
 zu löschen darf kein Byte Nutzdaten kosten. Ein Test erzwingt das: Verzeichnis
@@ -560,7 +594,18 @@ lesbar ist und das du mit jedem Editor bearbeiten kannst.
 **IDs** sind zeitsortiert und dateisystemtauglich: `JJJJMMTTThhmmss-xxxx`.
 Sortierbar, lesbar, kollisionsarm, und ohne ULID-Bibliothek.
 
-### 9.2 Front Matter: ein bewusst winziger YAML-Ausschnitt
+### 9.2 Front Matter bleibt, obwohl Gemtext es nicht kennt
+
+Gemtext hat kein Metadatenkonzept und keine Kommentare. Die typisierten Felder
+eines Datensatzes müssen also woandershin. Wir behalten den `---`-Block am
+Anfang: er ist außerhalb dieses Projekts verbreitet genug, dass fremde Werkzeuge
+ihn verstehen, und er hält die Metadaten strikt vom Textkörper getrennt.
+
+Erwogen und verworfen: die Felder als vorformatierten Block in Gemtext selbst
+unterzubringen. Das wäre gültiges Gemtext, aber die Felder stünden beim
+Ausliefern sichtbar in der Seite. Getrennt ist ehrlicher.
+
+### 9.3 Front Matter: ein bewusst winziger YAML-Ausschnitt
 
 Unterstützt werden `schlüssel: skalar` und `schlüssel: [a, b, c]`, mehr nicht.
 Kein verschachteltes Mapping, keine Anker, keine mehrzeiligen Blöcke. Alles
@@ -569,7 +614,7 @@ Kurskapitel über Parser, und es hält uns eine Abhängigkeit mit 20 000 Zeilen 
 Hals. Der zulässige Ausschnitt steht als Grammatik in `docs/frontmatter.md` und
 wird gegen eine Sammlung gültiger und ungültiger Beispieldateien getestet.
 
-### 9.3 Index und Abfragen
+### 9.4 Index und Abfragen
 
 ```sql
 CREATE TABLE records (
@@ -886,7 +931,7 @@ Tastatur“ überprüfbar statt behauptet, und jeder gemeldete Fehler kann als S
 ins Repository wandern. Dieselben Skripte laufen mit dem Touch-Thema und gesetztem
 `is_touch` — so fällt auf, wenn etwas nur mit Hover funktioniert.
 
-**4 — Speichertests.** Markdown-Rundlauf (lesen, schreiben, byteweise gleich),
+**4 — Speichertests.** Gemtext-Rundlauf (lesen, schreiben, byteweise gleich),
 Index-Wiederaufbau, Umlautsuche, Sortierung nach DIN 5007, ungültiges Front
 Matter mit erwarteter Fehlermeldung.
 
@@ -917,7 +962,7 @@ Zeichenkette im Quelltext.
 |---|---|---|
 | D-1 | Code englisch, Oberfläche übersetzbar, Deutsch als eine Sprache | Nichts Sichtbares steht im Quelltext; eine weitere Sprache wird eine Datei |
 | D-2 | `EV_TEXT` und `EV_KEY_DOWN` sind getrennt | QWERTZ, tote Tasten und AltGr funktionieren nur so |
-| D-3 | Markdown ist die Wahrheit, SQLite nur Index | Daten überleben das Programm; der Index ist wegwerfbar |
+| D-3 | Die Dateien sind die Wahrheit, SQLite nur Index | Daten überleben das Programm; der Index ist wegwerfbar |
 | D-4 | Ein Lua-Zustand, Anwendungen als Tabellen | Picotrons Nachrichtenform ohne Prozesskosten |
 | D-5 | Voll neu zeichnen statt schmutziger Rechtecke | 48 kB pro Bild sind geschenkt; die Sparsamkeit sitzt in `plat_esp32.c` |
 | D-6 | 1 Bit pro Pixel im Kern | Passt zu System 1 und hält den Bildspeicher mit 48 kB im internen SRAM des ESP32 |
@@ -925,4 +970,5 @@ Zeichenkette im Quelltext.
 | D-8 | Eigener Mini-YAML-Parser statt Bibliothek | 150 Zeilen, lehrreich, keine Abhängigkeit |
 | D-9 | 800 × 480 auf beiden Zielen, Vergrößerung nur in der Anzeige | Was du entwickelst, ist pixelgenau was das Gerät zeigt; Sollbilder gelten für beide Seiten. Auf derselben Platine unabhängig bestätigt (12.2) |
 | D-10 | Touch ist ein Zeiger ohne Hover, Trefferflächen kommen aus dem Thema | Die Plattformschicht wächst dadurch nicht |
+| D-12 | Textkörper in Gemtext statt Markdown | Ein Parser mit einem Bit Zustand; Notizendarsteller und SPARTAN-Browser werden dieselbe Funktion |
 | D-11 | Bildschirmtastatur ist ein gewöhnliches Fenster | Erzeugt normale Ereignisse; der Rest des Systems merkt nichts. Eine externe Tastatur über USB oder BLE ist damit kein Sonderfall, sondern derselbe Weg (12.5) |

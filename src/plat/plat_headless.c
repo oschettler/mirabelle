@@ -1,4 +1,4 @@
-/* Die kopfüber-Umsetzung der Plattformschicht.
+/* Die Headless-Umsetzung der Plattformschicht.
  *
  * Sie ist keine Notlösung, sondern der Grund, warum sich fast alles ohne
  * Bildschirm prüfen lässt: das Bild landet in einer Bitmap, Ereignisse kommen

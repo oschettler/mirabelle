@@ -1,4 +1,4 @@
-/* Die Plattformschicht in ihrer kopfüber-Umsetzung. */
+/* Die Plattformschicht in ihrer Headless-Umsetzung. */
 
 #include "test.h"
 

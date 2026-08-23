@@ -5,10 +5,21 @@
  * der Tastenbelegung. Deshalb kann ein Menü gar nicht behaupten, ein Befehl
  * liege auf einer Taste, auf der er nicht liegt.
  *
- * Bedient wird nach System-1-Art: drücken, durchziehen, loslassen. Das ist
- * historisch korrekt und passt zugleich auf einen Berührungsbildschirm, wo es
- * keinen Hover-Zustand gibt. Mit der Tastatur geht es genauso: F10 hinein,
- * Pfeiltasten, Return wählt, Esc bricht ab.
+ * Zwei Bedienweisen nebeneinander, und beide sollen sich richtig anfühlen:
+ *
+ *   Durchziehen  - drücken, ins Menü fahren, loslassen. Die System-1-Geste.
+ *   Kurzer Klick - klicken, das Menü bleibt offen, dann in Ruhe hineinfahren
+ *                  und den Eintrag anklicken. Das erwartet heute jeder.
+ *
+ * Unterschieden wird an der Stelle, nicht an der Zeit: wurde auf einem Titel
+ * gedrückt und auf demselben Titel losgelassen, war der Zeiger nie im Menü,
+ * also bleibt es offen. Kein Zeitgeber, keine Schwelle, nichts, was auf einem
+ * langsamen Gerät anders ausginge.
+ *
+ * Ein zweiter Klick auf denselben Titel klappt wieder zu.
+ *
+ * Mit der Tastatur geht es gleichwertig: F10 hinein, Pfeiltasten, Return
+ * wählt, Esc bricht ab.
  */
 #ifndef PDA_UI_MENU_H
 #define PDA_UI_MENU_H

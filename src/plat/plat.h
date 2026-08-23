@@ -5,7 +5,7 @@
  * von einem Betriebssystem.
  *
  * Es gibt drei Umsetzungen: plat_sdl3 für den Arbeitsplatz, plat_esp32 für das
- * Gerät und plat_headless für die Tests. Die kopfüber-Variante ist keine
+ * Gerät und plat_headless für die Tests. Die Headless-Variante ist keine
  * Notlösung, sondern der Grund, warum sich fast alles ohne Bildschirm prüfen
  * lässt.
  */

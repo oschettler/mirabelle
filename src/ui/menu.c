@@ -22,6 +22,7 @@ struct menubar {
     void           *enabled_user;
 
     bool open;         /* ist überhaupt ein Menü aufgeklappt */
+    int  press_title;  /* Titel, auf dem die Maustaste gedrückt wurde, sonst -1 */
     int  open_index;   /* welches, Index in menus */
     int  highlight;    /* Index des hervorgehobenen Eintrags, -1 = keiner */
 };
@@ -192,8 +193,9 @@ menubar *menubar_create(const menu *menus, int count, const catalog *cat,
     mb->cat        = cat;
     mb->km         = km;
     mb->th          = *th;
-    mb->open       = false;
-    mb->open_index = 0;
+    mb->open        = false;
+    mb->open_index  = 0;
+    mb->press_title = -1;
     mb->highlight  = -1;
 
     return mb;
@@ -318,12 +320,31 @@ bool menubar_event(menubar *mb, const event *e, int screen_w, const char **actio
     case EV_MOUSE_DOWN: {
         int ti = hit_title(mb, e->x, e->y);
         if (ti >= 0) {
-            mb->open       = true;
-            mb->open_index = ti;
-            mb->highlight  = -1;
+            /* Auf denselben Titel noch einmal: zuklappen. Sonst wäre ein
+             * offengehaltenes Menü nur über einen Klick daneben loszuwerden. */
+            if (mb->open && mb->open_index == ti) {
+                mb->open        = false;
+                mb->highlight   = -1;
+                mb->press_title = -1;
+                return true;
+            }
+            mb->open        = true;
+            mb->open_index  = ti;
+            mb->highlight   = -1;
+            mb->press_title = ti;
             return true;
         }
+        mb->press_title = -1;
+
         if (mb->open) {
+            /* Im aufgeklappten Menü gedrückt: das ist der Beginn einer
+             * Auswahl, nicht das Zuklappen. Ausgelöst wird beim Loslassen. */
+            int ii = hit_item(mb, e->x, e->y);
+            if (ii >= 0) {
+                const menu_item *it = &mb->menus[mb->open_index].items[ii];
+                mb->highlight = item_is_selectable(mb, it) ? ii : -1;
+                return true;
+            }
             mb->open      = false;
             mb->highlight = -1;
             return true;
@@ -350,7 +371,21 @@ bool menubar_event(menubar *mb, const event *e, int screen_w, const char **actio
     }
 
     case EV_MOUSE_UP: {
+        int press = mb->press_title;
+        mb->press_title = -1;
+
         if (!mb->open) return in_bar(mb, screen_w, e->x, e->y);
+
+        /* Kurzer Klick auf den Titel: das Menü bleibt offen, und der Nutzer
+         * kann in Ruhe hineinfahren. Nur wer aus dem Titel heraus in das Menü
+         * gezogen hat, löst beim Loslassen aus - das ist die alte
+         * System-1-Geste, und beide sollen nebeneinander funktionieren.
+         *
+         * Unterschieden wird an der Stelle, nicht an der Zeit: wurde auf einem
+         * Titel gedrückt und auf demselben Titel wieder losgelassen, ist der
+         * Zeiger nie im Menü gewesen. */
+        if (press >= 0 && hit_title(mb, e->x, e->y) == press)
+            return true;
 
         const menu_item *it = current_item(mb);
         if (it) *action = it->action;

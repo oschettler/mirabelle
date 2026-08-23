@@ -38,7 +38,7 @@ Textformat für Zeichensätze, Übersetzer nach C, Glyphentabelle, `utf8_next` u
 `plat.h`, `plat_sdl3.c`, `plat_headless.c`. Bild mit 800 × 480 anzeigen,
 wahlweise ganzzahlig vergrößert (2fach ergibt 1600 × 960 auf dem Monitor).
 *Lehrstoff:* Dreizehn Funktionen als einzige Naht zur Außenwelt, warum die
-kopfüber-Variante zuerst entsteht, und warum die Vergrößerung ausschließlich in
+Headless-Variante zuerst entsteht, und warum die Vergrößerung ausschließlich in
 der Anzeige passiert: die logische Auflösung ist auf beiden Zielen dieselbe (D-9),
 sonst gälten deine Sollbilder nur für eine Seite.
 
@@ -103,7 +103,7 @@ verletzen.
 ## Teil VI — Härten und portieren (M14 bis M17)
 
 **M14 · Aufgezeichnete Bedienabläufe**
-Das `.ui`-Skriptformat, Aufnahme aus der laufenden Anwendung, Wiedergabe kopfüber.
+Das `.ui`-Skriptformat, Aufnahme aus der laufenden Anwendung, Wiedergabe headless.
 *Lehrstoff:* Fehlerberichte werden zu Testdateien. Ab hier wächst die Abdeckung
 von selbst — und du brauchst das Werkzeug in M15.
 
