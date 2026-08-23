@@ -107,6 +107,75 @@ TEST(font_covers_required_set)
     CHECK_EQ(missing, 0);
 }
 
+
+/* --- Abgeleitete Glyphen -------------------------------------------------- */
+
+static int glyph_pixel(const font *f, const glyph *g, int x, int y)
+{
+    const uint8_t *row = f->bits + g->offset + (size_t)y * g->stride;
+    return (row[x / 8] >> (7 - (x & 7))) & 1;
+}
+
+/* Jedes Pixel des Grundbuchstabens muss auch im abgeleiteten Zeichen gesetzt
+ * sein. Obermenge statt Gleichheit, weil ø und Ø einen Durchstrich zufügen. */
+TEST(derived_glyphs_contain_their_base)
+{
+    char path[512];
+    snprintf(path, sizeof path, "%s/fonts/derived.map", PDA_DATA_DIR);
+
+    FILE *fp = fopen(path, "rb");
+    REQUIRE(fp != NULL);
+
+    int pairs = 0;
+    char line[512];
+
+    while (fgets(line, sizeof line, fp)) {
+        const char *s = line;
+        while (*s == ' ' || *s == '\t') s++;
+        if (*s == '#' || *s == '\n' || *s == '\r' || *s == '\0') continue;
+
+        const char *end;
+        uint32_t dcp = parse_codepoint(s, &end);
+        if (dcp == 0) continue;
+        while (*end == ' ' || *end == '\t') end++;
+        uint32_t bcp = parse_codepoint(end, &end);
+        if (bcp == 0) continue;
+
+        const glyph *d = font_find(&system12, dcp);
+        const glyph *b = font_find(&system12, bcp);
+        if (!d || !b || d->codepoint != dcp || b->codepoint != bcp) {
+            printf("  U+%04X oder U+%04X fehlt im Zeichensatz\n", dcp, bcp);
+            CHECK(false);
+            continue;
+        }
+
+        pairs++;
+
+        if (d->width != b->width) {
+            printf("  U+%04X ist %d breit, Grundbuchstabe U+%04X aber %d\n",
+                   dcp, d->width, bcp, b->width);
+            CHECK(false);
+            continue;
+        }
+
+        for (int y = 0; y < system12.size; y++) {
+            for (int x = 0; x < b->width; x++) {
+                if (glyph_pixel(&system12, b, x, y) &&
+                    !glyph_pixel(&system12, d, x, y)) {
+                    printf("  U+%04X fehlt ein Pixel des Grundbuchstabens "
+                           "U+%04X bei x %d, y %d\n", dcp, bcp, x, y);
+                    CHECK(false);
+                    y = system12.size;      /* eine Meldung je Paar genügt */
+                    break;
+                }
+            }
+        }
+    }
+
+    fclose(fp);
+    CHECK(pairs >= 20);
+}
+
 /* --- Glyphensuche -------------------------------------------------------- */
 
 TEST(font_find_hits_first_last_and_middle)
@@ -268,6 +337,7 @@ TEST(golden_specimen)
 int main(void)
 {
     RUN(font_covers_required_set);
+    RUN(derived_glyphs_contain_their_base);
     RUN(font_find_hits_first_last_and_middle);
     RUN(font_find_falls_back_to_replacement);
     RUN(font_glyphs_are_sorted);
