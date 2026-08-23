@@ -13,6 +13,7 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 
 add_library(pda_core
     src/core/utf8.c
+    src/core/keymap.c
 )
 target_include_directories(pda_core PUBLIC src)
 
@@ -52,11 +53,20 @@ if(TARGET PkgConfig::SDL3)
     )
     target_link_libraries(pda_plat_sdl3 PUBLIC pda_gfx PRIVATE PkgConfig::SDL3)
 
-    add_executable(pda src/main.c src/demo.c)
-    target_link_libraries(pda PRIVATE pda_plat_sdl3 pda_fonts)
+    add_executable(pda src/main.c)
+    target_compile_definitions(pda
+        PRIVATE PDA_KEYMAP_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/keys/default.keys")
+    target_link_libraries(pda PRIVATE pda_demo pda_plat_sdl3 pda_fonts)
 else()
     message(STATUS "SDL3 nicht gefunden - das Programm wird nicht gebaut, Tests laufen trotzdem")
 endif()
+
+# --- Die Vorführung ----------------------------------------------------------
+# Getrennt von main.c, damit sie ohne SDL und ohne Bildschirm geprüft werden kann.
+
+add_library(pda_demo src/demo.c)
+target_link_libraries(pda_demo PUBLIC pda_gfx pda_core)
+target_include_directories(pda_demo PUBLIC src)
 
 # --- Werkzeuge ---------------------------------------------------------------
 # fontc übersetzt .fnt-Zeichensätze nach C. Dieselbe Quelle wird zweimal
@@ -94,7 +104,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo)
 
 foreach(name IN LISTS PDA_TESTS)
     add_executable(test_${name} tests/unit/test_${name}.c)
@@ -103,6 +113,13 @@ foreach(name IN LISTS PDA_TESTS)
 endforeach()
 
 target_link_libraries(test_fontc PRIVATE pda_fontc)
+
+target_link_libraries(test_demo PRIVATE pda_demo pda_fonts)
+target_compile_definitions(test_demo
+    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
+target_compile_definitions(test_keymap
+    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 target_link_libraries(test_expand PRIVATE pda_plat_headless)
 target_link_libraries(test_plat   PRIVATE pda_plat_headless)

@@ -1,4 +1,4 @@
-/* Die Vorführung aus M4.
+/* Die Vorführung aus M4 und M5.
  *
  * Sie ist vom Hauptprogramm getrennt, damit sie ohne Bildschirm geprüft werden
  * kann: Zustand, Ereignisverarbeitung und Zeichnen sind reine Funktionen, die
@@ -10,15 +10,20 @@
 
 #include <stdbool.h>
 
+#include "core/keymap.h"
 #include "gfx/draw.h"
 #include "plat/plat.h"
 
 typedef struct {
-    char typed[256];
-    bool running;
+    const keymap *km;
+    char          typed[256];
+    char          last_action[64];
+    int           click_x, click_y, click_count;
+    bool          running;
 } demo_state;
 
-void demo_init(demo_state *st);
+/* km darf NULL sein; dann bleiben Kürzel wirkungslos. */
+void demo_init(demo_state *st, const keymap *km);
 void demo_event(demo_state *st, const event *e);
 void demo_draw(const demo_state *st, gc *g, int w, int h);
 

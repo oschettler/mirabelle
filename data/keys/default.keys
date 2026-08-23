@@ -1,0 +1,54 @@
+# Tastenbelegung.
+#
+# Format:  <aktion>  <kürzel>  <bereich>
+#
+# Modifikatoren: Cmd, Ctrl, Shift, Alt, mit + verbunden und dem Tastennamen
+# vorangestellt. Cmd ist auf dem Mac die Befehlstaste, sonst gleichbedeutend
+# mit Strg - so lässt sich ein Kürzel überall gleich schreiben.
+#
+# Tastennamen: einzelne Zeichen wie A oder 1, sonst Tab, Return, Esc, Space,
+# Backspace, Delete, Up, Down, Left, Right, Home, End, PageUp, PageDown,
+# F1 bis F12.
+#
+# Bereiche: global gilt überall. Sonst wird erst im Bereich des gerade
+# fokussierten Bedienelements gesucht und danach global. Deshalb darf Return
+# in einer Liste etwas anderes tun als in einem Formular.
+#
+# Die Menüs zeigen die Kürzel aus genau dieser Datei an. Wer hier etwas ändert,
+# ändert damit auch, was im Menü steht.
+
+# --- Überall ----------------------------------------------------------------
+app.quit              Cmd+Q          global
+edit.undo             Cmd+Z          global
+edit.redo             Cmd+Shift+Z    global
+edit.cut              Cmd+X          global
+edit.copy             Cmd+C          global
+edit.paste            Cmd+V          global
+menu.enter            F10            global
+app.tasks             Cmd+1          global
+app.calendar          Cmd+2          global
+app.contacts          Cmd+3          global
+app.notes             Cmd+4          global
+
+# --- In einer Anwendung -----------------------------------------------------
+record.new            Cmd+N          app
+record.open           Cmd+O          app
+record.save           Cmd+S          app
+record.delete         Cmd+Backspace  app
+window.close          Cmd+W          app
+search.open           Cmd+F          app
+
+# --- In einer Liste ---------------------------------------------------------
+list.next             Down           list
+list.prev             Up             list
+list.first            Home           list
+list.last             End            list
+list.page.down        PageDown       list
+list.page.up          PageUp         list
+list.open             Return         list
+
+# --- In einem Formular ------------------------------------------------------
+field.next            Tab            form
+field.prev            Shift+Tab      form
+form.accept           Return         form
+form.cancel           Esc            form

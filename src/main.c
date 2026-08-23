@@ -5,8 +5,10 @@
  * prüfbar; hier bleibt nur, was ohne echtes Fenster keinen Sinn ergibt.
  */
 
+#include <stdio.h>
 #include <string.h>
 
+#include "core/keymap.h"
 #include "demo.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
@@ -39,14 +41,19 @@ int main(int argc, char **argv)
     gc g;
     gc_init(&g, &fb);
 
+    char    err[512] = "";
+    keymap *km = keymap_load(PDA_KEYMAP_PATH, err, sizeof err);
+    if (!km) fprintf(stderr, "Tastenbelegung: %s\n", err);
+
     demo_state st;
-    demo_init(&st);
+    demo_init(&st, km);
 
     if (shot) {
         demo_draw(&st, &g, w, h);
         plat_present(&fb);
         bool ok = pbm_write_p4(shot, &fb);
         bitmap_free(&fb);
+        keymap_free(km);
         plat_shutdown();
         return ok ? 0 : 1;
     }
@@ -61,6 +68,7 @@ int main(int argc, char **argv)
     }
 
     bitmap_free(&fb);
+    keymap_free(km);
     plat_shutdown();
     return 0;
 }

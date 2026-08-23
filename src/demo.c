@@ -1,4 +1,4 @@
-/* Die Vorführung aus M4: Zustand, Ereignisse, Zeichnen.
+/* Die Vorführung aus M4 und M5: Zustand, Ereignisse, Zeichnen.
  *
  * Ab M6 übernimmt die Fensterverwaltung, was hier noch von Hand gezeichnet
  * wird. Bis dahin zeigt dieses Programm, dass die Schichten zusammenspielen:
@@ -9,6 +9,7 @@
  * gefolgt von a ein á, sieht sofort, ob Entscheidung D-2 trägt.
  */
 
+#include <stdio.h>
 #include <string.h>
 
 #include "core/utf8.h"
@@ -76,9 +77,33 @@ void demo_draw(const demo_state *st, gc *g, int w, int h)
     int y = win.y + TITLEBAR_H + 10 + system12.ascent;
 
     gfx_text(g, &system12, win.x + 12, y, "Grüße aus Köln, Fräulein Müller!");
-    y += 18;
-    gfx_text(g, &system12, win.x + 12, y, "Tippen Sie etwas. Esc beendet.");
-    y += 22;
+    y += 16;
+
+    /* Die Kürzel kommen aus derselben Datei wie die Auswertung. Was hier
+     * steht, kann deshalb gar nicht von dem abweichen, was die Taste tut. */
+    static const char *shown[] = { "record.new", "record.save", "search.open",
+                                   "edit.undo", "app.quit" };
+    for (size_t i = 0; i < sizeof shown / sizeof shown[0]; i++) {
+        char line[96], keys[32];
+        if (st->km && keymap_describe(st->km, shown[i], keys, sizeof keys))
+            snprintf(line, sizeof line, "%-14s %s", shown[i], keys);
+        else
+            snprintf(line, sizeof line, "%-14s -", shown[i]);
+        gfx_text(g, &system12, win.x + 12, y, line);
+        y += 13;
+    }
+    y += 6;
+
+    char info[96];
+    snprintf(info, sizeof info, "Aktion: %s",
+             st->last_action[0] ? st->last_action : "(noch keine)");
+    gfx_text(g, &system12, win.x + 12, y, info);
+    y += 13;
+
+    snprintf(info, sizeof info, "Klick: %d, %d  (%dx)",
+             st->click_x, st->click_y, st->click_count);
+    gfx_text(g, &system12, win.x + 12, y, info);
+    y += 20;
 
     gfx_hline(g, win.x + 12, y - system12.ascent - 4, win.w - 24);
     gfx_text(g, &system12, win.x + 12, y, typed);
@@ -109,10 +134,11 @@ static void backspace_codepoint(char *buf)
 }
 
 
-void demo_init(demo_state *st)
+void demo_init(demo_state *st, const keymap *km)
 {
-    st->typed[0] = '\0';
-    st->running  = true;
+    memset(st, 0, sizeof *st);
+    st->km      = km;
+    st->running = true;
 }
 
 void demo_event(demo_state *st, const event *e)
@@ -121,13 +147,34 @@ void demo_event(demo_state *st, const event *e)
     case EV_QUIT:
         st->running = false;
         break;
-    case EV_KEY_DOWN:
+
+    case EV_MOUSE_DOWN:
+        st->click_x     = e->x;
+        st->click_y     = e->y;
+        st->click_count = e->clicks;
+        break;
+
+    case EV_KEY_DOWN: {
+        /* Erst die Belegung fragen. Nur was dort nicht steht, wird hier von
+         * Hand behandelt - und das ist bewusst wenig. */
+        const char *action = st->km
+            ? keymap_lookup(st->km, e->key, e->mods, "app") : NULL;
+
+        if (action) {
+            snprintf(st->last_action, sizeof st->last_action, "%s", action);
+            if (strcmp(action, "app.quit") == 0) st->running = false;
+            break;
+        }
+
         if (e->key == KEY_ESCAPE)         st->running = false;
         else if (e->key == KEY_BACKSPACE) backspace_codepoint(st->typed);
         break;
+    }
+
     case EV_TEXT:
         append_text(st->typed, sizeof st->typed - 1, e->text);
         break;
+
     default:
         break;
     }
