@@ -1,0 +1,161 @@
+<svg version="1.1" baseProfile="full" width="578.5" height="378.0" viewBox="0 0 578.5116279069767 378" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+	<desc >#direction: down
+	#spacing: 22
+	#padding: 8
+	#font: Helvetica
+	#fontSize: 12
+	#lineWidth: 1
+	#edges: hard
+	#stroke: #000000
+	#fill: #ffffff
+	
+	[Gemtext-Datei|.gmi, Front Matter + Text]
+	[index.db|löschbar, jederzeit neu]
+	[Abfrage|store.find, store.search]
+	[Schema|task.lua]
+	[Generischer Browser|Liste, Formular]
+	[Gemtext-Darsteller|Notiz oder Spartan-Seite]
+	
+	[Gemtext-Datei] -- Scan --&gt; [index.db]
+	[index.db] -&gt; [Abfrage]
+	[Abfrage] -&gt; [Generischer Browser]
+	[Schema] -&gt; [Generischer Browser]
+	[Generischer Browser] -- schreibt --&gt; [Gemtext-Datei]
+	[Gemtext-Datei] -&gt; [Gemtext-Darsteller]
+	</desc>
+	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="normal" font-style="normal">
+		<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="round" stroke="#000000">
+			<g stroke="transparent" fill="transparent">
+				<rect x="0.0" y="0.0" height="378.0" width="578.5" stroke="none"></rect>
+			</g>
+			<g transform="translate(8, 8)" fill="#000000">
+				<g transform="translate(20, 20)" fill="#000000" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal">
+					<text x="26.5" y="78.0" stroke="none">Scan --&gt;</text>
+					<g stroke-dasharray="4 4">
+						<path d="M225.5 51.7 L101.5 75.0 L101.5 86.0" fill="none"></path>
+					</g>
+					<path d="M101.5 150.0 L101.5 161.0 L101.5 168.3" fill="none"></path>
+					<path d="M98.6 164.7 L101.5 168.3 L104.4 164.7 L101.5 172.0 Z"></path>
+					<path d="M101.5 236.0 L101.5 247.0 L234.4 272.1" fill="none"></path>
+					<path d="M230.2 274.3 L234.4 272.1 L231.3 268.6 L238.0 272.8 Z"></path>
+					<path d="M329.0 236.0 L329.0 247.0 L329.0 254.3" fill="none"></path>
+					<path d="M326.1 250.7 L329.0 254.3 L331.9 250.7 L329.0 258.0 Z"></path>
+					<text x="432.5" y="84.0" stroke="none">schreibt --&gt;</text>
+					<g stroke-dasharray="4 4">
+						<path d="M420.0 259.4 L457.0 247.0 L457.0 204.0 L457.0 161.0 L457.0 118.0 L457.0 75.0 L424.5 64.0" fill="none"></path>
+					</g>
+					<path d="M330.0 64.0 L330.0 75.0 L330.0 82.3" fill="none"></path>
+					<path d="M327.1 78.7 L330.0 82.3 L332.9 78.7 L330.0 86.0 Z"></path>
+					<g data-name="Gemtext-Datei">
+						<g fill="#ffffff" stroke="#000000" data-name="Gemtext-Datei">
+							<rect x="225.5" y="0.0" height="64.0" width="209.0" data-name="Gemtext-Datei"></rect>
+							<path d="M225.5 32.0 L434.5 32.0" fill="none" data-name="Gemtext-Datei"></path>
+						</g>
+						<g transform="translate(225.5, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Gemtext-Datei" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#000000" text-align="center" data-name="Gemtext-Datei" data-compartment="0">
+								<text x="96.5" y="14.1" stroke="none" text-anchor="middle" data-name="Gemtext-Datei" data-compartment="0">Gemtext-Datei</text>
+								
+							</g>
+						</g>
+						<g transform="translate(225.5, 32)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Gemtext-Datei" data-compartment="1">
+							<g transform="translate(8, 8)" fill="#000000" text-align="left" data-name="Gemtext-Datei" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Gemtext-Datei" data-compartment="1">.gmi, Front Matter + Text</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="index.db">
+						<g fill="#ffffff" stroke="#000000" data-name="index.db">
+							<rect x="0.0" y="86.0" height="64.0" width="203.0" data-name="index.db"></rect>
+							<path d="M0.0 118.0 L203.0 118.0" fill="none" data-name="index.db"></path>
+						</g>
+						<g transform="translate(0, 86)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="index.db" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#000000" text-align="center" data-name="index.db" data-compartment="0">
+								<text x="93.5" y="14.1" stroke="none" text-anchor="middle" data-name="index.db" data-compartment="0">index.db</text>
+								
+							</g>
+						</g>
+						<g transform="translate(0, 118)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="index.db" data-compartment="1">
+							<g transform="translate(8, 8)" fill="#000000" text-align="left" data-name="index.db" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="index.db" data-compartment="1">löschbar, jederzeit neu</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Abfrage">
+						<g fill="#ffffff" stroke="#000000" data-name="Abfrage">
+							<rect x="2.0" y="172.0" height="64.0" width="199.0" data-name="Abfrage"></rect>
+							<path d="M2.0 204.0 L201.0 204.0" fill="none" data-name="Abfrage"></path>
+						</g>
+						<g transform="translate(2, 172)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Abfrage" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#000000" text-align="center" data-name="Abfrage" data-compartment="0">
+								<text x="91.5" y="14.1" stroke="none" text-anchor="middle" data-name="Abfrage" data-compartment="0">Abfrage</text>
+								
+							</g>
+						</g>
+						<g transform="translate(2, 204)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Abfrage" data-compartment="1">
+							<g transform="translate(8, 8)" fill="#000000" text-align="left" data-name="Abfrage" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Abfrage" data-compartment="1">store.find, store.search</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Schema">
+						<g fill="#ffffff" stroke="#000000" data-name="Schema">
+							<rect x="289.0" y="172.0" height="64.0" width="80.0" data-name="Schema"></rect>
+							<path d="M289.0 204.0 L369.0 204.0" fill="none" data-name="Schema"></path>
+						</g>
+						<g transform="translate(289, 172)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Schema" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#000000" text-align="center" data-name="Schema" data-compartment="0">
+								<text x="32.0" y="14.1" stroke="none" text-anchor="middle" data-name="Schema" data-compartment="0">Schema</text>
+								
+							</g>
+						</g>
+						<g transform="translate(289, 204)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Schema" data-compartment="1">
+							<g transform="translate(8, 8)" fill="#000000" text-align="left" data-name="Schema" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Schema" data-compartment="1">task.lua</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Generischer Browser">
+						<g fill="#ffffff" stroke="#000000" data-name="Generischer Browser">
+							<rect x="238.0" y="258.0" height="64.0" width="182.0" data-name="Generischer Browser"></rect>
+							<path d="M238.0 290.0 L420.0 290.0" fill="none" data-name="Generischer Browser"></path>
+						</g>
+						<g transform="translate(238, 258)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Generischer Browser" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#000000" text-align="center" data-name="Generischer Browser" data-compartment="0">
+								<text x="83.0" y="14.1" stroke="none" text-anchor="middle" data-name="Generischer Browser" data-compartment="0">Generischer Browser</text>
+								
+							</g>
+						</g>
+						<g transform="translate(238, 290)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Generischer Browser" data-compartment="1">
+							<g transform="translate(8, 8)" fill="#000000" text-align="left" data-name="Generischer Browser" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Generischer Browser" data-compartment="1">Liste, Formular</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Gemtext-Darsteller">
+						<g fill="#ffffff" stroke="#000000" data-name="Gemtext-Darsteller">
+							<rect x="225.0" y="86.0" height="64.0" width="210.0" data-name="Gemtext-Darsteller"></rect>
+							<path d="M225.0 118.0 L435.0 118.0" fill="none" data-name="Gemtext-Darsteller"></path>
+						</g>
+						<g transform="translate(225, 86)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Gemtext-Darsteller" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#000000" text-align="center" data-name="Gemtext-Darsteller" data-compartment="0">
+								<text x="97.0" y="14.1" stroke="none" text-anchor="middle" data-name="Gemtext-Darsteller" data-compartment="0">Gemtext-Darsteller</text>
+								
+							</g>
+						</g>
+						<g transform="translate(225, 118)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Gemtext-Darsteller" data-compartment="1">
+							<g transform="translate(8, 8)" fill="#000000" text-align="left" data-name="Gemtext-Darsteller" data-compartment="1">
+								<text x="0.0" y="14.1" stroke="none" data-name="Gemtext-Darsteller" data-compartment="1">Notiz oder Spartan-Seite</text>
+								
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+</svg>

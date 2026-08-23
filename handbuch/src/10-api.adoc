@@ -1,0 +1,585 @@
+== API-Referenz
+
+Dieses Kapitel ist zum Nachschlagen da, nicht zum Durchlesen. Es hat zwei
+Teile, und der Unterschied ist wichtig:
+
+**Teil A** beschreibt die C-Schnittstellen, die es *heute gibt*. Alles darin
+kannst du aufrufen, sobald du `make` ausgeführt hast.
+
+**Teil B** beschreibt die *geplante* Lua-API. Sie kommt in Schritt M13. Du
+kannst sie lesen, um zu verstehen, wohin das Projekt will — aufrufen kannst du
+sie noch nicht.
+
+Die Erklärungen stammen aus den Kommentaren in den Kopfdateien unter `src/`.
+Wenn dir etwas unklar bleibt, sieh dort nach: die Kopfdatei ist immer der
+verbindliche Text, dieses Kapitel nur eine freundlichere Fassung davon.
+
+// =========================================================================
+== Teil A: Die C-Schnittstellen
+
+=== core/utf8.h — Zeichen statt Bytes
+
+Ein Byte ist kein Zeichen. Diese fünf Funktionen sind der Grund, warum in
+diesem Projekt ein `ä` beim Löschen ganz verschwindet und nicht halb.
+
+[source,c]
+----
+uint32_t utf8_next(const char **p);
+----
+Liefert den Codepunkt an `*p` und rückt `*p` hinter ihn. Bei einer ungültigen
+Bytefolge kommt `U+FFFD` heraus, und `*p` rückt um **genau ein Byte** vor. Das
+ist keine Kleinigkeit: nur so terminiert eine Schleife über eine beschädigte
+Datei überhaupt.
+
+[source,c]
+----
+uint32_t utf8_prev(const char *start, const char **p);
+----
+Dasselbe rückwärts. `start` ist nötig, weil man UTF-8 nicht blind rückwärts
+lesen kann — man muss wissen, wo die Zeichenkette anfängt.
+
+[source,c]
+----
+size_t utf8_count(const char *s);
+int    utf8_encode(uint32_t codepoint, char out[4]);
+int    utf8_valid(const char *s);
+----
+`utf8_count` zählt Zeichen, nicht Bytes. `utf8_encode` schreibt einen Codepunkt
+als UTF-8 und liefert die Zahl der Bytes, oder 0 bei Surrogaten und Werten über
+`U+10FFFF`. `utf8_valid` prüft eine ganze Zeichenkette.
+
+=== core/keymap.h — Tastenbelegung aus einer Datei
+
+[source,c]
+----
+keymap *keymap_load(const char *path, char *err, size_t err_size);
+void    keymap_free(keymap *km);
+int     keymap_count(const keymap *km);
+----
+Lädt `data/keys/default.keys`. Bei einem Fehler `NULL` und eine Meldung der
+Form `datei:zeile: text` in `err`. Doppelbelegungen werden abgewiesen — die
+Meldung nennt beide Zeilen.
+
+[source,c]
+----
+const char *keymap_lookup(const keymap *km, int key, uint8_t mods,
+                          const char *scope);
+----
+Sucht erst im angegebenen Bereich, dann in `"global"`. `scope` darf `NULL`
+sein, dann wird nur global gesucht. Deshalb kann kbd:[Return] in einer Liste
+etwas anderes tun als in einem Formular, ohne dass irgendwo eine
+Fallunterscheidung im Code steht.
+
+[source,c]
+----
+bool keymap_describe(const keymap *km, const char *action,
+                     char *out, size_t out_size);
+----
+Der umgekehrte Weg: das Kürzel zu einer Aktion, etwa `"Cmd+N"`. Genau das
+benutzen die Menüs für ihre Anzeige. Deshalb kann ein Menü gar nicht behaupten,
+ein Befehl liege auf einer Taste, auf der er nicht liegt.
+
+[source,c]
+----
+bool keymap_parse_shortcut(const char *text, int *key, uint8_t *mods);
+----
+Zerlegt `"Cmd+Shift+Z"` in Taste und Modifikatoren. Groß- und Kleinschreibung
+ist egal.
+
+=== core/i18n.h — Der Textkatalog
+
+Kein sichtbarer Text steht im Quelltext. Ein Wächter im Testlauf setzt das
+durch.
+
+[source,c]
+----
+catalog *i18n_load(const char *path, char *err, size_t err_size);
+void     i18n_free(catalog *c);
+int      i18n_count(const catalog *c);
+bool     i18n_has(const catalog *c, const char *key);
+----
+
+[source,c]
+----
+const char *T(const catalog *c, const char *key);
+----
+Der Text zum Schlüssel. Fehlt er, kommt der Schlüssel selbst zurück — sichtbar
+falsch ist besser als leer. `c` darf `NULL` sein.
+
+[source,c]
+----
+bool Tf(const catalog *c, const char *key, char *out, size_t out_size,
+        const char *const *args, int argc);
+----
+Wie `T`, setzt aber `{0}`, `{1}` … aus `args` ein. Die Argumente sind bewusst
+ein Feld und keine variable Argumentliste: so lässt sich ihre Zahl prüfen, und
+niemand kann Formatzeichen aus einer Datendatei einschleusen.
+
+[source,c]
+----
+bool Tn(const catalog *c, const char *key, int n, char *out, size_t out_size);
+----
+Plural. Sucht `<key>.one` bei `n == 1`, sonst `<key>.other`, und setzt `n` für
+`{0}` ein.
+
+// -------------------------------------------------------------------------
+=== gfx/bitmap.h — Ein Bit je Pixel
+
+[source,c]
+----
+typedef struct {
+    int      w, h;
+    int      stride;   /* Bytes je Zeile: (w + 7) / 8 */
+    uint8_t *bits;     /* 1 = schwarz, MSB links */
+    bool     owned;
+} bitmap;
+----
+
+[source,c]
+----
+bool   bitmap_init(bitmap *bm, int w, int h);
+void   bitmap_free(bitmap *bm);
+size_t bitmap_bytes(const bitmap *bm);
+void   bitmap_clear(bitmap *bm, int value);
+----
+`bitmap_init` legt eine weiße Bitmap an. `bitmap_clear(bm, 1)` füllt schwarz —
+und maskiert dabei die Füllbits am Zeilenende wieder auf 0.
+
+[NOTE]
+.Die Zusage über die Füllbits
+====
+Die ungenutzten Bits am Ende jeder Zeile sind **immer 0**. Nur deshalb dürfen
+`bitmap_equal` und das Schreiben von P4-Dateien direkt über die Bytes gehen
+statt Pixel für Pixel. Eine kleine Zusage, die viel Code spart — und die man
+beim Schreiben neuer Funktionen einhalten muss.
+====
+
+[source,c]
+----
+int  bitmap_get(const bitmap *bm, int x, int y);
+void bitmap_set(bitmap *bm, int x, int y, int value);
+bool bitmap_equal(const bitmap *a, const bitmap *b);
+bool bitmap_copy_rect(bitmap *dst, const bitmap *src, rect r);
+----
+Zugriffe außerhalb der Bitmap sind erlaubt und harmlos: `get` liefert 0, `set`
+tut nichts. `bitmap_copy_rect` legt `dst` als Kopie eines Ausschnitts an; was
+außerhalb von `src` liegt, wird weiß.
+
+=== gfx/draw.h — Zeichnen
+
+Der Zeichenzustand wird explizit übergeben, es gibt keine versteckten globalen
+Einstellungen:
+
+[source,c]
+----
+typedef struct {
+    bitmap  *dst;
+    rect     clip;
+    point    origin;
+    pattern  pat;
+    gfx_mode xfer;
+} gc;
+
+void gc_init(gc *g, bitmap *dst);
+void gc_clip(gc *g, rect r);
+void gc_clip_intersect(gc *g, rect r);
+----
+
+Rechtecke:
+
+[source,c]
+----
+rect rect_make(int x, int y, int w, int h);
+rect rect_intersect(rect a, rect b);
+bool rect_empty(rect r);
+bool rect_contains(rect r, int x, int y);
+----
+
+Die Übertragungsmodi ersetzen den Alphakanal, den es bei einem Bit je Pixel
+nicht geben kann:
+
+[source,c]
+----
+typedef enum {
+    GFX_COPY,      /* ziel = quelle */
+    GFX_OR,        /* ziel = ziel | quelle */
+    GFX_XOR,       /* ziel = ziel ^ quelle */
+    GFX_CLEAR,     /* ziel = ziel & ~quelle */
+    GFX_NOTCOPY    /* ziel = ~quelle */
+} gfx_mode;
+----
+
+`GFX_XOR` ist der interessanteste: derselbe Aufruf zeichnet und löscht wieder.
+Darauf beruhen der Fensterumriss beim Ziehen und die blinkende Schreibmarke.
+
+Die Primitiven:
+
+[source,c]
+----
+void gfx_clear(gc *g);
+void gfx_pset(gc *g, int x, int y);
+void gfx_hline(gc *g, int x, int y, int w);
+void gfx_vline(gc *g, int x, int y, int h);
+void gfx_line(gc *g, int x0, int y0, int x1, int y1);
+void gfx_fill_rect(gc *g, rect r);
+void gfx_frame_rect(gc *g, rect r);
+void gfx_fill_oval(gc *g, rect r);
+void gfx_frame_oval(gc *g, rect r);
+void gfx_invert_rect(gc *g, rect r);
+void gfx_blit(gc *g, const bitmap *src, int x, int y);
+----
+
+`gfx_invert_rect` ist der einzige Ausreißer: er ignoriert `pat` und `xfer` und
+kehrt einfach jedes Pixel um. Damit werden Menüeinträge und Knöpfe
+hervorgehoben.
+
+=== gfx/pattern.h — Muster statt Farbe
+
+[source,c]
+----
+extern const pattern PAT_BLACK;    /* voll */
+extern const pattern PAT_WHITE;    /* leer */
+extern const pattern PAT_GRAY50;   /* Schachbrett, der Schreibtisch von System 1 */
+extern const pattern PAT_GRAY25;
+extern const pattern PAT_GRAY75;
+extern const pattern PAT_HATCH;    /* Diagonalschraffur */
+
+pattern pattern_make(uint8_t r0, ..., uint8_t r7);
+----
+
+Ein Muster ist acht mal acht Bit, also acht Bytes. Es haftet am *Zielbild*,
+nicht am gezeichneten Objekt: verschiebt man ein Rechteck, wandert das Muster
+nicht mit. Deshalb sieht ein gerasterter Bereich immer gleich aus, egal wie er
+entstanden ist.
+
+=== gfx/font.h und gfx/text.h — Schrift
+
+[source,c]
+----
+const glyph *font_find(const font *f, uint32_t codepoint);
+----
+Binäre Suche in der sortierten Glyphentabelle. Fehlt ein Zeichen, kommt das
+Ersatzzeichen `U+FFFD` zurück — nie `NULL` und nie stillschweigend nichts.
+
+[source,c]
+----
+int gfx_text(gc *g, const font *f, int x, int y, const char *s);
+int text_width(const font *f, const char *s);
+----
+`y` ist die **Grundlinie**, nicht die Oberkante. Beide liefern die Breite in
+Pixeln, und sie müssen für dieselbe Zeichenkette dasselbe liefern — dafür gibt
+es einen Test.
+
+=== gfx/pbm.h — Bilder als Datei
+
+[source,c]
+----
+bool pbm_write_p1(const char *path, const bitmap *bm);   /* Text */
+bool pbm_write_p4(const char *path, const bitmap *bm);   /* binär */
+bool pbm_read(const char *path, bitmap *out);            /* erkennt beides */
+----
+
+P1 ist Text, im Versionsverlauf lesbar, aber groß. P4 ist binär und entspricht
+genau unserem Speicherformat. Die Größenregel steht in Kapitel 12.
+
+// -------------------------------------------------------------------------
+=== ui/theme.h — Maße aus einer Datei
+
+[source,c]
+----
+bool theme_load(theme *th, const char *path, char *err, size_t err_size);
+void theme_defaults(theme *th);
+----
+
+Die `theme`-Struktur enthält nur Zahlen: `titlebar_h`, `border`, `close_box`,
+`grow_box`, `box_margin`, `stripe_gap`, `title_pad`, `hit_slop`, `min_w`,
+`min_h`, dazu die Menü- und Dialogmaße. Keine dieser Zahlen steht im
+Zeichencode.
+
+=== ui/window.h — Ein Fenster
+
+[source,c]
+----
+enum {
+    WIN_CLOSABLE, WIN_MOVABLE, WIN_RESIZABLE, WIN_MODAL,
+    WIN_PLAIN  = WIN_CLOSABLE | WIN_MOVABLE,
+    WIN_NORMAL = WIN_CLOSABLE | WIN_MOVABLE | WIN_RESIZABLE
+};
+
+typedef enum {
+    HIT_NONE, HIT_CONTENT, HIT_TITLEBAR, HIT_CLOSE_BOX, HIT_GROW_BOX
+} hit_part;
+----
+
+[source,c]
+----
+rect        window_frame(const window *w);
+const char *window_title(const window *w);
+unsigned    window_flags(const window *w);
+bool        window_is_active(const window *w);
+rect        window_content_rect(const window *w);
+void        window_gc(window *w, gc *g);
+----
+`window_gc` liefert ein Zeichenziel für den Inhalt, mit Ursprung bei (0,0) und
+Clipping auf die Inhaltsbitmap. Eine Anwendung kann dadurch gar nicht über ihr
+Fenster hinausmalen.
+
+[source,c]
+----
+typedef void (*window_close_fn)(window *w, void *user);
+void window_set_on_close(window *w, window_close_fn fn, void *user);
+----
+
+[IMPORTANT]
+.Diese Rückmeldung ist Pflicht
+====
+Die Fensterverwaltung schließt ein Fenster *selbst*, sobald der Nutzer das
+Schließfeld trifft. Wer einen Zeiger auf ein Fenster hält und das nicht
+mitbekommt, greift danach auf freigegebenen Speicher zu. Genau daran ist dieses
+Projekt einmal abgestürzt — die Geschichte steht in Kapitel 7.
+====
+
+=== ui/wm.h — Die Fensterverwaltung
+
+[source,c]
+----
+wm  *wm_create(const theme *th, int screen_w, int screen_h);
+void wm_destroy(wm *m);
+----
+Die Verwaltung legt eine **Kopie** des Themas an. Du musst es also nicht am
+Leben halten.
+
+[source,c]
+----
+window *wm_open(wm *m, rect frame, const char *title, unsigned flags);
+void    wm_close(wm *m, window *w);
+void    wm_draw(wm *m, gc *g);
+bool    wm_event(wm *m, const event *e);
+----
+`wm_event` liefert `true`, wenn die Verwaltung das Ereignis verbraucht hat.
+Ein Klick in den Inhalt eines *bereits aktiven* Fensters liefert `false` — den
+soll die Anwendung sehen.
+
+[source,c]
+----
+window      *wm_active(const wm *m);
+void         wm_activate(wm *m, window *w);
+int          wm_count(const wm *m);
+window      *wm_at_z(const wm *m, int index);   /* 0 = hinten */
+window      *wm_hit(const wm *m, int x, int y, hit_part *part);
+bool         wm_is_dragging(const wm *m);
+const theme *wm_theme(const wm *m);
+void         wm_screen_size(const wm *m, int *w, int *h);
+----
+
+=== ui/menu.h — Menüleiste
+
+[source,c]
+----
+typedef struct { const char *key; const char *action; } menu_item;
+typedef struct { const char *key; const menu_item *items; int count; } menu;
+----
+Ein Eintrag mit `key == NULL` ist eine Trennlinie. `action == NULL` heißt: kein
+Kürzel anzeigen.
+
+[source,c]
+----
+menubar *menubar_create(const menu *menus, int count, const catalog *cat,
+                        const keymap *km, const theme *th);
+void     menubar_free(menubar *mb);
+void     menubar_set_enabled_fn(menubar *mb, menu_enabled_fn fn, void *user);
+int      menubar_height(const menubar *mb);
+bool     menubar_is_open(const menubar *mb);
+void     menubar_draw(menubar *mb, gc *g, int screen_w);
+bool     menubar_event(menubar *mb, const event *e, int screen_w,
+                       const char **action);
+void     menubar_enter(menubar *mb);
+void     menubar_dismiss(menubar *mb);
+----
+`menubar_draw` muss **nach** allen Fenstern gerufen werden — die Leiste liegt
+immer oben.
+
+=== ui/dialog.h — Modale Dialoge
+
+[source,c]
+----
+dialog *dialog_open(wm *m, const catalog *cat, const char *body_key,
+                    const char *const *args, int argc,
+                    const char *const *button_keys, int button_count);
+void    dialog_close(dialog *d);
+int     dialog_result(const dialog *d);     /* DIALOG_OPEN, bis gewählt wurde */
+void    dialog_draw(dialog *d);
+bool    dialog_event(dialog *d, const event *e);
+window *dialog_window(const dialog *d);
+----
+Der **letzte** Knopf ist der Voreinstellungsknopf und bekommt den Fokus. Der
+**erste** ist immer der abbrechende — kbd:[Esc] liefert 0.
+
+// -------------------------------------------------------------------------
+=== plat/plat.h — Die dreizehn Funktionen
+
+Das ist die gesamte Schnittstelle zur Außenwelt.
+
+[source,c]
+----
+bool     plat_init(const plat_config *cfg);
+void     plat_shutdown(void);
+void     plat_display_size(int *w, int *h);
+void     plat_present(const bitmap *fb);
+bool     plat_poll(event *out);
+uint32_t plat_ticks_ms(void);
+void     plat_sleep_ms(uint32_t ms);
+
+plat_file *plat_open(const char *path, plat_mode mode);
+size_t     plat_read(plat_file *f, void *buf, size_t n);
+size_t     plat_write(plat_file *f, const void *buf, size_t n);
+void       plat_close(plat_file *f);
+bool       plat_list(const char *dir, plat_dirent *out, int cap, int *count);
+bool       plat_mkdir(const char *path);
+----
+
+Die Ereignisstruktur:
+
+[source,c]
+----
+typedef enum {
+    EV_NONE, EV_MOUSE_DOWN, EV_MOUSE_UP, EV_MOUSE_MOVE, EV_WHEEL,
+    EV_KEY_DOWN, EV_KEY_UP, EV_TEXT, EV_QUIT
+} event_kind;
+
+enum { MOD_SHIFT, MOD_CTRL, MOD_ALT, MOD_CMD };
+----
+
+[IMPORTANT]
+.Zeichen und Tasten sind zwei verschiedene Dinge
+====
+Getippter Text kommt **ausschließlich** aus `EV_TEXT` (`e.text`, UTF-8, ein
+Codepunkt). Tastenkürzel kommen aus `EV_KEY_DOWN` (`e.key`, `e.mods`).
+
+Rechne niemals ein Zeichen aus einem Tastencode aus. Sonst brechen QWERTZ,
+tote Tasten und AltGr. Das ist Entscheidung D-2, und sie ist der Grund, warum
+in diesem Programm ein `ä` funktioniert.
+====
+
+Tastencodes: druckbare Tasten tragen ihren Codepunkt (kleingeschrieben),
+Sondertasten liegen oberhalb von `KEY_SPECIAL` und können deshalb nie mit einem
+Zeichen verwechselt werden: `KEY_UP`, `KEY_DOWN`, `KEY_LEFT`, `KEY_RIGHT`,
+`KEY_HOME`, `KEY_END`, `KEY_PAGE_UP`, `KEY_PAGE_DOWN`, `KEY_DELETE`,
+`KEY_F1` bis `KEY_F12`. Dazu `KEY_BACKSPACE`, `KEY_TAB`, `KEY_RETURN`,
+`KEY_ESCAPE`, `KEY_SPACE` mit ihren ASCII-Werten.
+
+// =========================================================================
+== Teil B: Die geplante Lua-API
+
+[NOTE]
+.Geplant
+====
+Dieser Teil beschreibt Schritt M13. Gebaut sind zurzeit M1 bis M7. Die Namen
+können sich noch ändern: die Erfahrung aus den Schritten M8 bis M12 fließt
+hinein, und eine API, die man vor der ersten Anwendung festzurrt, ist meistens
+die falsche.
+====
+
+Die Namen sind an https://www.lexaloffle.com/[Picotron] angelehnt, eine
+Fantasie-Arbeitsstation von Lexaloffle. Dort heißen die Zeichenbefehle `cls`,
+`line`, `rect`, `print` — kurz, kleingeschrieben, ohne Namensraum. Das ist
+Absicht: wer eine kleine Anwendung schreibt, soll wenig tippen müssen.
+
+=== Zeichnen
+
+[source,lua]
+----
+cls([pat])                     -- Fläche löschen
+pset(x, y)
+line(x0, y0, x1, y1)
+rect(x, y, w, h)               -- Rahmen
+rectfill(x, y, w, h, [pat])    -- gefüllt
+oval(x, y, w, h)
+blit(src, dx, dy)
+print(s, x, y)                 -- y ist die Grundlinie
+clip(x, y, w, h)
+camera(x, y)                   -- Ursprung verschieben
+mode("xor")                    -- copy, or, xor, clear, notcopy
+pattern(p)
+font("system12")
+textwidth(s)
+----
+
+=== Eingabe
+
+[source,lua]
+----
+btn(b)      -- Knopf gedrückt
+btnp(b)     -- gerade gedrückt worden
+key(k)      -- Taste gedrückt
+keyp(k)
+mouse()     -- x, y, Knöpfe
+text()      -- getippter Text seit dem letzten Aufruf
+----
+
+=== Fenster und Anwendungen
+
+[source,lua]
+----
+window{ width=, height=, title=, resizable=, modal= }
+menu{ ... }
+dialog{ ... }
+alert(msg)
+confirm(msg)
+on(event, fn)       -- auf ein Ereignis hören
+send(target, msg)   -- einer anderen Anwendung etwas schicken
+quit()
+----
+
+`on` und `send` sind die Nachrichtenform aus Picotron. Dort hat jeder Prozess
+einen eigenen Lua-Zustand und redet nur über Nachrichten. Dieses Projekt
+übernimmt die *Form*, nicht die Isolation (Entscheidung D-4) — für ein
+Kursprojekt wäre die zu viel Maschinerie. Sollte sie je gebraucht werden, ist
+der Nachrichtenbus die richtige Stelle, sie nachzurüsten.
+
+=== Daten
+
+[source,lua]
+----
+store.find(type, filter, opts)
+store.get(id)
+store.put(rec)
+store.delete(id)
+store.search(text)
+----
+
+Abgefragt wird mit Datenstrukturen, nie mit SQL-Zeichenketten:
+
+[source,lua]
+----
+store.find("task", { done = false, due = { ["<="] = today() } },
+                   { sort = "due", limit = 50 })
+----
+
+SQL entsteht an genau einer Stelle im C-Code. Eine Anwendung kann dadurch weder
+Syntax noch Escaping falsch machen.
+
+=== System
+
+[source,lua]
+----
+t()             -- Sekunden seit dem Start
+time()
+date(fmt)
+T(key)          -- Text aus dem Katalog
+Tn(key, n)      -- mit Plural
+fetch(path)
+save(path, obj)
+----
+
+=== Zum Nachschlagen
+
+Wenn du wissen willst, was eine Funktion *wirklich* tut, ist die Kopfdatei die
+Wahrheit, nicht dieses Kapitel. Die Reihenfolge, in der du suchst:
+
+. Die Kopfdatei unter `src/` — dort steht der Vertrag.
+. Der Test unter `tests/unit/` — dort steht, was garantiert gilt.
+. Die Umsetzung unter `src/` — dort steht, wie es gemacht wird.
+
+Die Tests sind oft die beste Beschreibung. Sie zeigen die Funktion im Gebrauch,
+und sie lügen nicht: was dort steht, wird bei jedem Bauen geprüft.

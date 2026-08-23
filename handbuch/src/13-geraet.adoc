@@ -1,0 +1,185 @@
+== Aufs eigene Gerät
+
+[NOTE]
+.Geplant
+====
+Dieses Kapitel beschreibt Schritt M16. Gebaut sind zurzeit M1 bis M7.
+====
+
+Alle bisherigen Kapitel liefen auf deinem Rechner, mit SDL3 als
+Plattformschicht. Am Ende des Projekts läuft dasselbe Programm auf einem
+eigenen, greifbaren Gerät: der Platine Sunton ESP32-8048S070C. Ein
+ESP32-S3-Mikrocontroller mit 16 MB Flash und 8 MB PSRAM, ein 7-Zoll-Bildschirm
+mit 800 × 480 Pixeln über einen parallelen RGB565-Bus, ein kapazitiver
+Touchsensor GT911, WLAN und ein microSD-Steckplatz. Kein Betriebssystem im
+üblichen Sinn — das Programm läuft direkt auf der Hardware.
+
+=== Die Pointe: größer, nicht kleiner
+
+Wer „Taschencomputer“ hört, denkt an einen kleinen Bildschirm. Das Gegenteil
+ist der Fall. Der Bildschirm dieser Platine misst 800 × 480 Pixel — mehr
+Fläche als die 512 × 342 Pixel des Macintosh von 1984, dessen Optik dieses
+Projekt sich zum Vorbild nimmt. Überlappende Fenster brauchen Platz, und
+dieses Gerät hat mehr davon als sein historisches Vorbild.
+
+Deshalb benutzt der Arbeitsplatz, auf dem du bisher entwickelt hast, exakt
+dieselbe Auflösung, 800 × 480, ohne Skalierung. Das ist keine zufällige
+Übereinstimmung, sondern eine bewusste Entscheidung: was du am Rechner
+entwickelst, ist pixelgenau das, was das Gerät später zeigt. Ein Sollbild aus
+den Bildvergleichstests, wie du sie aus Kapitel 5 kennst, gilt deshalb für
+beide Seiten — dieselbe `.pbm`-Datei, derselbe Vergleich, kein Unterschied.
+Eine denkbare Alternative wäre gewesen, mit einer kleineren logischen
+Auflösung zu rechnen und beim Zeichnen zu vergrößern. Das hätte größere
+Buchstaben ergeben, aber nur einen Bruchteil der Arbeitsfläche — für
+überlappende Fenster im Stil von System 1 zu wenig. Diese Entscheidung ist
+nicht nur überlegt, sondern schon einmal an genau dieser Hardware überprüft
+worden: das Referenzprojekt Draftling lief auf derselben Platine zunächst mit
+einer kleineren Auflösung und zweifacher Vergrößerung, hat den Weg wieder
+verlassen und stellt heute nativ mit einer größeren Schrift dar.
+
+=== Der Bildpfad
+
+Der Kern des Programms zeichnet, wie du aus Kapitel 5 weißt, in einen
+Bildspeicher mit einem Bit je Pixel. Bei 800 × 480 sind das `100 × 480 =
+48 000` Bytes — klein genug, um vollständig im internen SRAM des ESP32 zu
+liegen, dem schnellen, aber knappen Speicher direkt auf dem Chip. Das Panel
+selbst versteht diese Sprache aber nicht: es erwartet RGB565, zwei Bytes je
+Pixel, macht insgesamt `800 × 480 × 2 = 768 000` Bytes. Das ist sechzehnmal
+so viel wie der 1-Bit-Speicher und passt nicht mehr in den internen SRAM — es
+muss in den PSRAM, den größeren, aber langsameren externen Speicherbaustein.
+
+Der Kern zeichnet grundsätzlich das ganze Bild neu, bei jedem Durchlauf,
+ohne sich zu merken, welcher Ausschnitt sich geändert hat — das ist einfacher
+und, wie Kapitel 5 gezeigt hat, bei 48 000 Bytes fast geschenkt. Würde dieselbe
+Haltung auf den RGB565-Speicher übertragen, müssten bei jedem Bild alle
+768 000 Bytes neu geschrieben werden, während das Panel gleichzeitig
+ununterbrochen aus genau diesem Speicher liest. Die Lösung liegt nicht darin,
+den Kern zum Merken von Änderungen zu zwingen, sondern darin, die
+Information nachträglich zurückzukaufen: die Plattformschicht vergleicht den
+neuen 1-Bit-Bildspeicher mit `memcmp` gegen das Vorbild vom letzten Durchlauf
+— ein Vergleich von 48 000 Bytes, der nichts kostet — und klappt nur die
+Kacheln, die sich tatsächlich geändert haben, nach RGB565 aus. Das Ausklappen
+selbst läuft über eine vorbereitete Tabelle mit 256 Einträgen: jedes mögliche
+Byte aus dem 1-Bit-Speicher steht acht Pixeln gegenüber, also sechzehn fertig
+vorberechneten RGB565-Bytes, ein `memcpy` pro Quellbyte statt acht einzelner
+Fallunterscheidungen.
+
+Der entscheidende Satz dazu: diese ganze Optimierung sitzt vollständig in der
+Plattformschicht. Weder `gfx/` noch `ui/` — der Kern des Programms — wissen
+etwas davon, dass es zwei Bildspeicher, einen Vergleich und eine
+Ausklapptabelle gibt. Sie zeichnen genauso, wie sie es auf dem Arbeitsplatz
+mit SDL3 auch tun. Das ist der eigentliche Beleg dafür, dass die Schichtung
+des Projekts trägt: eine Plattform, die technisch ganz anders arbeitet als
+die andere, ändert am Kern kein einziges Zeichen. Der Preis für diese
+Bequemlichkeit ist ein kleiner Aufschlag — der `memcmp` über 48 kB —, den die
+Plattformschicht bezahlt, damit `gfx/` und `ui/` nie erfahren müssen, dass es
+so etwas wie Bildschirmauffrischung überhaupt gibt.
+
+Der Kern bleibt dabei einfarbig, aber das Ergebnis auf dem Panel muss es
+nicht sein: die Plattformschicht bildet die beiden Werte 0 und 1 auf zwei
+einstellbare RGB565-Farbtöne ab, zum Beispiel dunkle Tinte auf einem ruhigen
+Papierton statt hartem Schwarz auf hartem Weiß. Das kostet nichts
+Zusätzliches, denn die Farbwerte stehen ohnehin schon in der Ausklapptabelle.
+
+=== Die Fallen aus einem laufenden Port
+
+Unter `extern/draftling` liegt ein fertiger Port auf genau diese Platine. Die
+folgenden Werte sind dort auf echter Hardware gemessen und verifiziert, nicht
+aus einem Datenblatt abgeschrieben — das ist ein wichtiger Unterschied, denn
+ein Datenblatt beschreibt, was möglich sein sollte, ein laufender Port zeigt,
+was auf diesem konkreten Exemplar der Platine tatsächlich funktioniert.
+
+**Die Farbreihenfolge der Datenleitungen.** Die sechzehn Datenleitungen des
+Panels liegen physisch in der Reihenfolge Rot, Grün, Blau. Man könnte
+erwarten, sie in genau dieser Reihenfolge in der Software aufzuzählen. Das
+ist falsch. Die Treiberfunktion, die das Panel ansteuert, bildet den ersten
+Eintrag der Liste auf das *niederwertigste* Bit des RGB565-Wortes ab, und
+RGB565 packt seine Bits als Rot, dann Grün, dann Blau — Rot liegt also in den
+*höchstwertigen* Bits. Die Datenleitungen müssen deshalb in der Reihenfolge
+Blau, Grün, Rot aufgezählt werden, entgegen ihrer physischen Anordnung auf
+der Platine. Zählt man sie in der naheliegenden Reihenfolge Rot-Grün-Blau
+auf, kommen Rot und Blau im Bild vertauscht heraus.
+
+Für dieses Projekt ist genau dieser Fehler besonders tückisch, mehr als bei
+einem gewöhnlichen Farbbild. Weil der Kern nur zwei Werte kennt, 0 und 1, und
+die Plattformschicht jeden der beiden auf einen einzigen RGB565-Ton abbildet,
+bleiben bei einem vertauschten Rot und Blau beide Töne symmetrisch — Schwarz
+auf Weiß sieht mit vertauschten Farbkanälen immer noch nach Schwarz auf Weiß
+aus, denn Schwarz und Weiß haben in allen Farbkanälen denselben Wert. Der
+Fehler fällt also bei der ersten Inbetriebnahme überhaupt nicht auf. Er
+zeigt sich erst, sobald jemand testweise einen getönten Papierton statt
+reinem Weiß einstellt — dann steht plötzlich ein bläulicher statt ein
+gelblicher Papierton da, und die Ursache liegt drei Schichten tiefer als dort,
+wo man sie zuerst vermuten würde.
+
+**Flash im DIO-Modus.** Für den ESP32-S3 ist normalerweise QIO die übliche
+Voreinstellung beim Beschreiben des Flash-Speichers — ein schnellerer Modus
+mit vier Datenleitungen. Diese Platine ist aber für den langsameren DIO-Modus
+mit zwei Datenleitungen verdrahtet. Bleibt man bei der QIO-Voreinstellung,
+kommt der Bootloader nicht zuverlässig hoch — das Gerät startet unregelmäßig
+oder gar nicht, und die Ursache liegt in einer Einstellung, die mit dem
+eigentlichen Programm nichts zu tun hat.
+
+**PCLK bei 12 MHz.** Das ist die Taktrate, mit der das Panel neue Pixel
+angezeigt bekommt. Eine höhere Taktrate wäre wünschenswert, weil sie das Bild
+schneller auffrischt, aber auf dieser Platine flimmert das Bild bei höheren
+Raten, sobald der Prozessor gleichzeitig unter Last steht — etwa während er
+Kacheln nach RGB565 ausklappt. 12 MHz ist der Wert, bei dem das auf der
+gemessenen Hardware stabil bleibt.
+
+**Der Touchsensor GT911 ohne verdrahtete INT-Leitung.** Üblicherweise meldet
+ein solcher Sensor eine Berührung über eine eigene Signalleitung, die
+Software wartet dann untätig, bis diese Leitung einen Wechsel anzeigt. Auf
+dieser Platine ist diese Leitung nicht angeschlossen. Die Software muss den
+Sensor deshalb zyklisch abfragen, in regelmäßigen Abständen nachfragen, statt
+auf ein Signal zu warten. Eine zweite Folge betrifft die Adresse des
+Sensors auf dem I2C-Bus: normalerweise legt die INT-Leitung beim Zurücksetzen
+fest, welche von zwei möglichen Adressen der Baustein annimmt. Ohne diese
+Leitung ist das nicht steuerbar, also prüft die Software beide möglichen
+Adressen und bindet sich neu, falls der Baustein die Adresse wechselt.
+
+=== Was Touch für den Entwurf bedeutet
+
+Ein Finger ist kein Mauszeiger, und zwei Eigenschaften der Maus, an die man
+sich beim Entwerfen einer Oberfläche gewöhnt, fehlen auf dem Gerät ganz.
+Erstens gibt es kein Hover — keinen Zustand „der Zeiger befindet sich gerade
+über diesem Knopf, ohne zu klicken“. Alles, was auf einer solchen Reaktion
+beruht — ein Knopf, der beim Überfahren hell wird, eine Kurzinfo, die beim
+Verweilen erscheint — funktioniert auf dem Gerät nicht, denn ein Finger
+berührt oder berührt nicht, ein Dazwischen kennt er nicht. Zweitens trifft
+ein Finger nicht punktgenau. Kapitel 11 hat gezeigt, wie `hit_slop` dieses
+Problem löst: die gezeichnete Fläche eines Bedienelements bleibt klein, die
+Trefferfläche wächst darüber hinaus, ohne dass ein zusätzliches Pixel
+gezeichnet wird.
+
+Aus beidem folgt eine dritte Notwendigkeit: eine eingebaute Tastatur gibt es
+auf diesem Gerät nicht, also braucht das System eine Bildschirmtastatur —
+ein gewöhnliches Fenster mit Tasten, die auf Berührung reagieren und
+dieselben Tastaturereignisse auslösen wie eine echte Tastatur. Der Rest des
+Systems merkt dadurch nichts von der Umschaltung: eine Bildschirmtastatur ist
+kein Sonderfall, sondern erzeugt genau die Ereignisse, die auch eine echte
+Tastatur erzeugen würde. Das schließt eine externe Tastatur nicht aus — über
+USB oder per Bluetooth ist eine echte Tastatur am Gerät durchaus möglich, und
+Draftling, dessen Erfahrungen dieses Kapitel an mehreren Stellen übernimmt,
+fährt sogar überwiegend so.
+
+=== Zum Ausprobieren
+
+. Rechne von Hand nach, warum der RGB565-Bildspeicher genau sechzehnmal so
+  groß ist wie der 1-Bit-Bildspeicher, und warum `768 000` Bytes zu groß für
+  den internen SRAM eines ESP32-S3 sind, aber bequem in 8 MB PSRAM passen.
+
+. Sieh dir die Ausklapptabelle mit ihren 256 Einträgen genauer an, sobald sie
+  in `plat_esp32.c` existiert: warum reichen 256 Einträge aus, um jedes
+  mögliche Byte des 1-Bit-Bildspeichers abzudecken?
+
+. Überlege, an welcher Stelle im Bildpfad ein vertauschtes Rot und Blau
+  zuerst auffallen würde, wenn der Papierton des Programms nicht reines Weiß,
+  sondern ein cremiges Beige ist. Vergleiche das mit der Situation bei
+  reinem Schwarz auf Weiß.
+
+. Lies `data/themes/desktop.theme` aus Kapitel 11 noch einmal und überlege,
+  welche Werte — `titlebar_h`, `close_box`, `hit_slop` — für ein Thema
+  geändert werden müssten, das für einen Finger statt für einen Mauszeiger
+  entworfen ist. Die Faustregel aus diesem Kapitel: ein Finger ist rund 9 mm
+  breit.

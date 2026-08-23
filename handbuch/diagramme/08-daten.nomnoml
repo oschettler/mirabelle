@@ -1,0 +1,23 @@
+#direction: down
+#spacing: 22
+#padding: 8
+#font: Helvetica
+#fontSize: 12
+#lineWidth: 1
+#edges: hard
+#stroke: #000000
+#fill: #ffffff
+
+[Gemtext-Datei|.gmi, Front Matter + Text]
+[index.db|löschbar, jederzeit neu]
+[Abfrage|store.find, store.search]
+[Schema|task.lua]
+[Generischer Browser|Liste, Formular]
+[Gemtext-Darsteller|Notiz oder Spartan-Seite]
+
+[Gemtext-Datei] -- Scan --> [index.db]
+[index.db] -> [Abfrage]
+[Abfrage] -> [Generischer Browser]
+[Schema] -> [Generischer Browser]
+[Generischer Browser] -- schreibt --> [Gemtext-Datei]
+[Gemtext-Datei] -> [Gemtext-Darsteller]

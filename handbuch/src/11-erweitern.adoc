@@ -1,0 +1,285 @@
+== Selbst etwas dazubauen
+
+Die vorigen Kapitel haben erklärt, wie das Projekt aufgebaut ist. Dieses
+Kapitel dreht die Blickrichtung um: du änderst etwas, baust neu und siehst dem
+Ergebnis beim Erscheinen zu. Alle vier Beispiele funktionieren mit dem Stand,
+der heute im Repository liegt — M1 bis M7.
+
+=== Ein Tastenkürzel ändern
+
+Alle Tastenkürzel des Projekts stehen in einer einzigen Datei,
+`data/keys/default.keys`. Kein Kürzel steckt fest im C-Code. Eine Zeile daraus:
+
+[source]
+----
+record.new            Cmd+N          app
+----
+
+Drei Felder, durch Leerraum getrennt. Das erste ist die *Aktion* — ein Name,
+den der Code aufruft, wenn das Kürzel gedrückt wird, hier „einen neuen
+Datensatz anlegen“. Das zweite ist das *Kürzel* selbst: Modifikatoren mit `+`
+verbunden, davor der Tastenname. Das dritte ist der *Bereich*.
+
+Bereiche sind der Teil, der beim ersten Lesen leicht übersehen wird, aber
+entscheidend ist. Die Datei selbst erklärt es im Kopf:
+
+[source]
+----
+# Bereiche: global gilt überall. Sonst wird erst im Bereich des gerade
+# fokussierten Bedienelements gesucht und danach global. Deshalb darf Return
+# in einer Liste etwas anderes tut als in einem Formular.
+----
+
+Wenn du in einer Liste stehst und kbd:[Return] drückst, sucht die Suche zuerst
+im Bereich `list` — dort steht `list.open`, der markierte Eintrag wird
+geöffnet. Wenn du in einem Formularfeld stehst und dieselbe Taste drückst,
+sucht die Suche zuerst im Bereich `form` — dort steht `form.accept`, das
+Formular wird bestätigt. Dieselbe physische Taste, zwei verschiedene
+Wirkungen, weil `keymap_lookup` in `src/core/keymap.c` erst im Bereich des
+fokussierten Bedienelements sucht und erst danach, wenn nichts gefunden wurde,
+im Bereich `global`:
+
+[source,c]
+----
+const char *keymap_lookup(const keymap *km, int key, uint8_t mods, const char *scope)
+{
+    if (scope) {
+        for (...)
+            if (e->key == key && e->mods == mods && strcmp(e->scope, scope) == 0)
+                ...
+    }
+    for (...)
+        if (e->key == key && e->mods == mods && strcmp(e->scope, "global") == 0)
+        ...
+}
+----
+
+Angenommen, du willst kbd:[Cmd+N] durch kbd:[Cmd+Shift+N] ersetzen, weil dir
+kbd:[Cmd+N] zu leicht aus Versehen gedrückt wird. Du änderst genau eine Zeile:
+
+[source]
+----
+record.new            Cmd+Shift+N    app
+----
+
+Speichern, neu bauen — mehr nicht. Du musst keine Menüdatei suchen, in der das
+Kürzel noch einmal als Text steht, denn die gibt es nicht. Die Menüleiste
+zeigt neben jedem Eintrag das Kürzel an, das gerade in `default.keys`
+eingetragen ist, weil sie beim Aufbau denselben Katalog abfragt, den auch die
+Tastaturbehandlung benutzt. Ändere die Datei, und die Anzeige im Menü ändert
+sich von selbst mit. Genau das meint der Kommentar am Kopf der Datei: „Die
+Menüs zeigen die Kürzel aus genau dieser Datei an. Wer hier etwas ändert,
+ändert damit auch, was im Menü steht.“
+
+Eine Zeile weiter unten in derselben Datei prüft eine zweite Sache: ob du aus
+Versehen ein Kürzel doppelt vergibst. Trägst du versehentlich `Cmd+N` noch
+einmal im Bereich `app` ein — etwa für eine zweite Aktion, ohne die erste
+Zeile zu löschen — meldet der Parser das beim nächsten Bauen:
+
+----
+default.keys:35: Kürzel 'Cmd+N' im Bereich 'app' ist bereits in Zeile 34 an 'record.new' vergeben
+----
+
+Diese Meldung kommt aus `keymap.c`, aus derselben Funktion, die die Datei
+Zeile für Zeile einliest. Jede neu gelesene Zeile wird gegen alle bereits
+gelesenen verglichen, gleicher Bereich und gleiches Kürzel gelten als
+Kollision. Die Prüfung ist bewusst streng: zwei verschiedene Bereiche dürfen
+dasselbe Kürzel benutzen — deshalb funktioniert kbd:[Return] in `list` und
+`form` unterschiedlich, ohne dass das eine Doppelbelegung wäre —, aber
+innerhalb *desselben* Bereichs muss jedes Kürzel eindeutig sein. Ohne diese
+Prüfung würde eine der beiden Aktionen einfach nie ausgelöst, und du würdest
+es erst bemerken, wenn du dich fragst, warum eine Taste nichts tut.
+
+=== Einen Text ändern
+
+Sichtbarer Text steht nicht im C-Code, sondern in Katalogdateien, eine je
+Sprache. Für Deutsch ist das `data/lang/de.strings`. Eine Zeile daraus:
+
+[source]
+----
+demo.click               = Klick: {0}, {1} ({2}x)
+----
+
+`{0}`, `{1}` und `{2}` sind nummerierte Platzhalter. Der Code füllt sie mit
+Werten — hier vermutlich x-Koordinate, y-Koordinate und Klickzahl —, aber die
+Katalogdatei entscheidet, in welcher *Reihenfolge* und mit welchem Text
+drumherum sie erscheinen. Das ist kein Stilmittel, sondern notwendig: die
+Wortstellung ändert sich zwischen Sprachen. Ein deutscher Satz kann das Objekt
+vor dem Verb nennen, ein englischer meist nicht, und ein Satz, der Werte
+zusammenklebt — `"Klick: " + x + ", " + y` —, kann diese Reihenfolge in einer
+anderen Sprache gar nicht mehr ändern, ohne den Code selbst anzufassen. Die
+Katalogdatei kann es, weil sie `{0}` und `{1}` frei anordnen darf.
+
+Willst du zum Beispiel `demo.greeting` anpassen:
+
+[source]
+----
+demo.greeting            = Grüße aus Köln, Fräulein Müller!
+----
+
+Du änderst den Text, speicherst, baust neu — der neue Text erscheint überall,
+wo der Schlüssel `demo.greeting` verwendet wird.
+
+Was du dabei *nicht* tun darfst: den Schlüssel selbst löschen oder
+umbenennen, ohne die englische Datei mitzuziehen. Es gibt eine
+Sprachprüfung, die verlangt, dass `de.strings` und `en.strings` genau
+dieselben Schlüssel enthalten — kein Schlüssel darf in der einen Datei stehen
+und in der anderen fehlen. Fehlt einer, schlägt der Test fehl, bevor das
+Programm überhaupt läuft.
+
+Das wirft eine berechtigte Frage auf: warum gibt es überhaupt einen
+englischen Katalog, wenn das Projekt auf Deutsch entsteht und niemand ihn
+gerade braucht? Aus zwei Gründen. Erstens ist er der Beweis, dass die
+Übersetzbarkeit tatsächlich funktioniert und nicht bloß behauptet wird — ein
+zweiter, vollständiger Katalog kann nur existieren, wenn kein sichtbarer Text
+fest im Code steht. Zweitens ist er eine Art Geländer: wenn du morgen einen
+neuen Schlüssel einführst und vergisst, ihn in beide Dateien einzutragen,
+merkst du es sofort, statt es erst zu bemerken, wenn irgendwann tatsächlich
+jemand Englisch braucht.
+
+=== Eine Glyphe ändern
+
+Der Zeichensatz liegt als Textdatei vor, `data/fonts/system12-ascii.part`.
+Jede Glyphe ist ein kleines Punktraster aus `#` und `.`:
+
+[source]
+----
+glyph U+0021 width 4        # !
+  ....
+  ....
+  .#..
+  .#..
+  .#..
+  .#..
+  .#..
+  ....
+  .#..
+  ....
+  ....
+  ....
+----
+
+`#` ist ein gesetztes Pixel, `.` ein leeres. `width` ist, wie breit die
+Glyphe beim Schreiben eines Textes zählt. Der übliche Ablauf, wenn du eine
+Glyphe änderst:
+
+. Die Zeichen in der `.part`-Datei ändern.
+. `make` aufrufen — ein eigenes Werkzeug (`tools/fontc.c`, aus Kapitel 6)
+  übersetzt die Textdatei in das Format, das das Programm liest.
+. `./build/pda --shot bild.pbm` aufrufen und `bild.pbm` ansehen. Das schreibt
+  den tatsächlichen Bildspeicher des Programms in eine Datei, ohne
+  Fensterrahmen und ohne Skalierung — du siehst genau die Pixel, die das
+  Programm zeichnen würde.
+. Erst wenn das Bild wirklich stimmt: `make test ACCEPT=1`. Das übernimmt
+  die neuen Sollbilder für die Bildvergleichstests.
+
+Der letzte Schritt ist der Punkt, an dem viele zu schnell werden. `ACCEPT=1`
+ersetzt nicht ein Sollbild durch das, was *richtig* ist, sondern durch das,
+was das Programm gerade *erzeugt*. Führst du ihn aus, bevor du dir das Bild
+angesehen hast, schreibst du möglicherweise einen Fehler als neuen Maßstab
+fest, und kein Test wird ihn je wieder finden — er hätte ja genau das
+Vorbild, gegen das er prüft, selbst mit erzeugt. Erst hinsehen, dann
+übernehmen, nie blind.
+
+Der eigentlich wichtige Teil kommt danach, bei Buchstaben mit Ableitungen.
+Ändert man das Grundzeichen `a`, bleiben `ä`, `à` und `å` unverändert stehen,
+denn es sind eigene Einträge in der Schriftdatei. Genau das ist einmal
+passiert: als das `a` neu gezeichnet wurde, blieben die Akzentbuchstaben auf
+der alten Form. Auf dem Bildschirm las sich „Fräulein“ danach als „Fröulein“
+— nicht weil ein Buchstabe falsch war, sondern weil zwei verwandte Buchstaben
+plötzlich nicht mehr zusammenpassten, und im ASCII-Auszug der Schrift fiel
+das niemandem auf.
+
+Aus diesem Fehlschlag ist `data/fonts/derived.map` entstanden, eine Liste,
+die jedem abgeleiteten Zeichen seinen Grundbuchstaben zuordnet:
+
+[source]
+----
+U+00E4 U+0061   # ä von a
+U+00E0 U+0061   # à
+U+00E5 U+0061   # å
+----
+
+Und ein Test, `derived_glyphs_contain_their_base` in
+`tests/unit/test_text.c`, der für jedes Paar prüft, dass jedes Pixel des
+Grundbuchstabens auch im abgeleiteten Zeichen gesetzt ist — nicht auf
+Gleichheit, sondern auf Teilmenge, denn Zeichen mit Durchstrich wie `ø`
+fügen noch ein zusätzliches Pixel hinzu. Änderst du also `a`, musst du auch
+`ä`, `à` und `å` nachziehen, sonst schlägt dieser Test beim nächsten Bauen
+fehl — und das ist Absicht. Dieselbe Regel gilt für `o`, `u`, `e`, `c`, `n`
+und ihre Großbuchstaben, jeweils mit den in `derived.map` gelisteten
+Ableitungen.
+
+=== Ein eigenes Thema
+
+Alle Maße der Fensteroberfläche — Titelleistenhöhe, Rahmenbreite, Schriftart
+— stehen in einer Themendatei, `data/themes/desktop.theme`:
+
+[source]
+----
+titlebar_h    20
+border         1
+close_box     11
+grow_box      15
+box_margin     5
+stripe_gap     2
+title_pad      6
+hit_slop       0
+min_w         96
+min_h         48
+font          system12
+----
+
+Eine eigene Kopie mit größeren Maßen ist schnell angelegt: Datei kopieren,
+Werte anheben, in der Konfiguration einbinden. Der interessanteste Wert dabei
+ist `hit_slop`, und die Themendatei erklärt selbst, wofür er gedacht ist:
+
+[source]
+----
+# Für das Gerät gibt es in M15 ein zweites Thema. Dort sind Titelleiste und
+# Felder größer, und hit_slop vergrößert die Trefferfläche, ohne dass die
+# gezeichnete Fläche wächst - ein Finger ist rund 9 mm breit, das sind auf dem
+# Panel etwa 47 Pixel.
+----
+
+Der Punkt ist die Trennung zwischen zwei Dingen, die leicht verwechselt
+werden: der *gezeichneten* Fläche eines Bedienelements und seiner
+*Trefferfläche* — dem Bereich, in dem ein Klick oder Tipp als Treffer zählt.
+Bei einem Mauszeiger dürfen beide gleich groß sein, denn ein Zeiger trifft
+punktgenau. Ein Finger trifft nicht punktgenau. `hit_slop` vergrößert nur die
+Trefferfläche um einen Rand, ohne dass ein einziges zusätzliches Pixel
+gezeichnet wird — der Schließknopf sieht weiterhin elf Pixel groß aus, reagiert
+aber schon, wenn du etwas daneben tippst. Für den Arbeitsplatz mit Maus steht
+`hit_slop` deshalb auf 0.
+
+[NOTE]
+.Geplant
+====
+Sobald M11 (eine erste eigene Anwendung als Lua-Tabelle) und M13
+(Schemadateien für Formulare) fertig sind, wird eine eigene Anwendung nicht
+mehr bedeuten, C-Code zu schreiben. Du wirst eine Tabelle mit Feldern
+beschreiben — Name, Typ, Pflicht oder optional — und der generische Formular-
+und Listendarsteller zeichnet daraus ein vollständiges Fenster, mit
+denselben Tastenkürzeln, Texten aus dem Katalog und demselben Thema wie jede
+andere Anwendung des Systems.
+====
+
+=== Zum Ausprobieren
+
+. Ändere `record.save` in `data/keys/default.keys` von kbd:[Cmd+S] auf
+  kbd:[Cmd+Shift+S]. Baue neu und sieh nach, ob das Kürzel in der Menüleiste
+  jetzt mit dem neuen Wert erscheint.
+
+. Trage versehentlich `Cmd+O` ein zweites Mal im Bereich `app` ein, für eine
+  erfundene Aktion `record.reopen`. Baue neu und lies die Fehlermeldung —
+  steht die richtige Zeilennummer darin?
+
+. Ändere `demo.hint` in `data/lang/de.strings` auf einen eigenen Text, der
+  einen der Platzhalter `{0}` benutzt, falls die Aktion, die den Text
+  aufruft, einen Wert übergibt. Prüfe mit dem Sprachtest, ob `de.strings` und
+  `en.strings` noch dieselben Schlüssel haben.
+
+. Lege eine Kopie von `desktop.theme` mit doppelt so großem `close_box` und
+  `hit_slop` gleich `20` an. Baue das Programm mit diesem Thema und
+  vergleiche mit `--shot`, wie sich die Titelleiste sichtbar verändert, obwohl
+  `hit_slop` selbst nichts zeichnet.
