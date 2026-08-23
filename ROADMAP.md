@@ -62,11 +62,17 @@ Tab-Reihenfolge, Menüs per Tastatur betreten.
 *Lehrstoff:* Jeder Befehl ohne Maus erreichbar — Pflicht, nicht Kür, wegen M16.
 
 **M8 · Widgets, Layout und Themen**
-Zehn Widgets mit je vier Funktionen, Stapel-Layout, `layout.form()`, dazu
-`data/themes/desktop.lua`.
+Widgets mit je vier Funktionen, Stapel-Layout, Fokus im Panel, und das
+Textmodell getrennt vom Textwidget.
 *Lehrstoff:* Rahmenmaße und Trefferflächen gehören ins Thema, nicht in den
-Zeichencode — sonst wird M15 zur Verzweigungsorgie. Das mehrzeilige Textfeld mit
-Umbruch, Auswahl und Widerrufen ist die eigentliche Arbeit dieses Kapitels.
+Zeichencode — sonst wird M15 zur Verzweigungsorgie.
+
+Das mehrzeilige Textfeld ist die eigentliche Arbeit dieses Kapitels, und die
+Lehre daraus steht am Anfang, nicht am Ende: **zerlege es, bevor du anfängst.**
+Puffer, Schreibmarke, Auswahl und Widerrufen haben mit Zeichnen nichts zu tun.
+Als eigenes Modul lässt sich der schwierige Teil ohne Bildschirm durchspielen —
+und der schwierige Teil ist nicht das Zeichnen, sondern dass die Marke nach
+jeder Änderung noch richtig steht.
 
 ## Teil IV — Daten (M9 bis M10)
 

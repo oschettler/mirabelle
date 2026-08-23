@@ -501,21 +501,70 @@ zwar ohne Verzweigung im Zeichencode.
 
 ## 8. Widgets und Layout
 
-Wenig und ausreichend: `label`, `text_field`, `text_area`, `checkbox`, `radio`,
-`button`, `list`, `scrollbar`, `popup_menu`, `date_field`.
+Wenig und ausreichend. Gebaut sind `label`, `button`, `checkbox`, `list`,
+`text_field` und `text_area`; `radio`, `scrollbar`, `popup_menu` und
+`date_field` kommen, wenn eine Anwendung sie braucht.
 
-Jedes Widget ist eine Tabelle mit vier Funktionen:
+Ein Widget ist eine Klasse mit vier Funktionen und ein Rechteck:
 
-```lua
-{ measure(self)            -> w, h
-  draw(self, gc, rect)
-  event(self, ev)          -> true, wenn verarbeitet
-  value(self, [neu])       -> Wert lesen oder setzen }
+```c
+typedef struct {
+    const char *name;                              /* für Fehlersuche und Tests */
+    void (*measure)(widget *w, int *pw, int *ph);  /* Wunschgröße */
+    void (*draw)(const widget *w, gc *g);
+    bool (*event)(widget *w, const event *e);      /* true = verarbeitet */
+    void (*destroy)(widget *w);                    /* nur Zusätzliches */
+} widget_class;
 ```
 
-Layout ist ein Stapel: vertikal, horizontal, feste Rechtecke, Abstand, Dehnung.
-Kein Constraint-Solver, keine Flexbox. Formulare sind ohnehin
-Beschriftung-links-Feld-rechts, und genau das kann `layout.form()`.
+**Das Widget kennt seine Lage nicht selbst.** `frame` setzt das Layout. Ein
+Widget, das seine Position ausrechnet, und ein Layout, das sie auch ausrechnet,
+driften früher oder später auseinander; so gibt es sie genau einmal.
+
+**Wer gibt frei?** `destroy` gibt nur zurück, was die Klasse zusätzlich belegt
+hat; das Widget selbst gibt `widget_destroy()` frei. Diese Zusage stand anfangs
+nicht im Header — Umsetzung und Test lasen sie entgegengesetzt, und das Ergebnis
+war ein doppeltes Freigeben, das erst der Sanitizer zeigte.
+
+### Layout
+
+Ein Stapel, kein Constraint-Solver: `LAYOUT_VSTACK`, `LAYOUT_HSTACK` und
+`LAYOUT_FORM`. Letzteres nimmt die Widgets paarweise, Beschriftung links,
+Element rechts, und macht die linke Spalte so breit wie ihr breitestes Element.
+Verschachteln geht, indem ein Panel selbst als Widget in ein anderes wandert.
+
+### Fokus
+
+Der Fokus wohnt im Panel, nicht in den Widgets: nur eine Stelle weiß, welches
+Element dran ist, und nur eine kennt die Reihenfolge. `Tab` und `Umschalt+Tab`
+wandern mit Umbruch und überspringen alles ohne `wants_focus` und alles
+Gesperrte. Die Suche hat eine Schrittgrenze — ein Panel ohne fokussierbares
+Element darf nicht endlos kreisen.
+
+### Das Textmodell liegt getrennt
+
+`ui/textbuf.c` kennt Puffer, Schreibmarke, Auswahl, Bewegung und Widerrufen —
+und kein einziges Pixel. Das ist nicht nur Ordnung: der schwierigste Teil eines
+Texteditors ist nicht das Zeichnen, sondern dass die Schreibmarke nach jeder
+Änderung noch richtig steht. Als eigenes Modul lässt sich genau das ohne
+Bildschirm durchspielen.
+
+Drei Festlegungen darin:
+
+* **Alle Positionen sind Byte-Versätze, jede Bewegung geht über UTF-8.** Die
+  Marke kann deshalb nie mitten in einem Mehrbytezeichen landen; ein Versatz,
+  der doch mittendrin liegt, wird auf den Zeichenanfang zurückgezogen.
+* **Eine Handlung ist ein Widerruf.** Das Ersetzen einer Auswahl ist intern ein
+  Löschen und ein Einfügen; beide sind aneinander gebunden. Ohne das bräuchte
+  es zwei Widerrufe, und dazwischen stünde ein Text, den nie jemand geschrieben
+  hat.
+* **Die Wunschspalte gilt nur für eine ununterbrochene Kette aus Auf und Ab.**
+  Jede andere Bewegung setzt sie zurück, sonst springt die Marke später in eine
+  Spalte, in der sie längst nicht mehr steht.
+
+Der Umbruch im mehrzeiligen Feld ist reine Anzeige und ändert den Text nicht.
+Wer beim Umbrechen Zeilenumbrüche einfügte, veränderte den Text, sobald jemand
+das Fenster schmaler zieht.
 
 ---
 
@@ -976,5 +1025,6 @@ Zeichenkette im Quelltext.
 | D-8 | Eigener Mini-YAML-Parser statt Bibliothek | 150 Zeilen, lehrreich, keine Abhängigkeit |
 | D-9 | 800 × 480 auf beiden Zielen, Vergrößerung nur in der Anzeige | Was du entwickelst, ist pixelgenau was das Gerät zeigt; Sollbilder gelten für beide Seiten. Auf derselben Platine unabhängig bestätigt (12.2) |
 | D-10 | Touch ist ein Zeiger ohne Hover, Trefferflächen kommen aus dem Thema | Die Plattformschicht wächst dadurch nicht |
+| D-13 | Textmodell getrennt vom Textwidget | Der schwierigste Teil eines Editors ist die Schreibmarke, nicht das Zeichnen — getrennt ist er ohne Bildschirm prüfbar |
 | D-12 | Textkörper in Gemtext statt Markdown | Ein Parser mit einem Bit Zustand; Notizendarsteller und SPARTAN-Browser werden dieselbe Funktion |
 | D-11 | Bildschirmtastatur ist ein gewöhnliches Fenster | Erzeugt normale Ereignisse; der Rest des Systems merkt nichts. Eine externe Tastatur über USB oder BLE ist damit kein Sonderfall, sondern derselbe Weg (12.5) |

@@ -19,6 +19,7 @@
 #include "core/i18n.h"
 #include "gfx/draw.h"
 #include "plat/plat.h"
+#include "ui/textbuf.h"
 #include "ui/theme.h"
 
 typedef struct widget widget;
@@ -116,5 +117,30 @@ bool list_was_opened(widget *w);
 
 /* Erster sichtbarer Eintrag; für Tests und einen späteren Rollbalken. */
 int list_top(const widget *w);
+
+/* --- Textfelder ----------------------------------------------------------
+ *
+ * Beide setzen auf textbuf auf und teilen sich fast alles. Der Unterschied ist
+ * schmal, aber wesentlich: das einzeilige Feld bricht nicht um und schluckt
+ * kbd:[Return] nicht - dort gehört Return dem Formular. Das mehrzeilige bricht
+ * an der Feldbreite um und nimmt Return als Zeilenumbruch.
+ *
+ * Der Umbruch im mehrzeiligen Feld ist reine Anzeige. Er ändert den Text
+ * nicht und fügt keine Zeilenumbrüche ein - wer das täte, würde den Text
+ * verändern, sobald jemand das Fenster schmaler zieht.
+ */
+widget *text_field_create(const theme *th, const catalog *cat);
+widget *text_area_create(const theme *th, const catalog *cat);
+
+const char *text_widget_value(const widget *w);
+bool        text_widget_set_value(widget *w, const char *utf8);
+
+/* Das Modell dahinter, etwa um von außen zu widerrufen oder die Auswahl zu
+ * setzen. Gehört dem Widget. */
+textbuf *text_widget_buf(widget *w);
+
+/* Erste sichtbare Anzeigezeile im mehrzeiligen Feld; für Tests und einen
+ * späteren Rollbalken. Beim einzeiligen immer 0. */
+int text_widget_top_line(const widget *w);
 
 #endif /* PDA_UI_WIDGET_H */
