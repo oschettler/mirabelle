@@ -18,9 +18,13 @@
 #include "app/schema.h"
 #include "core/collate.h"
 #include "core/i18n.h"
+#include "core/keymap.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
 #include "app/shell.h"
+#include <lua.h>
+#include <lauxlib.h>
+
 #include "lua/pdalua.h"
 #include "store/record.h"
 #include "store/vault.h"
@@ -1228,6 +1232,72 @@ TEST(a_letter_starts_a_new_address_and_backspace_shortens_it)
     i18n_free(cat);
 }
 
+TEST(a_long_page_gets_a_working_scrollbar)
+{
+    /* Der Balken ist in Lua gezeichnet - es gibt kein Widget dafür, das ein
+     * Skript benutzen könnte. Er soll trotzdem aussehen und sich anfühlen wie
+     * die anderen: Pfeilfelder, Rinne im Schachbrett, weißer Schieber. */
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_browser(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(run(L,
+        "local page = ''\n"
+        "for i = 1, 60 do page = page .. 'Zeile ' .. i .. '\\n' end\n"
+        "browser.address = 'spartan://x.org/lang'\n"
+        "browser.status  = 'text/gemini'\n"
+        "browser.render(page, 30)"));
+    CHECK(truth(L, "#browser.lines == 60"));
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 240, 160));
+    gc g;
+    gc_init(&g, &bm);
+
+    shell_scripting sc = pdalua_scripting(L);
+    sc.draw(sc.user, 0, &g, 240, 160);
+
+    /* Erst jetzt steht fest, wie viele Zeilen hineinpassen. */
+    CHECK(truth(L, "browser.visible > 3 and browser.visible < 60"));
+    CHECK(truth(L, "browser.bar ~= nil"));
+
+    CHECK(golden_check("lua_spartan_lang", &bm));
+
+    /* Das untere Pfeilfeld rollt eine Zeile weiter. */
+    CHECK(run(L,
+        "klick = { kind = 'mouse_down',\n"
+        "          x = browser.bar.x + 8,\n"
+        "          y = browser.bar.y + browser.bar.h - 4 }"));
+
+    event down = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1 };
+    CHECK(truth(L, "browser.top == 1"));
+
+    /* Der Klickpunkt kommt aus Lua - der Test rechnet die Lage des Balkens
+     * nicht nach, sondern fragt ihn. */
+    lua_getglobal(L, "klick");
+    lua_getfield(L, -1, "x"); down.x = (int)lua_tointeger(L, -1); lua_pop(L, 1);
+    lua_getfield(L, -1, "y"); down.y = (int)lua_tointeger(L, -1); lua_pop(L, 2);
+
+    CHECK(sc.event(sc.user, 0, &down));
+    CHECK(truth(L, "browser.top == 2"));
+
+    /* Und das Mausrad ebenso, in Leserichtung. */
+    event wheel = { .kind = EV_WHEEL, .x = 20, .y = 60, .wheel = -3 };
+    CHECK(sc.event(sc.user, 0, &wheel));
+    CHECK(truth(L, "browser.top == 5"));
+
+    /* Über das Ende hinaus geht es nicht. */
+    event far = { .kind = EV_WHEEL, .x = 20, .y = 60, .wheel = -500 };
+    CHECK(sc.event(sc.user, 0, &far));
+    CHECK(truth(L, "browser.top + browser.visible - 1 <= #browser.lines"));
+
+    bitmap_free(&bm);
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
 TEST(the_browser_draws_a_page)
 {
     catalog *cat = load_cat();
@@ -1256,6 +1326,88 @@ TEST(the_browser_draws_a_page)
 
     bitmap_free(&bm);
     pdalua_close(L);
+    i18n_free(cat);
+}
+
+/* --- Durch die ganze Schale hindurch ---------------------------------------------
+ *
+ * Der Weg, den eine Taste wirklich nimmt: Fenster, Tastenbelegung, Schale,
+ * Skript. Jede Station für sich ist geprüft; hier geht es darum, dass die
+ * Kette nirgends reisst.
+ */
+
+TEST(a_key_the_shell_cannot_use_reaches_the_script)
+{
+    /* Der Fehler, um den es geht: Return ist in data/keys/default.keys mit
+     * `list.open` belegt. Die Schale nahm die Aktion an, fand in einer
+     * Skriptanwendung keinen Browser und verwarf sie - im SPARTAN-Browser
+     * liess sich die Adresse eintippen, aber Return tat nichts. */
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    collate   *sort = NULL, *search = NULL;
+    lua_State *L = with_store(cat, &sort, &search);
+    REQUIRE(L != NULL);
+    pdalua_open_apps(L);
+    pdalua_open_net(L);
+
+    char err[512] = "";
+    CHECK(run(L,
+        "gesehen = {}\n"
+        "app{ title = 'app.spartan',\n"
+        "     draw  = function() end,\n"
+        "     event = function(e)\n"
+        "       gesehen[#gesehen+1] = e.kind .. ':' .. tostring(e.key)\n"
+        "       return true\n"
+        "     end }"));
+
+    theme th;
+    theme_defaults(&th);
+
+    char path[512];
+    snprintf(path, sizeof path, "%s/keys/default.keys", PDA_DATA_DIR);
+    keymap *km = keymap_load(path, err, sizeof err);
+    REQUIRE(km != NULL);
+
+    shell_scripting sc  = pdalua_scripting(L);
+    shell_config    cfg = {
+        .data_dir = PDA_DATA_DIR, .vault = g_vault, .theme = &th,
+        .catalog = cat, .keymap = km, .sort = sort, .search = search,
+        .screen_w = 800, .screen_h = 480, .scripts = &sc,
+    };
+
+    shell *sh = shell_create(&cfg, err, sizeof err);
+    REQUIRE(sh != NULL);
+
+    int app = -1;
+    for (int i = 0; i < shell_app_count(sh); i++)
+        if (strcmp(shell_app_label(sh, i), "app.spartan") == 0) app = i;
+    REQUIRE(app >= 0);
+    REQUIRE(shell_open_app(sh, app, err, sizeof err));
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 800, 480));
+    gc g;
+    gc_init(&g, &bm);
+    shell_draw(sh, &g);
+
+    /* Return, ohne Umschalttaste. */
+    event ret = { .kind = EV_KEY_DOWN, .key = KEY_RETURN };
+    shell_event(sh, &ret);
+
+    /* Und ein Zeichen, damit auch der Textweg geprüft ist. */
+    event text = { .kind = EV_TEXT, .text = "x" };
+    shell_event(sh, &text);
+
+    CHECK(truth(L, "#gesehen == 2"));
+    CHECK(truth(L, "gesehen[1] == 'key_down:13'"));
+    CHECK(truth(L, "gesehen[2]:sub(1, 4) == 'text'"));
+
+    bitmap_free(&bm);
+    shell_destroy(sh);
+    keymap_free(km);
+    pdalua_close(L);
+    drop_store(sort, search);
     i18n_free(cat);
 }
 
@@ -1294,7 +1446,10 @@ int main(void)
     RUN(preformatted_text_keeps_its_lines);
     RUN(typing_a_digit_selects_a_link_and_two_digits_select_a_later_one);
     RUN(a_letter_starts_a_new_address_and_backspace_shortens_it);
+    RUN(a_long_page_gets_a_working_scrollbar);
     RUN(the_browser_draws_a_page);
+
+    RUN(a_key_the_shell_cannot_use_reaches_the_script);
 
     return test_summary();
 }

@@ -111,3 +111,5 @@ spartan.loading          = wird geholt ...
 spartan.failed           = Fehlgeschlagen.
 spartan.redirect         = Weiterleitung nach
 spartan.badlink          = Der Verweis führt nirgendwohin.
+dialog.delete.body       = „{0}“ wirklich löschen? Das lässt sich nicht rückgängig machen.
+spartan.hint             = Return holt die Adresse. Tippen ersetzt sie, Esc bricht ab.

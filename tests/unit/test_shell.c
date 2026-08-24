@@ -24,6 +24,7 @@
 #include "store/vault.h"
 #include "support/golden.h"
 #include "ui/theme.h"
+#include "ui/dialog.h"
 #include "ui/widget.h"
 #include "ui/window.h"
 
@@ -810,6 +811,116 @@ TEST(the_scrollbar_next_to_the_list_works)
     teardown();
 }
 
+TEST(deleting_asks_first)
+{
+    /* Löschen ist die einzige Handlung im Programm, die sich nicht rückgängig
+     * machen lässt. Ohne Rückfrage wäre ein verrutschter Tastendruck genug. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int  tasks = app_by_label(s, "app.tasks");
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, tasks, err, sizeof err));
+
+    browser *br = shell_app_browser(s, tasks);
+    REQUIRE(br != NULL);
+    int before = browser_count(br);
+    REQUIRE(before >= 2);
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, SCREEN_W, SCREEN_H));
+    gc g;
+    gc_init(&g, &bm);
+
+    /* Erst abbrechen: der Datensatz bleibt. */
+    shell_run_action(s, "record.delete");
+    CHECK_EQ(browser_count(br), before);
+    shell_draw(s, &g);                       /* der Dialog muss zeichnen */
+
+    event esc = { .kind = EV_KEY_DOWN, .key = KEY_ESCAPE };
+    shell_event(s, &esc);
+    CHECK_EQ(browser_count(br), before);
+
+    /* Und danach ist die Oberfläche wieder frei. */
+    shell_run_action(s, "record.new");
+    CHECK_EQ(browser_view_of(br), BROWSE_FORM);
+    browser_cancel(br);
+
+    /* Jetzt zustimmen. Der letzte Knopf ist der Voreinstellungsknopf, und
+     * Return löst ihn aus (dialog.h). */
+    shell_run_action(s, "record.delete");
+    shell_draw(s, &g);
+
+    event ret = { .kind = EV_KEY_DOWN, .key = KEY_RETURN };
+    shell_event(s, &ret);
+    CHECK_EQ(browser_count(br), before - 1);
+
+    bitmap_free(&bm);
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(a_dialog_takes_everything_while_it_is_open)
+{
+    /* Modal heißt modal: solange die Frage dasteht, gibt es daneben nichts zu
+     * tun. Käme ein Klick durch, könnte der Nutzer den Datensatz wechseln,
+     * über den gerade gefragt wird. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int  tasks = app_by_label(s, "app.tasks");
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, tasks, err, sizeof err));
+
+    browser *br = shell_app_browser(s, tasks);
+    REQUIRE(br != NULL);
+    REQUIRE(browser_count(br) >= 2);
+
+    /* Ganz oben anfangen, damit die Pfeiltaste überhaupt irgendwohin könnte -
+     * am unteren Ende bewegt sie nichts, und der Test prüfte dann nichts. */
+    browser_select(br, 0);
+
+    shell_run_action(s, "record.delete");
+
+    /* Weder eine Taste der Liste ... */
+    press(s, "list.next");
+    CHECK_EQ(browser_selected(br), 0);
+
+    /* ... noch ein Klick irgendwohin. */
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, SCREEN_W, SCREEN_H));
+    gc g;
+    gc_init(&g, &bm);
+    shell_draw(s, &g);
+
+    click_in(s, tasks, 40, 8, 1);
+    CHECK_EQ(browser_selected(br), 0);
+    CHECK_EQ(browser_view_of(br), BROWSE_LIST);
+
+    /* Und ein zweiter Löschbefehl öffnet keinen zweiten Dialog. */
+    shell_run_action(s, "record.delete");
+    shell_draw(s, &g);
+
+    event esc = { .kind = EV_KEY_DOWN, .key = KEY_ESCAPE };
+    shell_event(s, &esc);
+
+    /* Danach ist wieder alles frei - wäre ein zweiter Dialog offen, wäre es
+     * das nicht. Und das Fenster der Anwendung ist wieder aktiv, ohne dass
+     * jemand hineinklicken musste. */
+    CHECK_EQ(shell_active_app(s), tasks);
+
+    press(s, "list.next");
+    CHECK_EQ(browser_selected(br), 1);
+
+    bitmap_free(&bm);
+    shell_destroy(s);
+    teardown();
+}
+
 /* --- Skriptanwendungen -----------------------------------------------------------
  *
  * Die Schale kennt Lua nicht - sie bekommt eine Handvoll Funktionszeiger. Also
@@ -1036,6 +1147,8 @@ int main(void)
     RUN(a_click_on_the_desktop_leaves_the_list_alone);
     RUN(clicking_an_inactive_window_brings_it_forward);
     RUN(the_scrollbar_next_to_the_list_works);
+    RUN(deleting_asks_first);
+    RUN(a_dialog_takes_everything_while_it_is_open);
 
     RUN(scripts_become_applications_too);
     RUN(a_script_application_gets_a_window_and_draws_itself);

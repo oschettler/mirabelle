@@ -12,6 +12,7 @@
 
 #include "app/browser.h"
 #include "app/schema.h"
+#include "ui/dialog.h"
 #include "ui/menu.h"
 #include "ui/widget.h"
 #include "ui/window.h"
@@ -61,6 +62,15 @@ struct shell {
     char last_action[64];
     char last_error[256];
     bool running;
+
+    /* Der offene Rückfragedialog, oder NULL.
+     *
+     * Löschen ist die einzige Handlung im Programm, die sich nicht rückgängig
+     * machen lässt - der Datensatz ist danach weg. Genau dafür sind modale
+     * Dialoge da, und für nichts sonst: wer bei jeder Kleinigkeit fragt,
+     * bekommt Nutzer, die wegklicken, ohne zu lesen. */
+    dialog *ask;
+    int     ask_app;
 };
 
 /* --- Schemata einlesen -------------------------------------------------------------
@@ -255,7 +265,8 @@ void shell_destroy(shell *s)
 {
     if (!s) return;
 
-    if (s->mb) menubar_free(s->mb);
+    if (s->ask) dialog_close(s->ask);
+    if (s->mb)  menubar_free(s->mb);
 
     /* Die Fensterverwaltung zuerst. Sie schließt jedes Fenster, und jedes
      * Schließen ruft on_window_closed, und das räumt Browser und Rollbalken
@@ -440,6 +451,21 @@ static bool shell_handles(const char *action)
     return false;
 }
 
+/* Braucht diese Aktion einen Browser?
+ *
+ * Alles, was einen Datensatz anfasst. In einer Skriptanwendung gibt es keinen,
+ * und dann darf die Schale die Taste nicht verbrauchen: Return ist in der
+ * Tastenbelegung mit `list.open` belegt, und ein Skript, das Return für etwas
+ * anderes benutzt, bekäme sie sonst nie zu sehen. Genau das ist im
+ * SPARTAN-Browser passiert - die Adresse ließ sich eintippen, aber Return tat
+ * nichts. */
+static bool needs_browser(const char *action)
+{
+    return strncmp(action, "record.", 7) == 0 ||
+           strncmp(action, "form.", 5) == 0 ||
+           strcmp(action, "list.open") == 0;
+}
+
 /* Der Inhalt eines Skriptfensters. Getrennt, weil beide Aufrufstellen -
  * Zeichnen und Ereignis - dieselbe Größe brauchen. */
 static bool script_ok(const shell *s, const app_entry *a)
@@ -485,10 +511,36 @@ void shell_run_action(shell *s, const char *action)
      * Formular - genau dafür hat die Tastenbelegung Bereiche. Hier stehen
      * beide Bedeutungen nebeneinander, und welche gilt, hat die Suche nach dem
      * Bereich schon entschieden. */
+    /* Löschen fragt nach. Die Handlung selbst passiert erst, wenn der Dialog
+     * beantwortet ist - siehe finish_ask(). */
+    if (strcmp(action, "record.delete") == 0) {
+        if (s->ask) return;
+
+        const char *id = browser_selected_id(a->br);
+        if (!id) return;
+
+        const char *row = browser_row_text(a->br, browser_selected(a->br));
+        const char *args[] = { row ? row : id };
+        const char *btns[] = { "button.cancel", "button.discard" };
+
+        /* Die Anwendung merken, BEVOR der Dialog aufgeht: er ist modal und
+         * wird damit selbst zum aktiven Fenster. Danach zu fragen, welche
+         * Anwendung aktiv ist, liefert den Dialog - und der hat keine
+         * Datensätze. */
+        s->ask_app = shell_active_app(s);
+        s->ask     = dialog_open(s->wm, s->cfg.catalog, "dialog.delete.body",
+                                 args, 1, btns, 2);
+
+        /* Ohne Dialog wäre die Alternative, kommentarlos zu löschen. Lieber
+         * gar nicht: der Nutzer kann es noch einmal versuchen. */
+        if (!s->ask)
+            snprintf(s->last_error, sizeof s->last_error, "kein Speicher");
+        return;
+    }
+
     if (strcmp(action, "record.new") == 0)          ok = browser_new(a->br, msg, sizeof msg);
     else if (strcmp(action, "record.save") == 0)    ok = browser_save(a->br, msg, sizeof msg);
     else if (strcmp(action, "form.accept") == 0)    ok = browser_save(a->br, msg, sizeof msg);
-    else if (strcmp(action, "record.delete") == 0)  ok = browser_delete_selected(a->br, msg, sizeof msg);
     else if (strcmp(action, "list.open") == 0)      ok = browser_open_selected(a->br, msg, sizeof msg);
     else if (strcmp(action, "form.cancel") == 0)  { browser_cancel(a->br); return; }
     else return;
@@ -511,6 +563,37 @@ static void layout_app(shell *s, app_entry *a)
 
     if (a->bar)
         a->bar->frame = rect_make(area.w - 1, 0, bw, cr.h);
+}
+
+/* Wertet einen beantworteten Dialog aus und räumt ihn weg.
+ *
+ * Der erste Knopf ist immer der abbrechende (dialog.h), also zählt nur die
+ * Eins: gelöscht wird, wenn ausdrücklich zugestimmt wurde. */
+static void finish_ask(shell *s)
+{
+    int result = dialog_result(s->ask);
+    if (result == DIALOG_OPEN) return;
+
+    window *w = dialog_window(s->ask);
+    dialog_close(s->ask);
+    wm_close(s->wm, w);
+    s->ask = NULL;
+
+    /* Das Fenster, aus dem die Frage kam, wieder nach vorn holen. Ein
+     * geschlossener Dialog lässt sonst gar kein Fenster aktiv zurück, und die
+     * nächste Aktion fände keine Anwendung mehr - man müsste erst irgendwohin
+     * klicken, damit das Programm wieder reagiert. */
+    window *back = shell_app_window(s, s->ask_app);
+    if (back) wm_activate(s->wm, back);
+
+    if (result != 1) return;
+
+    browser *br = shell_app_browser(s, s->ask_app);
+    if (!br) return;
+
+    char msg[256] = "";
+    if (!browser_delete_selected(br, msg, sizeof msg))
+        snprintf(s->last_error, sizeof s->last_error, "%s", msg);
 }
 
 void shell_draw(shell *s, gc *g)
@@ -540,6 +623,8 @@ void shell_draw(shell *s, gc *g)
         if (a->bar) widget_draw(a->bar, &wg);
     }
 
+    if (s->ask) dialog_draw(s->ask);
+
     wm_draw(s->wm, g);
     menubar_draw(s->mb, g, s->cfg.screen_w);
 }
@@ -550,6 +635,14 @@ void shell_event(shell *s, const event *e)
 {
     if (e->kind == EV_QUIT) {
         s->running = false;
+        return;
+    }
+
+    /* Ein offener Dialog bekommt alles. Modal heißt modal - solange die Frage
+     * dasteht, gibt es daneben nichts zu tun. */
+    if (s->ask) {
+        dialog_event(s->ask, e);
+        finish_ask(s);
         return;
     }
 
@@ -572,8 +665,14 @@ void shell_event(shell *s, const event *e)
 
         /* Was in einem Bereich steht, aber der Schale nichts bedeutet -
          * `list.next` etwa -, geht weiter an das Widget. Es kennt seine Tasten
-         * selbst, und die Schale hat dazu nichts zu sagen. */
-        if (action && (shell_handles(action) || is_app_label(s, action))) {
+         * selbst, und die Schale hat dazu nichts zu sagen.
+         *
+         * Dasselbe gilt für eine Anwendung ohne Browser: sie bekommt die
+         * Taste, statt dass die Schale sie ins Leere laufen lässt. */
+        bool mine = action && (shell_handles(action) || is_app_label(s, action));
+        if (mine && needs_browser(action) && (!cur || !cur->br)) mine = false;
+
+        if (mine) {
             shell_run_action(s, action);
             return;
         }

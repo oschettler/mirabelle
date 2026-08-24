@@ -9,13 +9,18 @@
 -- Auswahl, die Tastatur, den Verlauf.
 --
 -- Bedienung:
---   tippen         Adresse eingeben
---   Return         abrufen, oder den ausgewählten Verweis öffnen
+--   Return         die gezeigte Adresse abrufen, oder den gewählten Verweis
+--   tippen         eine neue Adresse eingeben (Esc bricht ab)
 --   Ziffern        einen Verweis auswählen
 --   Hoch/Runter    blättern
---   Backspace      im Verlauf zurück (in der Adresszeile: Zeichen löschen)
+--   Backspace      im Verlauf zurück (beim Tippen: Zeichen löschen)
 
 local START = "spartan://mozz.us/"
+
+-- Breite des Rollbalkens. Im Thema steht dieselbe Zahl (scrollbar_w); Lua
+-- kommt an das Thema nicht heran, also steht sie hier noch einmal. Das ist
+-- eine bekannte Naht: wer das Thema ändert, ändert sie hier mit.
+local BAR = 16
 
 browser = {
   address  = START,
@@ -26,7 +31,116 @@ browser = {
   top      = 1,
   status   = "",
   history  = {},
+
+  visible  = 1,      -- wie viele Zeilen zuletzt ins Fenster passten
+  bar      = nil,    -- Lage des Rollbalkens, beim Zeichnen gesetzt
+  drag     = nil,    -- Abstand des Zeigers zur Schiebervorderkante
 }
+
+-- Klemmt den Anfang der Anzeige auf einen gültigen Bereich.
+local function clamp_top()
+  local last = math.max(1, #browser.lines - browser.visible + 1)
+  if browser.top > last then browser.top = last end
+  if browser.top < 1 then browser.top = 1 end
+end
+
+-- Lage und Länge des Schiebers in der Rinne.
+--
+-- Dieselbe Rechnung wie in ui/scroll.c: die Länge zeigt an, welcher Anteil des
+-- Ganzen zu sehen ist, und eine Untergrenze hält ihn greifbar.
+local function thumb(track)
+  local total = #browser.lines
+  if total <= browser.visible then return 0, track end
+
+  local len = math.max(BAR, math.floor(track * browser.visible / total + 0.5))
+  local span = track - len
+  local maxtop = total - browser.visible
+
+  local pos = (span > 0) and math.floor((browser.top - 1) * span / maxtop + 0.5) or 0
+  return pos, len
+end
+
+-- Zeichnet den Balken und merkt sich seine Lage für die Bedienung.
+local function draw_bar(x, y, h)
+  browser.bar = { x = x, y = y, h = h, track = h - 2 * BAR + 2 }
+
+  if #browser.lines <= browser.visible then
+    -- Nichts zu rollen: nur der Umriss, wie in System 1.
+    pattern("white") rectfill(x, y, BAR, h)
+    pattern("black") rect(x, y, BAR, h)
+    return
+  end
+
+  pattern("gray")  rectfill(x, y, BAR, h)
+  pattern("black") rect(x, y, BAR, h)
+
+  -- Die beiden Pfeilfelder.
+  for i, dir in ipairs({ -1, 1 }) do
+    local by = (i == 1) and y or (y + h - BAR)
+    pattern("white") rectfill(by == y and x or x, by, BAR, BAR)
+    pattern("black") rect(x, by, BAR, BAR)
+
+    local cx, cy = x + BAR // 2, by + BAR // 2
+    for k = 0, 3 do
+      local w = 2 * k + 1
+      local ly = (dir < 0) and (cy - 2 + k) or (cy + 2 - k)
+      line(cx - k, ly, cx + k, ly)
+    end
+  end
+
+  local pos, len = thumb(browser.bar.track)
+  local ty = y + BAR - 1 + pos
+
+  pattern("white") rectfill(x, ty, BAR, len)
+  pattern("black") rect(x, ty, BAR, len)
+end
+
+-- Bedient den Balken. Liefert true, wenn der Klick ihm galt.
+local function bar_click(mx, my)
+  local b = browser.bar
+  if not b or mx < b.x or mx >= b.x + BAR then return false end
+  if my < b.y or my >= b.y + b.h then return false end
+
+  if #browser.lines <= browser.visible then return true end
+
+  if my < b.y + BAR then
+    browser.top = browser.top - 1
+  elseif my >= b.y + b.h - BAR then
+    browser.top = browser.top + 1
+  else
+    local pos, len = thumb(b.track)
+    local ty = b.y + BAR - 1 + pos
+
+    if my < ty then
+      browser.top = browser.top - browser.visible
+    elseif my >= ty + len then
+      browser.top = browser.top + browser.visible
+    else
+      browser.drag = my - ty
+    end
+  end
+
+  clamp_top()
+  return true
+end
+
+-- Zieht am Schieber.
+local function bar_drag(my)
+  local b = browser.bar
+  if not b or not browser.drag then return false end
+
+  local total = #browser.lines
+  local _, len = thumb(b.track)
+  local span = b.track - len
+  if span <= 0 then return true end
+
+  local pos = my - browser.drag - (b.y + BAR - 1)
+  pos = math.max(0, math.min(span, pos))
+
+  browser.top = 1 + math.floor(pos * (total - browser.visible) / span + 0.5)
+  clamp_top()
+  return true
+end
 
 -- Bricht einen Text auf eine Breite in Zeichen um.
 --
@@ -101,13 +215,13 @@ function browser.go(url, remember)
     -- verschweigt dem Nutzer, wo er gelandet ist - und zwei Server, die
     -- aufeinander zeigen, ergeben ein Aufhängen statt einer Meldung.
     browser.status = T("spartan.redirect") .. " " .. page.meta
-    browser.render("=> " .. page.meta .. "\n", 60)
+    browser.render("=> " .. page.meta .. "\n", browser.cols or 60)
     return true
   end
 
   if page.status ~= 2 then
     browser.status = page.status .. " " .. page.meta
-    browser.render(page.body or "", 60)
+    browser.render(page.body or "", browser.cols or 60)
     return true
   end
 
@@ -118,7 +232,7 @@ function browser.go(url, remember)
   browser.address  = page.url or url
   browser.status   = page.meta
   browser.selected = 0
-  browser.render(page.body, 60)
+  browser.render(page.body, browser.cols or 60)
   return true
 end
 
@@ -152,16 +266,22 @@ app{
     cls()
 
     local lh   = textheight() + 2
-    local cols = math.max(8, math.floor((w - 8) / textwidth("M")))
+    local text_w = w - BAR
+    local cols = math.max(8, math.floor((text_w - 8) / textwidth("M")))
 
     -- Die Adresszeile. Beim Tippen steht ein Strich dahinter, damit man
     -- sieht, wo die Schreibmarke ist.
     rect(2, 2, w - 4, lh + 4)
     print(browser.address .. (browser.editing and "_" or ""), 6, 5)
 
+    -- Solange nichts geholt wurde, steht hier, was zu tun ist. Ein leeres
+    -- Fenster, in dem man raten muss, ist keine Bedienoberfläche.
+    local status = browser.status
+    if status == "" and #browser.lines == 0 then status = T("spartan.hint") end
+
     local y = lh + 10
-    if browser.status ~= "" then
-      print(browser.status, 6, y)
+    if status ~= "" then
+      print(status, 6, y)
       y = y + lh
     end
 
@@ -169,9 +289,10 @@ app{
     y = y + 3
 
     local visible = math.max(1, math.floor((h - y) / lh))
-    if browser.top + visible - 1 > #browser.lines then
-      browser.top = math.max(1, #browser.lines - visible + 1)
-    end
+    browser.visible = visible
+    clamp_top()
+
+    draw_bar(w - BAR, y, h - y)
 
     for i = browser.top, math.min(#browser.lines, browser.top + visible - 1) do
       local l = browser.lines[i]
@@ -185,7 +306,7 @@ app{
 
       if l.link and l.link == browser.selected then
         mode("xor")
-        rectfill(4, y - 1, w - 8, lh - 1)
+        rectfill(4, y - 1, text_w - 8, lh - 1)
         mode("copy")
       end
 
@@ -198,6 +319,19 @@ app{
   end,
 
   event = function(e)
+    if e.kind == "mouse_down" then
+      return bar_click(e.x, e.y)
+    elseif e.kind == "mouse_move" then
+      return bar_drag(e.y)
+    elseif e.kind == "mouse_up" then
+      browser.drag = nil
+      return false
+    elseif e.kind == "wheel" then
+      browser.top = browser.top - e.wheel
+      clamp_top()
+      return true
+    end
+
     if e.kind == "text" then
       if browser.editing then
         browser.address = browser.address .. e.text
@@ -224,11 +358,13 @@ app{
     if e.kind ~= "key_down" then return false end
 
     if e.key == key.enter then
-      if browser.editing then
+      if browser.selected > 0 and not browser.editing then
+        browser.open_link(browser.selected)
+      else
+        -- Auch ohne Tippen: Return holt, was in der Zeile steht. So kommt man
+        -- beim ersten Öffnen weiter, ohne die Adresse abzuschreiben.
         browser.editing = false
         browser.go(browser.address)
-      elseif browser.selected > 0 then
-        browser.open_link(browser.selected)
       end
       return true
 
@@ -245,11 +381,23 @@ app{
       return true
 
     elseif e.key == key.down then
-      browser.top = math.min(browser.top + 1, math.max(1, #browser.lines))
+      browser.top = browser.top + 1
+      clamp_top()
       return true
 
     elseif e.key == key.up then
-      browser.top = math.max(browser.top - 1, 1)
+      browser.top = browser.top - 1
+      clamp_top()
+      return true
+
+    elseif e.key == key.pagedown then
+      browser.top = browser.top + browser.visible
+      clamp_top()
+      return true
+
+    elseif e.key == key.pageup then
+      browser.top = browser.top - browser.visible
+      clamp_top()
       return true
     end
 

@@ -109,3 +109,5 @@ spartan.loading          = loading ...
 spartan.failed           = Failed.
 spartan.redirect         = Redirect to
 spartan.badlink          = That link goes nowhere.
+dialog.delete.body       = Really delete “{0}”? This cannot be undone.
+spartan.hint             = Return fetches this address. Type to replace it, Esc cancels.

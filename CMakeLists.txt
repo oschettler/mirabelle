@@ -285,7 +285,8 @@ target_compile_definitions(test_text_widget
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 if(TARGET pda_lua)
-    target_link_libraries(test_lua PRIVATE pda_lua pda_fonts pda_plat_headless)
+    target_link_libraries(test_lua PRIVATE pda_lua pda_fonts pda_plat_headless
+                                          PkgConfig::LUA)
     target_compile_definitions(test_lua
         PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 endif()
