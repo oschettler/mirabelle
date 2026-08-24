@@ -139,6 +139,26 @@ add_library(pda_app
 )
 target_link_libraries(pda_app PUBLIC pda_ui pda_store)
 
+# --- Lua ---------------------------------------------------------------------
+# Eigene Bibliothek, damit nichts anderes Lua kennt. Fehlt Lua, wird sie nicht
+# gebaut - die Anwendungen laufen trotzdem, weil der Schemavertrag die
+# C-Struktur ist und nicht die Lua-Tabelle (D-15).
+
+if(PkgConfig_FOUND)
+    pkg_check_modules(LUA IMPORTED_TARGET lua5.4 lua-5.4 lua)
+endif()
+
+if(TARGET PkgConfig::LUA)
+    add_library(pda_lua
+        src/lua/pdalua.c
+        src/lua/pdalua_store.c
+        src/lua/pdalua_schema.c
+    )
+    target_link_libraries(pda_lua PUBLIC pda_app pda_gfx PRIVATE PkgConfig::LUA)
+else()
+    message(STATUS "Lua nicht gefunden - die Skriptanbindung wird nicht gebaut")
+endif()
+
 # --- Die Vorführung ----------------------------------------------------------
 # Getrennt von main.c, damit sie ohne SDL und ohne Bildschirm geprüft werden kann.
 
@@ -194,6 +214,10 @@ if(TARGET pda_index)
     list(APPEND PDA_TESTS index)
 endif()
 
+if(TARGET pda_lua)
+    list(APPEND PDA_TESTS lua)
+endif()
+
 foreach(name IN LISTS PDA_TESTS)
     add_executable(test_${name} tests/unit/test_${name}.c)
     target_link_libraries(test_${name} PRIVATE pda_testsupport)
@@ -210,6 +234,12 @@ target_link_libraries(test_fontc PRIVATE pda_fontc)
 target_link_libraries(test_text_widget PRIVATE pda_ui pda_fonts)
 target_compile_definitions(test_text_widget
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
+if(TARGET pda_lua)
+    target_link_libraries(test_lua PRIVATE pda_lua pda_fonts pda_plat_headless)
+    target_compile_definitions(test_lua
+        PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+endif()
 
 if(TARGET pda_index)
     target_link_libraries(test_index PRIVATE pda_index pda_plat_headless)

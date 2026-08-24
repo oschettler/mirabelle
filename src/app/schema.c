@@ -226,8 +226,13 @@ static bool field_level(schema_field *f, const char *key, char *rest,
     return fail(err, err_size, path, line, "unbekannter Schlüssel „%s“ in einem Feld", key);
 }
 
-/* Alles, was sich erst beurteilen lässt, wenn die Datei ganz gelesen ist. */
-static bool check_whole(const schema *s, char *err, size_t err_size, const char *path)
+/* Alles, was sich erst beurteilen lässt, wenn das Schema vollständig ist.
+ *
+ * Öffentlich als schema_check(), weil es zwei Lader gibt - die Textdatei hier
+ * und die Lua-Tabelle in lua/pdalua_schema.c - aber nur eine Vorstellung davon,
+ * was ein gültiges Schema ist. Läge diese Prüfung zweimal vor, wären es früher
+ * oder später zwei verschiedene. */
+bool schema_check(const schema *s, const char *path, char *err, size_t err_size)
 {
     if (!s->type[0])   return fail(err, err_size, path, 0, "type fehlt");
     if (!s->folder[0]) return fail(err, err_size, path, 0, "folder fehlt");
@@ -369,7 +374,7 @@ bool schema_load(schema *s, const char *path, char *err, size_t err_size)
 
     fclose(fp);
     if (!ok) return false;
-    if (!check_whole(&tmp, err, err_size, path)) return false;
+    if (!schema_check(&tmp, path, err, err_size)) return false;
 
     *s = tmp;
     return true;

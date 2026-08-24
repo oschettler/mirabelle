@@ -22,19 +22,18 @@ Fahrplan in [ROADMAP.md](ROADMAP.md).
 | M10 | Sortierung, Abfragen, SQLite-Index mit FTS5 |
 | M11 | Schemata, Feldtyp-Registratur, generischer Browser |
 | M12 | Datumsrechnung, Monatsansicht, Ansichtsregistratur |
+| M13 | Lua 5.4 eingebettet, API, Schemalader, eine Lua-Anwendung |
 
 Dazu: Handbuch (14 Kapitel, baut zu PDF/EPUB/HTML), Maße nach
 `docs/ui-style-guide.md`.
 
 ## Was als Nächstes dran ist
 
-**M13 - Lua-Anbindung.** Lua 5.4 einbetten, die API aus DESIGN.md Abschnitt 11
-exportieren, und einen zweiten Schemalader schreiben, der eine Lua-Tabelle in
-dieselbe `schema`-Struktur füllt (D-15). Zum Schluss eine reine Lua-Anwendung
-als Beweis.
-
-Danach ist Teil V abgeschlossen; es folgen M14 bis M17 (Härten und Portieren)
-und die Überarbeitung des Handbuchs.
+Teil V ist abgeschlossen. Es folgen **M14 bis M17** (Härten und Portieren,
+siehe ROADMAP.md) und die **Überarbeitung des Handbuchs**: die vierzehn
+vorhandenen Kapitel sind noch im alten Ton geschrieben und müssen nach
+`handbuch/STIL.md` neu gefasst werden - kein Erlebnisbericht, sondern ein
+Entwurf aus einem Guss. Dabei kommen die Kapitel zu M9 bis M13 dazu.
 
 ## Offene Punkte
 

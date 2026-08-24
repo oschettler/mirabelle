@@ -124,6 +124,17 @@ typedef struct {
  * halbfertiges Schema kommt nie zurück. */
 bool schema_load(schema *s, const char *path, char *err, size_t err_size);
 
+/* Prüft ein fertig gefülltes Schema: Kopf vollständig, jedes Feld brauchbar,
+ * jeder Name in columns, sort, form und view ein Feld, das es gibt.
+ *
+ * schema_load() ruft das selbst. Öffentlich ist es für den zweiten Lader - die
+ * Lua-Fassung in lua/pdalua.h -, damit es nur eine Vorstellung davon gibt, was
+ * ein gültiges Schema ist. Läge diese Prüfung zweimal vor, wären es früher oder
+ * später zwei verschiedene.
+ *
+ * path erscheint in der Meldung und darf NULL sein. */
+bool schema_check(const schema *s, const char *path, char *err, size_t err_size);
+
 /* Das Feld mit diesem Namen, oder NULL. */
 const schema_field *schema_field_by_name(const schema *s, const char *name);
 
