@@ -132,4 +132,35 @@ bool plat_rename(const char *from, const char *to);
 /* Löscht eine Datei. true auch, wenn sie schon nicht mehr da war. */
 bool plat_remove(const char *path);
 
+/* --- Netz -----------------------------------------------------------------
+ *
+ * Vier Funktionen, und keine davon weiß etwas über ein Protokoll. Sie sind das
+ * Gegenstück zu den Dateifunktionen: eine Verbindung ist ein Ding, in das man
+ * schreibt und aus dem man liest.
+ *
+ * Auf dem Arbeitsplatz sind das gewöhnliche Sockets, auf dem Gerät wird es
+ * lwIP - und beides sieht von hier aus gleich aus. Das ist der Grund, warum
+ * das Protokoll (net/spartan.h) den Transport übergeben bekommt statt ihn zu
+ * kennen: so hängt es an keiner der beiden Umsetzungen.
+ *
+ * Wo es kein Netz gibt, liefert plat_connect() NULL mit einer Meldung. Das ist
+ * kein Sonderfall, sondern der Normalzustand in Tests und auf einem Gerät ohne
+ * Verbindung.
+ */
+
+typedef struct plat_socket plat_socket;
+
+/* Baut eine Verbindung auf. NULL und eine Meldung in err, wenn nicht. */
+plat_socket *plat_connect(const char *host, int port, char *err, size_t err_size);
+
+/* Schickt alles oder gar nichts: false, wenn nicht alle len Bytes durchgingen.
+ * Teilweise gesendete Anfragen wären schlimmer als gar keine. */
+bool plat_send(plat_socket *s, const char *data, size_t len);
+
+/* Liest bis zu cap Bytes. 0 heißt: die Gegenseite hat geschlossen. Negativ
+ * heißt Fehler. cap muss größer als null sein. */
+long plat_recv(plat_socket *s, char *buf, size_t cap);
+
+void plat_disconnect(plat_socket *s);
+
 #endif /* PDA_PLAT_H */

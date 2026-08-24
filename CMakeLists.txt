@@ -54,6 +54,7 @@ add_library(pda_plat_headless
     src/plat/expand.c
     src/plat/plat_headless.c
     src/plat/plat_files_posix.c
+    src/plat/plat_net_posix.c
 )
 target_link_libraries(pda_plat_headless PUBLIC pda_gfx)
 
@@ -67,6 +68,7 @@ if(TARGET PkgConfig::SDL3)
         src/plat/expand.c
         src/plat/plat_sdl3.c
         src/plat/plat_files_posix.c
+        src/plat/plat_net_posix.c
     )
     target_link_libraries(pda_plat_sdl3 PUBLIC pda_gfx PRIVATE PkgConfig::SDL3)
 
@@ -114,7 +116,7 @@ endif()
 # Das Protokoll ist reine Rechnung auf Bytes und braucht nichts als den Kern.
 # Wer die Bytes überträgt, wird übergeben (spartan.h).
 
-add_library(pda_net src/net/spartan.c)
+add_library(pda_net src/net/spartan.c src/net/plat_transport.c)
 target_link_libraries(pda_net PUBLIC pda_core)
 
 # --- Oberfläche --------------------------------------------------------------
@@ -143,8 +145,9 @@ add_library(pda_app
     src/app/fieldkind.c
     src/app/browser.c
     src/app/monthview.c
+    src/app/gemview.c
 )
-target_link_libraries(pda_app PUBLIC pda_ui pda_store)
+target_link_libraries(pda_app PUBLIC pda_ui pda_store pda_net)
 
 # --- Lua ---------------------------------------------------------------------
 # Eigene Bibliothek, damit nichts anderes Lua kennt. Fehlt Lua, wird sie nicht
@@ -209,7 +212,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query schema fieldkind browser date monthview spartan)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query schema fieldkind browser date monthview spartan gemview)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
@@ -253,6 +256,10 @@ if(TARGET pda_index)
     target_compile_definitions(test_index
         PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 endif()
+
+target_link_libraries(test_gemview     PRIVATE pda_app pda_fonts)
+target_compile_definitions(test_gemview
+    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 target_link_libraries(test_monthview   PRIVATE pda_app pda_fonts)
 target_compile_definitions(test_monthview

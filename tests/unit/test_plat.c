@@ -229,6 +229,41 @@ TEST(plat_can_be_restarted)
     plat_shutdown();
 }
 
+/* --- Netz ---------------------------------------------------------------------
+ *
+ * Hier wird keine Verbindung aufgebaut. Ein Test, der ins Netz greift, ist
+ * beim Nutzer langsam, im Zug rot und sagt über unseren Code nichts aus.
+ * Geprüft wird, was ohne Gegenstelle festliegt: dass Fehler Fehler sind und
+ * dass ein Nullzeiger nichts kaputtmacht.
+ */
+
+TEST(a_name_that_does_not_resolve_fails_with_a_message)
+{
+    char err[256] = "";
+
+    /* .invalid ist per RFC 2606 dauerhaft für genau das reserviert - es gibt
+     * ihn nicht und wird ihn nie geben. Ein ausgedachter Name könnte
+     * eines Tages jemandem gehören. */
+    plat_socket *s = plat_connect("kein-rechner.invalid", 300, err, sizeof err);
+    CHECK(s == NULL);
+    CHECK(err[0] != '\0');
+    CHECK(strstr(err, "kein-rechner.invalid") != NULL);
+
+    plat_disconnect(s);      /* auf NULL muss das gehen */
+}
+
+TEST(sending_and_receiving_without_a_connection_are_errors)
+{
+    char buf[16];
+
+    CHECK(!plat_send(NULL, "x", 1));
+    CHECK(plat_recv(NULL, buf, sizeof buf) < 0);
+
+    /* Null Bytes zu erbitten ergibt keinen Sinn und wird abgelehnt, statt
+     * womöglich ewig zu warten. */
+    CHECK(plat_recv(NULL, buf, 0) < 0);
+}
+
 int main(void)
 {
     RUN(plat_init_uses_default_size);
@@ -242,5 +277,8 @@ int main(void)
     RUN(plat_mkdir_is_idempotent);
     RUN(plat_list_on_missing_dir_fails);
     RUN(plat_can_be_restarted);
+    RUN(a_name_that_does_not_resolve_fails_with_a_message);
+    RUN(sending_and_receiving_without_a_connection_are_errors);
+
     return test_summary();
 }

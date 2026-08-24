@@ -94,3 +94,8 @@ value.einkauf            = Shopping
 app.events               = Events
 field.date               = Date
 field.time               = Time
+
+# --- Gemtext-Anzeige --------------------------------------------------------
+# Das Aufzählungszeichen ist eine Darstellungsentscheidung, keine Übersetzung -
+# es steht hier, damit es sich ändern lässt, ohne den Zeichencode anzufassen.
+gemtext.bullet           = *
