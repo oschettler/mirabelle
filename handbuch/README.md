@@ -14,20 +14,52 @@ handbuch/
 ├── STIL.md               Stilblatt — verbindlich für alle, die ein Kapitel schreiben
 ├── src/                  Die Kapitel in AsciiDoc
 │   ├── 00-master.adoc    bindet alle Kapitel ein
-│   ├── 01-einleitung.adoc
-│   ├── ...
+│   ├── 01-einleitung.adoc … 16-glossar.adoc
+│   │                     Die Dateinummer ist die Kapitelnummer.
 │   └── diagramme/        erzeugte SVG — nicht von Hand ändern
 ├── diagramme/            Diagrammquellen im Nomnoml-Format
 ├── build/                Makefile, Dockerfile, Metadaten, PDF-Layout
 └── output/               entsteht beim Bauen
 ```
 
+## Die sechzehn Kapitel
+
+| | Kapitel | Worum es geht |
+|---|---|---|
+| 1 | Worum es geht | Was gebaut wird und warum so |
+| 2 | Bauen und starten | `make`, `make test`, das Programm |
+| 3 | Die Oberfläche bedienen | Fenster, Menüs, Tastatur |
+| 4 | Wie das Programm aufgebaut ist | Schichten und die Plattformschicht |
+| 5 | Ein Bild aus einzelnen Bits | Bitmap, Muster, Übertragungsmodi |
+| 6 | Buchstaben von Hand | Bitmapschrift, UTF-8, Umlaute |
+| 7 | Überlappende Fenster | Fensterverwaltung, Clipping, Ziehen |
+| 8 | Wo die Daten liegen | Gemtext, Front Matter, Vault, Suche |
+| 9 | Aus Dateien werden Anwendungen | Schemata, die Schale, Tastenbereiche |
+| 10 | Lua in einer halben Stunde | Die Sprache |
+| 11 | API-Referenz | C-Schnittstellen und die Lua-API |
+| 12 | Ein Browser für ein kleines Netz | SPARTAN, Transport, der Browser in Lua |
+| 13 | Selbst etwas dazubauen | Kürzel, Texte, Themen, eigene Anwendungen |
+| 14 | Wie wir prüfen, ob es stimmt | Testläufer, Sollbilder, Mutationstests |
+| 15 | Aufs eigene Gerät | Der Port auf den ESP32 — noch nicht gebaut |
+| 16 | Glossar | |
+
 ## Voraussetzungen
 
-- Docker, gestartet
-- nomnoml für die Diagramme: `npm install -g nomnoml`
+Zwei Wege, und beide funktionieren.
 
-Eine lokale Ruby- oder Asciidoctor-Installation ist nicht nötig.
+**Mit Docker**, wie das `Makefile` in `build/` es tut — dann brauchst du nur
+Docker und `nomnoml` für die Diagramme (`npm install -g nomnoml`).
+
+**Ohne Docker**, wenn Asciidoctor lokal installiert ist:
+
+```
+cd handbuch
+asciidoctor              -o output/pda-handbuch.html src/00-master.adoc
+asciidoctor-pdf -a pdf-theme=build/theme.yml \
+                         -o output/pda-handbuch.pdf  src/00-master.adoc
+```
+
+Der zweite Weg ist beim Schreiben bequemer: ein Durchgang dauert Sekunden.
 
 ## Bauen
 
