@@ -7,7 +7,8 @@ was er prueft, ist das Aussehen, nicht die Logik.
 import subprocess, pathlib, tempfile, os
 
 SRC = pathlib.Path("src/ui/widget_scroll.c")
-DEPS = ["src/ui/scroll.c", "src/ui/widget.c", "src/ui/theme.c",
+DEPS = ["src/ui/scroll.c", "src/ui/widget.c", "src/ui/theme.c", "src/core/lines.c",
+        "src/ui/widget_list.c",
         "tests/unit/test_scrollbar.c"]
 orig = SRC.read_text(encoding="utf-8")
 
@@ -49,7 +50,7 @@ def run(text):
                "-DPDA_DATA_DIR=\"data\"", src] + DEPS + [
                "src/core/i18n.c", "src/core/utf8.c", "src/gfx/bitmap.c",
                "src/gfx/draw.c", "src/gfx/pattern.c", "src/gfx/text.c",
-               "src/gfx/font.c", "src/gfx/pbm.c", "src/ui/textbuf.c", "src/ui/widget_text.c",
+               "src/gfx/font.c", "src/gfx/pbm.c", "src/ui/textbuf.c", "src/ui/widget_text.c", "src/ui/caret.c",
                "build/font_system12.c", "tests/support/golden.c",
                "-DPDA_GOLDEN_DIR=\"tests/golden\"", "-o", exe]
         b = subprocess.run(cmd, capture_output=True, text=True)

@@ -5,7 +5,7 @@ Direkt uebersetzt, nicht ueber CMake - warum, steht in tests/mutate_scroll.py.
 import subprocess, pathlib, tempfile, os
 
 SRC  = pathlib.Path("src/core/collate.c")
-DEPS = ["src/core/utf8.c", "tests/unit/test_collate.c"]
+DEPS = ["src/core/utf8.c", "src/core/lines.c", "tests/unit/test_collate.c"]
 orig = SRC.read_text(encoding="utf-8")
 
 MUTS = [

@@ -23,6 +23,7 @@
 #include "gfx/text.h"
 #include "plat/plat.h"
 #include "support/golden.h"
+#include "ui/caret.h"
 #include "ui/theme.h"
 #include "ui/widget.h"
 
@@ -673,6 +674,76 @@ TEST(golden_text_area_wrapped)
     i18n_free(cat);
 }
 
+/* --- Die Schreibmarke blinkt ------------------------------------------------------ */
+
+/* Zählt die gesetzten Pixel. Genau genug: die Schreibmarke ist der einzige
+ * Unterschied zwischen den beiden Bildern in diesem Test. */
+static int ink(const bitmap *bm)
+{
+    int n = 0;
+    for (int y = 0; y < bm->h; y++)
+        for (int x = 0; x < bm->w; x++)
+            n += bitmap_get(bm, x, y) ? 1 : 0;
+    return n;
+}
+
+static int draw_field_ink(widget *w)
+{
+    bitmap bm;
+    if (!bitmap_init(&bm, w->frame.w, w->frame.h)) return -1;
+
+    gc g;
+    gc_init(&g, &bm);
+    g.pat  = PAT_WHITE;
+    g.mode = GFX_COPY;
+    gfx_clear(&g);
+
+    widget_draw(w, &g);
+
+    int n = ink(&bm);
+    bitmap_free(&bm);
+    return n;
+}
+
+TEST(the_caret_disappears_in_the_dark_half_of_the_blink)
+{
+    const theme *th  = load_test_theme();
+    catalog     *cat = load_test_catalog();
+    REQUIRE(cat);
+
+    widget *w = text_field_create(th, cat);
+    REQUIRE(w);
+    int mw, mh;
+    widget_measure(w, &mw, &mh);
+    w->frame   = rect_make(0, 0, mw, mh);
+    w->focused = true;
+
+    text_widget_set_value(w, "abc");
+
+    /* Ohne Uhr steht die Schreibmarke und ist zu sehen - so entstehen alle
+     * Sollbilder in diesem Verzeichnis. */
+    caret_reset();
+    int hell = draw_field_ink(w);
+    REQUIRE(hell > 0);
+
+    caret_tick(0);
+    CHECK_EQ(draw_field_ink(w), hell);
+
+    /* Eine halbe Periode weiter ist sie aus, und das Bild hat weniger Pixel. */
+    caret_tick(CARET_BLINK_MS);
+    int dunkel = draw_field_ink(w);
+    CHECK(dunkel < hell);
+
+    /* Ein Anschlag holt sie sofort zurück: wer tippt, will sehen, wo er ist. */
+    event x = { .kind = EV_TEXT, .text = "d" };
+    CHECK(widget_event(w, &x));
+    CHECK(draw_field_ink(w) > dunkel);
+
+    caret_reset();
+    widget_destroy(w);
+    i18n_free(cat);
+}
+
 int main(void)
 {
     RUN(typing_fills_value_and_round_trips_with_set_value);
@@ -697,6 +768,7 @@ int main(void)
 
     RUN(text_area_without_layout_does_not_crash);
     RUN(disabled_widget_processes_nothing);
+    RUN(the_caret_disappears_in_the_dark_half_of_the_blink);
 
     RUN(golden_text_field_focused);
     RUN(golden_text_area_wrapped);

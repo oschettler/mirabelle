@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "core/utf8.h"
+#include "ui/caret.h"
 #include "gfx/draw.h"
 #include "gfx/font.h"
 #include "gfx/pattern.h"
@@ -310,6 +311,11 @@ static void text_area_scroll_to_cursor(text_widget *tw)
  * von außen über text_widget_set_value() - genau wie list_ensure_visible(). */
 static void text_after_move(text_widget *tw)
 {
+    /* Wer gerade tippt, will sehen, wo er ist: der Takt fängt von vorn an,
+     * sichtbar. Sonst landet ein Anschlag in einer dunklen Phase und die
+     * Schreibmarke scheint zu fehlen. */
+    caret_wake();
+
     if (tw->multiline) text_area_scroll_to_cursor(tw);
     else                text_field_scroll_to_cursor(tw);
 }
@@ -391,7 +397,7 @@ static void text_field_draw_content(const text_widget *tw, gc *g, rect content)
         int x0 = content.x - tw->scroll_x + width_of_range(&system12, text, 0, from);
         int x1 = content.x - tw->scroll_x + width_of_range(&system12, text, 0, to);
         gfx_invert_rect(g, rect_make(x0, content.y, x1 - x0, content.h));
-    } else if (tw->base.focused) {
+    } else if (tw->base.focused && caret_on()) {
         int cx = content.x - tw->scroll_x + width_of_range(&system12, text, 0, textbuf_cursor(buf));
         int cy = content.y + (content.h - system12.size) / 2;
         g->mode = GFX_XOR;
@@ -437,7 +443,7 @@ static void text_area_draw_content(const text_widget *tw, gc *g, rect content)
         }
     }
 
-    if (!has_sel && tw->base.focused) {
+    if (!has_sel && tw->base.focused && caret_on()) {
         int cursor_line = text_area_line_at(tw, textbuf_cursor(tw->buf));
         int row          = cursor_line - tw->sc.value;
         if (row >= 0 && row < rows) {

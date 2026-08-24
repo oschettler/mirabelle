@@ -3,7 +3,7 @@ Sanitizer - warum, steht in tests/mutate_scroll.py."""
 import subprocess, pathlib, tempfile, os
 
 SRC  = pathlib.Path("src/store/index_sqlite.c")
-DEPS = ["src/core/utf8.c", "src/core/collate.c", "src/store/record.c",
+DEPS = ["src/core/utf8.c", "src/core/collate.c", "src/core/lines.c", "src/store/record.c",
         "src/store/frontmatter.c", "src/store/gemtext.c", "src/store/query.c",
         "src/store/vault.c", "src/plat/plat_headless.c",
         "src/plat/plat_files_posix.c", "src/plat/expand.c",

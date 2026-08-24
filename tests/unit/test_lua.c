@@ -21,6 +21,7 @@
 #include "core/keymap.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
+#include "ui/caret.h"
 #include "ui/theme.h"
 #include "app/shell.h"
 #include <lua.h>
@@ -1351,6 +1352,60 @@ TEST(the_browser_draws_a_page)
     i18n_free(cat);
 }
 
+/* Zählt die gesetzten Pixel eines Bildes. Grob, aber genau genug, um zu
+ * zeigen, dass ein Strich da ist oder eben nicht. */
+static int ink(const bitmap *bm)
+{
+    int n = 0;
+    for (int y = 0; y < bm->h; y++)
+        for (int x = 0; x < bm->w; x++)
+            n += bitmap_get(bm, x, y) ? 1 : 0;
+    return n;
+}
+
+TEST(the_address_line_blinks_in_the_same_beat_as_every_text_field)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_browser(cat);
+    REQUIRE(L != NULL);
+
+    /* Der Browser zeichnet seine Adresszeile selbst. Früher stand dort ein
+     * Unterstrich, weil ein Skript nur Text zeichnen konnte - eine zweite
+     * Schreibmarke neben der des Programms. Jetzt fragt es denselben Takt. */
+    CHECK(run(L, "browser.address = 'spartan://x.org/'\nbrowser.editing = true"));
+
+    shell_scripting sc = pdalua_scripting(L);
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 250, 60));
+    gc g;
+    gc_init(&g, &bm);
+
+    caret_reset();
+    sc.draw(sc.user, 0, &g, 250, 60);
+    int hell = ink(&bm);
+
+    caret_tick(0);
+    caret_tick(CARET_BLINK_MS);
+    sc.draw(sc.user, 0, &g, 250, 60);
+    int dunkel = ink(&bm);
+    CHECK(dunkel < hell);
+
+    /* Ohne Tippen keine Schreibmarke: der Strich sagt "hier landet, was du
+     * tippst", und das stimmt nur beim Tippen. */
+    caret_reset();
+    CHECK(run(L, "browser.editing = false"));
+    sc.draw(sc.user, 0, &g, 250, 60);
+    CHECK_EQ(ink(&bm), dunkel);
+
+    bitmap_free(&bm);
+    pdalua_close(L);
+    i18n_free(cat);
+    caret_reset();
+}
+
 /* --- Durch die ganze Schale hindurch ---------------------------------------------
  *
  * Der Weg, den eine Taste wirklich nimmt: Fenster, Tastenbelegung, Schale,
@@ -1470,6 +1525,7 @@ int main(void)
     RUN(a_letter_starts_a_new_address_and_backspace_shortens_it);
     RUN(a_long_page_gets_a_working_scrollbar);
     RUN(the_browser_draws_a_page);
+    RUN(the_address_line_blinks_in_the_same_beat_as_every_text_field);
 
     RUN(a_key_the_shell_cannot_use_reaches_the_script);
 

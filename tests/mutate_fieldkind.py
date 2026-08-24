@@ -3,8 +3,8 @@ import subprocess, pathlib, tempfile, os
 
 SRC  = pathlib.Path("src/app/fieldkind.c")
 DEPS = ["src/app/schema.c", "src/core/i18n.c", "src/core/utf8.c",
-        "src/core/keymap.c", "src/ui/theme.c", "src/ui/widget.c",
-        "src/ui/widget_list.c", "src/ui/widget_text.c", "src/ui/widget_scroll.c",
+        "src/core/keymap.c", "src/core/lines.c", "src/ui/theme.c", "src/ui/widget.c",
+        "src/ui/widget_list.c", "src/ui/widget_text.c", "src/ui/caret.c", "src/ui/widget_scroll.c",
         "src/ui/scroll.c", "src/ui/textbuf.c", "src/gfx/bitmap.c", "src/gfx/draw.c",
         "src/gfx/pattern.c", "src/gfx/font.c", "src/gfx/text.c",
         "build/font_system12.c", "tests/unit/test_fieldkind.c"]

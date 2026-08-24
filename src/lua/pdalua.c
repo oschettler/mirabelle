@@ -17,6 +17,7 @@
 #include "gfx/font.h"
 #include "gfx/pattern.h"
 #include "gfx/text.h"
+#include "ui/caret.h"
 
 /* Die Schlüssel, unter denen die C-Seite in der Registry liegt. Ihre Adressen
  * sind die Schlüssel - so kann kein Lua-Code sie zufällig treffen. */
@@ -236,6 +237,19 @@ static int l_textheight(lua_State *L)
     return 1;
 }
 
+/* Blinkt die Schreibmarke gerade sichtbar? Ein Skript, das ein Eingabefeld
+ * selbst zeichnet, soll denselben Takt haben wie die Felder des Programms -
+ * zwei Schreibmarken, die gegeneinander blinken, sehen aus wie ein Fehler.
+ *
+ * Der Takt kommt aus ui/caret.h und wird nur im Hauptprogramm gestellt. Ein
+ * Skript kann ihn abfragen, aber nicht verstellen.
+ */
+static int l_caret(lua_State *L)
+{
+    lua_pushboolean(L, caret_on());
+    return 1;
+}
+
 /* --- Texte aus dem Katalog --------------------------------------------------------- */
 
 static int l_T(lua_State *L)
@@ -294,6 +308,7 @@ static const luaL_Reg API[] = {
     { "print",      l_print },
     { "textwidth",  l_textwidth },
     { "textheight", l_textheight },
+    { "caret",      l_caret },
     { "T",          l_T },
     { "Tn",         l_Tn },
     { NULL, NULL }

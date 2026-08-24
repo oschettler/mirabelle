@@ -181,10 +181,18 @@ app{
     local text_w = w - BAR
     local cols = math.max(8, math.floor((text_w - 8) / textwidth("M")))
 
-    -- Die Adresszeile. Beim Tippen steht ein Strich dahinter, damit man
-    -- sieht, wo die Schreibmarke ist.
+    -- Die Adresszeile. Beim Tippen blinkt dahinter eine Schreibmarke - ein
+    -- senkrechter Strich im selben Takt wie in jedem Textfeld des Programms,
+    -- gezeichnet im Modus xor, damit derselbe Aufruf sie setzt und löscht.
     rect(2, 2, w - 4, lh + 4)
-    print(browser.address .. (browser.editing and "_" or ""), 6, 5)
+    print(browser.address, 6, 5)
+
+    if browser.editing and caret() then
+      local cx = 6 + textwidth(browser.address)
+      mode("xor")
+      line(cx, 5, cx, 5 + textheight() - 1)
+      mode("copy")
+    end
 
     -- Solange nichts geholt wurde, steht hier, was zu tun ist. Ein leeres
     -- Fenster, in dem man raten muss, ist keine Bedienoberfläche.

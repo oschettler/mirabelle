@@ -4,8 +4,8 @@ import subprocess, pathlib, tempfile, os
 
 SRC  = pathlib.Path("src/app/monthview.c")
 DEPS = ["src/core/date.c", "src/core/i18n.c", "src/core/utf8.c",
-        "src/ui/theme.c", "src/ui/widget.c", "src/ui/widget_list.c",
-        "src/ui/widget_text.c", "src/ui/widget_scroll.c", "src/ui/scroll.c",
+        "src/ui/theme.c", "src/core/lines.c", "src/ui/widget.c", "src/ui/widget_list.c",
+        "src/ui/widget_text.c", "src/ui/caret.c", "src/ui/widget_scroll.c", "src/ui/scroll.c",
         "src/ui/textbuf.c", "src/gfx/bitmap.c", "src/gfx/pbm.c", "src/gfx/draw.c",
         "src/gfx/pattern.c", "src/gfx/font.c", "src/gfx/text.c",
         "build/font_system12.c", "tests/support/golden.c",

@@ -3,7 +3,7 @@ warum, steht in tests/mutate_scroll.py und tests/mutate_collate.py."""
 import subprocess, pathlib, tempfile, os
 
 SRC  = pathlib.Path("src/store/query.c")
-DEPS = ["src/core/utf8.c", "src/core/collate.c", "src/store/record.c",
+DEPS = ["src/core/utf8.c", "src/core/collate.c", "src/core/lines.c", "src/store/record.c",
         "src/store/frontmatter.c", "src/store/gemtext.c",
         "tests/unit/test_query.c"]
 orig = SRC.read_text(encoding="utf-8")

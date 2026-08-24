@@ -129,6 +129,8 @@ target_link_libraries(pda_net PUBLIC pda_core)
 
 add_library(pda_ui
     src/ui/theme.c
+    src/ui/caret.c
+    src/ui/caret.c
     src/ui/scroll.c
     src/ui/window.c
     src/ui/wm.c
@@ -263,7 +265,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll lines collate query schema fieldkind browser date monthview spartan gemview shell)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll caret lines collate query schema fieldkind browser date monthview spartan gemview shell)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
@@ -344,6 +346,7 @@ target_link_libraries(test_vault       PRIVATE pda_store pda_plat_headless)
 
 target_link_libraries(test_textbuf PRIVATE pda_ui)
 target_link_libraries(test_scroll  PRIVATE pda_ui)
+target_link_libraries(test_caret   PRIVATE pda_ui)
 
 # pda_core kommt schon über pda_testsupport; noch einmal zu linken gäbe nur
 # eine Warnung des Binders.

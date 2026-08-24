@@ -22,6 +22,7 @@
 #include "gfx/pbm.h"
 #include "plat/plat.h"
 #include "store/vault.h"
+#include "ui/caret.h"
 #include "ui/theme.h"
 
 #ifdef PDA_WITH_LUA
@@ -279,6 +280,12 @@ int main(int argc, char **argv)
     while (shell_running(p.sh)) {
         event e;
         while (plat_poll(&e)) shell_event(p.sh, &e);
+
+        /* Hier, und nur hier, kommt die Uhr ins Zeichnen: das Hauptprogramm
+         * ist die einzige Stelle, die weiss, dass gerade ein Bild entsteht.
+         * Wer keine Bilder erzeugt - Tests, Sollbilder, das Kopfloslaufen -
+         * bekommt eine stehende Schreibmarke und damit immer dasselbe Bild. */
+        caret_tick(plat_ticks_ms());
 
         shell_draw(p.sh, &g);
         plat_present(&p.fb);
