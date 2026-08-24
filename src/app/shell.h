@@ -38,6 +38,29 @@
 
 typedef struct shell shell;
 
+/* --- Anwendungen aus Skripten ----------------------------------------------
+ *
+ * Die Schale kennt Lua nicht. Sie bekommt eine Handvoll Funktionszeiger und
+ * ruft sie auf; ob dahinter Lua steckt, ein anderes Skriptsystem oder gar
+ * nichts, sieht sie nicht.
+ *
+ * Das ist dieselbe Vorsichtsmaßnahme wie beim Index und bei der Schrift: auf
+ * dem Gerät kann Lua fehlen, und dann fehlen eben die Skriptanwendungen. Die
+ * vier aus den Schemadateien laufen weiter.
+ *
+ * pdalua_scripting() in lua/pdalua.h liefert eine gefüllte Struktur.
+ */
+typedef struct {
+    void *user;
+
+    int         (*count)(void *user);
+    const char *(*title)(void *user, int index);   /* Katalogschlüssel */
+
+    void (*update)(void *user, int index);
+    void (*draw)(void *user, int index, gc *g, int w, int h);
+    bool (*event)(void *user, int index, const event *e);
+} shell_scripting;
+
 typedef struct {
     const char *data_dir;    /* enthält schema/, lang/, themes/ ... */
     vault      *vault;       /* gehört dem Aufrufer */
@@ -48,6 +71,9 @@ typedef struct {
 
     const collate *sort;     /* darf NULL sein */
     const collate *search;
+
+    /* Darf NULL sein; dann gibt es keine Skriptanwendungen. */
+    const shell_scripting *scripts;
 
     int screen_w, screen_h;
 } shell_config;

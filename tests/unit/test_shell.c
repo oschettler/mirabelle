@@ -462,6 +462,167 @@ TEST(a_click_reaches_the_list_in_the_active_window)
     teardown();
 }
 
+/* --- Skriptanwendungen -----------------------------------------------------------
+ *
+ * Die Schale kennt Lua nicht - sie bekommt eine Handvoll Funktionszeiger. Also
+ * werden hier welche erfunden: so prüft der Test, was die Schale tut, und nicht,
+ * ob Lua funktioniert. Das steht in test_lua.c.
+ */
+
+typedef struct {
+    int  count;
+    int  updated, drawn, evented;
+    bool consume;
+} fake_scripts;
+
+static int fs_count(void *user) { return ((fake_scripts *)user)->count; }
+
+static const char *fs_title(void *user, int index)
+{
+    (void)user;
+    static const char *titles[] = { "app.agenda", "app.outline" };
+    if (index < 0 || index >= 2) return NULL;
+    return titles[index];
+}
+
+static void fs_update(void *user, int index)
+{
+    (void)index;
+    ((fake_scripts *)user)->updated++;
+}
+
+static void fs_draw(void *user, int index, gc *g, int w, int h)
+{
+    (void)index;
+    ((fake_scripts *)user)->drawn++;
+
+    /* Etwas zeichnen, damit sichtbar wäre, wenn der Zeichenzustand nicht
+     * stimmt - ein Sanitizerlauf fände einen falschen Rahmen sonst nicht. */
+    g->pat = PAT_BLACK;
+    gfx_frame_rect(g, rect_make(0, 0, w, h));
+}
+
+static bool fs_event(void *user, int index, const event *e)
+{
+    (void)index; (void)e;
+
+    fake_scripts *f = user;
+    f->evented++;
+    return f->consume;
+}
+
+static shell *open_shell_with(fake_scripts *f, shell_scripting *sc)
+{
+    *sc = (shell_scripting){ f, fs_count, fs_title, fs_update, fs_draw, fs_event };
+
+    shell_config cfg = {
+        .data_dir = PDA_DATA_DIR, .vault = g_vault, .theme = &g_theme,
+        .catalog = g_cat, .keymap = g_km, .sort = g_sort, .search = g_search,
+        .screen_w = SCREEN_W, .screen_h = SCREEN_H, .scripts = sc,
+    };
+
+    char   err[256] = "";
+    shell *s = shell_create(&cfg, err, sizeof err);
+    if (!s) printf("  Schale: %s\n", err);
+    return s;
+}
+
+TEST(scripts_become_applications_too)
+{
+    REQUIRE(setup());
+
+    fake_scripts    f  = { .count = 2 };
+    shell_scripting sc;
+    shell          *s = open_shell_with(&f, &sc);
+    REQUIRE(s != NULL);
+
+    /* Vier aus Dateien, zwei aus Skripten - und die Skripte kommen hinten,
+     * damit die Reihenfolge der eingebauten festliegt. */
+    CHECK_EQ(shell_app_count(s), 6);
+    CHECK_STR(shell_app_label(s, 4), "app.agenda");
+    CHECK_STR(shell_app_label(s, 5), "app.outline");
+
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(a_script_application_gets_a_window_and_draws_itself)
+{
+    REQUIRE(setup());
+
+    fake_scripts    f  = { .count = 1 };
+    shell_scripting sc;
+    shell          *s = open_shell_with(&f, &sc);
+    REQUIRE(s != NULL);
+
+    int agenda = app_by_label(s, "app.agenda");
+    REQUIRE(agenda >= 0);
+
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, agenda, err, sizeof err));
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, SCREEN_W, SCREEN_H));
+    gc g;
+    gc_init(&g, &bm);
+
+    shell_draw(s, &g);
+    CHECK_EQ(f.updated, 1);
+    CHECK_EQ(f.drawn, 1);
+
+    /* Ein Ereignis geht an das Skript. Der Klickpunkt liegt sicher im Fenster:
+     * die Fenster sind halb so breit wie der Bildschirm und stehen links. */
+    f.consume = true;
+    event click = { .kind = EV_MOUSE_DOWN, .clicks = 1,
+                    .x = SCREEN_W / 4, .y = SCREEN_H / 2 };
+    shell_event(s, &click);
+    CHECK_EQ(f.evented, 1);
+
+    /* ... und was es nicht will, geht an die Fensterverwaltung: verschieben
+     * und schließen muss immer gehen, auch wenn ein Skript sich sonst um
+     * nichts kümmert. */
+    f.consume = false;
+    shell_event(s, &click);
+    CHECK_EQ(f.evented, 2);
+
+    /* Schließen geht über die Schale, nicht über das Skript. */
+    shell_run_action(s, "window.close");
+    CHECK(!shell_app_is_open(s, agenda));
+
+    /* Und danach wird das Skript nicht mehr gezeichnet. */
+    int was = f.drawn;
+    shell_draw(s, &g);
+    CHECK_EQ(f.drawn, was);
+
+    bitmap_free(&bm);
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(record_actions_do_nothing_in_a_script_window)
+{
+    /* Eine Skriptanwendung hat keinen Browser. „Sichern" darf dort nichts
+     * tun und schon gar nicht in einen Nullzeiger greifen. */
+    REQUIRE(setup());
+
+    fake_scripts    f  = { .count = 1 };
+    shell_scripting sc;
+    shell          *s = open_shell_with(&f, &sc);
+    REQUIRE(s != NULL);
+
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, app_by_label(s, "app.agenda"), err, sizeof err));
+
+    shell_run_action(s, "record.new");
+    shell_run_action(s, "record.save");
+    shell_run_action(s, "record.delete");
+
+    CHECK(shell_running(s));
+
+    shell_destroy(s);
+    teardown();
+}
+
 /* --- Aussehen -------------------------------------------------------------------------- */
 
 TEST(two_windows_side_by_side)
@@ -504,6 +665,10 @@ int main(void)
 
     RUN(a_shortcut_and_the_menu_do_the_same_thing);
     RUN(a_click_reaches_the_list_in_the_active_window);
+
+    RUN(scripts_become_applications_too);
+    RUN(a_script_application_gets_a_window_and_draws_itself);
+    RUN(record_actions_do_nothing_in_a_script_window);
 
     RUN(two_windows_side_by_side);
 

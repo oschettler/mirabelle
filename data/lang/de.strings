@@ -103,3 +103,6 @@ field.time               = Uhrzeit
 gemtext.bullet           = *
 menu.apps                = Anwendungen
 menu.file.delete         = Löschen
+app.agenda               = Agenda
+app.outline              = Gliederung
+outline.empty            = Noch keine Notizen.

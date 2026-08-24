@@ -32,6 +32,7 @@
 #include <stddef.h>
 
 #include "app/schema.h"
+#include "app/shell.h"
 #include "core/collate.h"
 #include "core/i18n.h"
 #include "gfx/draw.h"
@@ -80,6 +81,17 @@ void pdalua_set_vault(lua_State *L, vault *v,
  * also auch hier beim Laden auf. */
 bool pdalua_schema(lua_State *L, const char *path, schema *out,
                    char *err, size_t err_size);
+
+/* Richtet app{}, on() und send() ein - die Anmeldung von Anwendungen und den
+ * Ereignisbus (pdalua_apps.c).
+ *
+ * Getrennt von pdalua_open(), weil ein Zustand, der nur ein Schema lesen soll,
+ * keine Anwendungen anmelden können muss. */
+void pdalua_open_apps(lua_State *L);
+
+/* Die Brücke zur Schale: eine Handvoll Funktionszeiger, mit denen shell.c die
+ * angemeldeten Anwendungen aufruft, ohne Lua zu kennen. */
+shell_scripting pdalua_scripting(lua_State *L);
 
 /* Führt eine Datei aus. Bei einem Fehler false und die Lua-Meldung in err -
  * mit Dateiname und Zeilennummer, so wie Lua sie baut. */

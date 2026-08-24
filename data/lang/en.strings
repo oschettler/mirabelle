@@ -101,3 +101,6 @@ field.time               = Time
 gemtext.bullet           = *
 menu.apps                = Applications
 menu.file.delete         = Delete
+app.agenda               = Agenda
+app.outline              = Outline
+outline.empty            = No notes yet.

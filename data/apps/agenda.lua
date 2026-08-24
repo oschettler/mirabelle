@@ -1,20 +1,16 @@
 -- Eine Anwendung, die es nur in Lua gibt.
 --
--- Sie beweist, dass die Anbindung trägt: sie liest Datensätze, ändert sie,
--- schreibt sie zurück und zeichnet. Kein C-Code weiß von ihr.
---
--- Aufgerufen wird sie über zwei Funktionen, die das Programm kennt:
---
---   agenda.update()   rechnet, ändert Daten
---   agenda.draw(w, h) zeichnet in den Bildspeicher
---
--- Mehr Vereinbarung braucht es nicht. Ein Ereignisbus wäre die nächste Stufe;
--- solange eine Anwendung nur diese beiden Dinge tut, wäre er Maschinerie ohne
--- Anlass.
-
-agenda = {}
+-- Sie liest Datensätze, ändert sie, schreibt sie zurück und zeichnet. Kein
+-- C-Code weiß von ihr; die Schale findet sie, weil sie in data/apps liegt und
+-- sich mit app{} anmeldet.
 
 local COLLECTION = "Aufgaben"
+
+agenda = {
+  today = "2026-01-01",
+  tasks = {},
+  late  = 0,
+}
 
 -- Alle offenen Aufgaben, nach Fälligkeit.
 function agenda.open_tasks()
@@ -29,6 +25,10 @@ function agenda.finish(id)
 
   rec.done = "yes"
   store.put(COLLECTION, rec)
+
+  -- Wer sonst noch Aufgaben zeigt, soll es erfahren. Ob jemand zuhört, muss
+  -- der Sender nicht wissen.
+  send("tasks.changed", id)
   return true
 end
 
@@ -42,31 +42,55 @@ function agenda.overdue(today)
   return n
 end
 
-function agenda.update(today)
-  agenda.today   = today
-  agenda.tasks   = agenda.open_tasks()
-  agenda.late    = agenda.overdue(today)
+function agenda.refresh(today)
+  agenda.today = today or agenda.today
+  agenda.tasks = agenda.open_tasks()
+  agenda.late  = agenda.overdue(agenda.today)
 end
 
-function agenda.draw(w, h)
-  cls()
-  pattern("black")
-  rect(0, 0, w, h)
+app{
+  name  = "agenda",
+  title = "app.agenda",
 
-  local y = 4
-  print(Tn("list.count", #agenda.tasks), 6, y)
-  y = y + textheight() + 2
+  update = function()
+    -- Bei jedem Bild neu zu lesen wäre verschwenderisch, aber richtig: der
+    -- Vault ist die Wahrheit, und ein anderes Fenster kann ihn geändert
+    -- haben. Für eine Handvoll Dateien ist das nicht zu merken.
+    agenda.refresh()
+  end,
 
-  for _, task in ipairs(agenda.tasks) do
-    if y + textheight() > h - 4 then break end
+  draw = function(w, h)
+    cls()
 
-    -- Überfällige bekommen einen Balken davor statt einer Farbe: bei einem
-    -- Bit je Pixel ist das der Unterschied, den man sehen kann.
-    if task.due and task.due < agenda.today then
-      rectfill(4, y + 2, 3, textheight() - 4)
+    local y = 4
+    print(Tn("list.count", #agenda.tasks), 6, y)
+    y = y + textheight() + 3
+
+    line(4, y, w - 4, y)
+    y = y + 3
+
+    for _, task in ipairs(agenda.tasks) do
+      if y + textheight() > h - 4 then break end
+
+      -- Überfällige bekommen einen Balken davor statt einer Farbe: bei einem
+      -- Bit je Pixel ist das der Unterschied, den man sehen kann.
+      if task.due and task.due < agenda.today then
+        rectfill(4, y + 2, 3, textheight() - 4)
+      end
+
+      print(task.title, 12, y)
+      y = y + textheight() + 1
     end
+  end,
 
-    print(task.title, 12, y)
-    y = y + textheight() + 1
-  end
-end
+  event = function(e)
+    -- Return hakt die oberste Aufgabe ab. Mehr Bedienung braucht eine
+    -- Übersicht nicht; wer eine Aufgabe ändern will, öffnet die Aufgaben.
+    if e.kind == "key_down" and e.key == 10 and agenda.tasks[1] then
+      agenda.finish(agenda.tasks[1].id)
+      agenda.refresh()
+      return true
+    end
+    return false
+  end,
+}

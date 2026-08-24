@@ -19,9 +19,23 @@
 
 #define APPS_MAX 16
 
+/* Woher eine Anwendung kommt.
+ *
+ * Beides sind Anwendungen, beide bekommen ein Fenster und einen Menüeintrag.
+ * Der Unterschied steckt nur darin, wer den Inhalt zeichnet - hier der
+ * Browser, dort ein Skript. */
+typedef enum {
+    APP_SCHEMA,   /* aus data/schema, der Browser zeigt sie */
+    APP_SCRIPT    /* aus data/apps, ein Skript zeigt sie */
+} app_kind;
+
 typedef struct {
-    schema  sch;
-    char    file[128];       /* Dateiname, für die Reihenfolge und Meldungen */
+    app_kind kind;
+    char     file[128];      /* Dateiname, für die Reihenfolge und Meldungen */
+    char     label[64];      /* Katalogschlüssel; zugleich der Aktionsname */
+
+    schema  sch;             /* nur bei APP_SCHEMA */
+    int     script;          /* nur bei APP_SCRIPT: Index beim Skriptsystem */
 
     window  *win;            /* NULL, solange nicht geöffnet */
     browser *br;
@@ -102,7 +116,9 @@ static bool load_schemas(shell *s, char *err, size_t err_size)
             continue;
         }
 
+        a->kind = APP_SCHEMA;
         snprintf(a->file, sizeof a->file, "%s", entries[i].name);
+        snprintf(a->label, sizeof a->label, "%s", a->sch.label);
         s->app_count++;
     }
 
@@ -113,6 +129,29 @@ static bool load_schemas(shell *s, char *err, size_t err_size)
 
     qsort(s->apps, (size_t)s->app_count, sizeof s->apps[0], by_name);
     return true;
+}
+
+/* Die Skriptanwendungen anhängen - nach den Schemaanwendungen, damit die
+ * Reihenfolge der vier eingebauten festliegt und nicht davon abhängt, was
+ * jemand in data/apps legt. */
+static void load_scripts(shell *s)
+{
+    const shell_scripting *sc = s->cfg.scripts;
+    if (!sc || !sc->count) return;
+
+    int n = sc->count(sc->user);
+    for (int i = 0; i < n && s->app_count < APPS_MAX; i++) {
+        const char *title = sc->title ? sc->title(sc->user, i) : NULL;
+        if (!title) continue;
+
+        app_entry *a = &s->apps[s->app_count++];
+        memset(a, 0, sizeof *a);
+
+        a->kind   = APP_SCRIPT;
+        a->script = i;
+        snprintf(a->label, sizeof a->label, "%s", title);
+        snprintf(a->file, sizeof a->file, "%s", title);
+    }
 }
 
 /* --- Menüs ------------------------------------------------------------------------- */
@@ -146,8 +185,8 @@ static const menu_item EDIT_ITEMS[] = {
 static bool build_menus(shell *s)
 {
     for (int i = 0; i < s->app_count; i++) {
-        s->app_items[i].key    = s->apps[i].sch.label;
-        s->app_items[i].action = s->apps[i].sch.label;
+        s->app_items[i].key    = s->apps[i].label;
+        s->app_items[i].action = s->apps[i].label;
     }
 
     s->menus[0] = (menu){ "menu.file",  FILE_ITEMS, 6 };
@@ -199,6 +238,7 @@ shell *shell_create(const shell_config *cfg, char *err, size_t err_size)
         free(s);
         return NULL;
     }
+    load_scripts(s);
 
     s->wm = wm_create(&s->th, cfg->screen_w, cfg->screen_h);
     if (!s->wm || !build_menus(s)) {
@@ -242,7 +282,7 @@ int shell_app_count(const shell *s) { return s->app_count; }
 const char *shell_app_label(const shell *s, int index)
 {
     if (index < 0 || index >= s->app_count) return NULL;
-    return s->apps[index].sch.label;
+    return s->apps[index].label;
 }
 
 bool shell_app_is_open(const shell *s, int index)
@@ -274,19 +314,37 @@ bool shell_open_app(shell *s, int index, char *err, size_t err_size)
         return true;
     }
 
+    /* Versetzt gestapelt, wie es sich für einen Schreibtisch gehört: das
+     * zweite Fenster liegt ein Stück rechts unter dem ersten, und keines
+     * verdeckt das andere vollständig.
+     *
+     * Der Versatz geht von der Größe ab, nicht nur von der Lage - sonst hinge
+     * das sechste Fenster unten aus dem Bildschirm heraus, und seine untere
+     * Kante samt Größenfeld wäre nicht mehr zu greifen. */
     int top    = menubar_height(s->mb) + 12;
     int offset = index * 24;
-    int w      = s->cfg.screen_w / 2;
-    int h      = s->cfg.screen_h - top - 40;
+
+    int w = s->cfg.screen_w / 2;
+    int h = s->cfg.screen_h - top - offset - 24;
+
+    if (h < 6 * s->th.titlebar_h) h = 6 * s->th.titlebar_h;
 
     rect frame = rect_make(24 + offset, top + offset, w, h);
 
-    a->win = wm_open(s->wm, frame, T(s->cfg.catalog, a->sch.label), WIN_NORMAL);
+    a->win = wm_open(s->wm, frame, T(s->cfg.catalog, a->label), WIN_NORMAL);
     if (!a->win) {
         snprintf(err, err_size, "kein Fenster mehr frei");
         return false;
     }
     window_set_on_close(a->win, on_window_closed, s);
+
+    /* Eine Skriptanwendung braucht weder Browser noch Rollbalken - sie
+     * zeichnet selbst. Das Fenster bekommt sie trotzdem von hier, damit sie
+     * sich wie jede andere verschieben und schließen lässt. */
+    if (a->kind == APP_SCRIPT) {
+        if (err && err_size) err[0] = '\0';
+        return true;
+    }
 
     a->br = browser_create(&a->sch, s->cfg.vault, &s->th, s->cfg.catalog,
                            s->cfg.sort, s->cfg.search);
@@ -332,6 +390,13 @@ static app_entry *active_app(shell *s)
     return NULL;
 }
 
+/* Der Inhalt eines Skriptfensters. Getrennt, weil beide Aufrufstellen -
+ * Zeichnen und Ereignis - dieselbe Größe brauchen. */
+static bool script_ok(const shell *s, const app_entry *a)
+{
+    return a->kind == APP_SCRIPT && s->cfg.scripts && a->win;
+}
+
 void shell_run_action(shell *s, const char *action)
 {
     if (!action) return;
@@ -343,7 +408,7 @@ void shell_run_action(shell *s, const char *action)
     }
 
     for (int i = 0; i < s->app_count; i++) {
-        if (strcmp(action, s->apps[i].sch.label) != 0) continue;
+        if (strcmp(action, s->apps[i].label) != 0) continue;
 
         char msg[256] = "";
         if (!shell_open_app(s, i, msg, sizeof msg))
@@ -354,14 +419,19 @@ void shell_run_action(shell *s, const char *action)
     app_entry *a = active_app(s);
     if (!a) return;
 
-    char msg[256] = "";
-    bool ok       = true;
-
     if (strcmp(action, "window.close") == 0) {
         wm_close(s->wm, a->win);
         return;
     }
-    else if (strcmp(action, "record.new") == 0)    ok = browser_new(a->br, msg, sizeof msg);
+
+    /* Alles Weitere sind Aufrufe an den Browser. Eine Skriptanwendung hat
+     * keinen; was sie kann, entscheidet sie selbst über ihr event. */
+    if (!a->br) return;
+
+    char msg[256] = "";
+    bool ok       = true;
+
+    if (strcmp(action, "record.new") == 0)    ok = browser_new(a->br, msg, sizeof msg);
     else if (strcmp(action, "record.save") == 0)   ok = browser_save(a->br, msg, sizeof msg);
     else if (strcmp(action, "record.delete") == 0) ok = browser_delete_selected(a->br, msg, sizeof msg);
     else return;
@@ -398,6 +468,15 @@ void shell_draw(shell *s, gc *g)
         wg.mode = GFX_COPY;
         gfx_clear(&wg);
         wg.pat = PAT_BLACK;
+
+        if (script_ok(s, a)) {
+            rect cr = window_content_rect(a->win);
+
+            if (s->cfg.scripts->update) s->cfg.scripts->update(s->cfg.scripts->user, a->script);
+            if (s->cfg.scripts->draw)   s->cfg.scripts->draw(s->cfg.scripts->user, a->script,
+                                                             &wg, cr.w, cr.h);
+            continue;
+        }
 
         layout_app(s, a);
         browser_draw(a->br, &wg);
@@ -453,7 +532,7 @@ void shell_event(shell *s, const event *e)
 
     /* Dann der Inhalt des aktiven Fensters. */
     app_entry *a = active_app(s);
-    if (a && a->br) {
+    if (a && a->win) {
         rect  cr    = window_content_rect(a->win);
         event local = *e;
 
@@ -465,6 +544,20 @@ void shell_event(shell *s, const event *e)
                 local.x -= cr.x;
                 local.y -= cr.y;
             }
+
+            if (script_ok(s, a)) {
+                if (s->cfg.scripts->event &&
+                    s->cfg.scripts->event(s->cfg.scripts->user, a->script, &local))
+                    return;
+
+                /* Was das Skript nicht will, geht an die Fensterverwaltung -
+                 * verschieben und schließen muss immer gehen, auch wenn ein
+                 * Skript sich sonst um nichts kümmert. */
+                wm_event(s->wm, e);
+                return;
+            }
+
+            if (!a->br) { wm_event(s->wm, e); return; }
 
             layout_app(s, a);
 

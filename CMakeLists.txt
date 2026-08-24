@@ -72,12 +72,6 @@ if(TARGET PkgConfig::SDL3)
     )
     target_link_libraries(pda_plat_sdl3 PUBLIC pda_gfx PRIVATE PkgConfig::SDL3)
 
-    add_executable(pda src/main.c)
-    target_compile_definitions(pda
-        PRIVATE PDA_KEYMAP_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/keys/default.keys"
-                PDA_THEME_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/themes/desktop.theme"
-                PDA_LANG_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/lang/de.strings")
-    target_link_libraries(pda PRIVATE pda_demo pda_plat_sdl3 pda_fonts)
 else()
     message(STATUS "SDL3 nicht gefunden - das Programm wird nicht gebaut, Tests laufen trotzdem")
 endif()
@@ -164,6 +158,7 @@ if(TARGET PkgConfig::LUA)
         src/lua/pdalua.c
         src/lua/pdalua_store.c
         src/lua/pdalua_schema.c
+        src/lua/pdalua_apps.c
     )
     target_link_libraries(pda_lua PUBLIC pda_app pda_gfx PRIVATE PkgConfig::LUA)
 else()
@@ -176,6 +171,28 @@ endif()
 add_library(pda_demo src/demo.c)
 target_link_libraries(pda_demo PUBLIC pda_ui pda_gfx pda_core)
 target_include_directories(pda_demo PUBLIC src)
+
+# --- Das Programm ------------------------------------------------------------
+# Ganz zum Schluss, weil es sich zusammensucht, was da ist: die Oberfläche in
+# jedem Fall, Lua und der Index nur, wenn sie gebaut wurden. Stünde es weiter
+# oben, wüsste CMake an dieser Stelle noch nichts von ihnen - und die
+# Skriptanwendungen fehlten stillschweigend.
+
+if(TARGET pda_plat_sdl3)
+    add_executable(pda src/main.c)
+    target_compile_definitions(pda
+        PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+    target_link_libraries(pda PRIVATE pda_plat_sdl3 pda_fonts)
+
+    # pda_lua bringt pda_app schon mit; beides zu nennen ergäbe eine Warnung
+    # des Binders über doppelte Bibliotheken.
+    if(TARGET pda_lua)
+        target_compile_definitions(pda PRIVATE PDA_WITH_LUA)
+        target_link_libraries(pda PRIVATE pda_lua)
+    else()
+        target_link_libraries(pda PRIVATE pda_app)
+    endif()
+endif()
 
 # --- Werkzeuge ---------------------------------------------------------------
 # fontc übersetzt .fnt-Zeichensätze nach C. Dieselbe Quelle wird zweimal

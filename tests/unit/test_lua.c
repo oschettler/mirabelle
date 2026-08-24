@@ -20,6 +20,7 @@
 #include "core/i18n.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
+#include "app/shell.h"
 #include "lua/pdalua.h"
 #include "store/record.h"
 #include "store/vault.h"
@@ -722,12 +723,21 @@ TEST(an_application_written_only_in_lua_runs)
     collate   *sort = NULL, *search = NULL;
     lua_State *L = with_store(cat, &sort, &search);
     REQUIRE(L != NULL);
+    pdalua_open_apps(L);
 
     char path[512], err[512] = "";
     snprintf(path, sizeof path, "%s/apps/agenda.lua", PDA_DATA_DIR);
 
-    if (!pdalua_dofile(L, path, err, sizeof err)) printf("  agenda: %s\n", err);
-    REQUIRE(pdalua_dofile(L, path, err, sizeof err));
+    bool loaded = pdalua_dofile(L, path, err, sizeof err);
+    if (!loaded) printf("  agenda: %s\n", err);
+    REQUIRE(loaded);
+
+    /* Sie hat sich angemeldet - die Schale findet sie über diese Brücke, ohne
+     * Lua zu kennen. */
+    shell_scripting sc = pdalua_scripting(L);
+    CHECK_EQ(sc.count(sc.user), 1);
+    CHECK_STR(sc.title(sc.user, 0), "app.agenda");
+    CHECK(sc.title(sc.user, 9) == NULL);
 
     /* Sie rechnet. Zwei offene Aufgaben, eine davon vor dem 1. April fällig. */
     CHECK(truth(L, "#agenda.open_tasks() == 2"));
@@ -741,18 +751,180 @@ TEST(an_application_written_only_in_lua_runs)
 
     CHECK(truth(L, "agenda.finish('gibtesnicht') == false"));
 
-    /* Und sie zeichnet. */
+    /* Und sie zeichnet - über die Brücke, so wie die Schale es täte. */
     bitmap bm;
     REQUIRE(bitmap_init(&bm, 220, 80));
     gc g;
     gc_init(&g, &bm);
-    pdalua_set_gc(L, &g);
 
-    /* Mit einem Tag NACH der Fälligkeit, damit auch der Balken für Überfällige
-     * im Bild steht - sonst prüfte das Sollbild diesen Zweig nie. */
-    CHECK(run(L, "agenda.update('2026-06-01')\nagenda.draw(220, 80)"));
+    CHECK(run(L, "agenda.refresh('2026-06-01')"));
     CHECK(truth(L, "agenda.late == 1"));
+
+    sc.update(sc.user, 0);
+    sc.draw(sc.user, 0, &g, 220, 80);
     CHECK(golden_check("lua_agenda", &bm));
+
+    bitmap_free(&bm);
+    pdalua_close(L);
+    drop_store(sort, search);
+    i18n_free(cat);
+}
+
+TEST(an_application_without_a_title_or_a_draw_is_refused)
+{
+    /* Ohne Titel gäbe es keinen Menüeintrag, ohne draw kein Fenster. Beides
+     * soll beim Laden auffallen und nicht erst, wenn jemand die Anwendung
+     * öffnet. */
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    char       err[512] = "";
+    lua_State *L = pdalua_open(cat, err, sizeof err);
+    REQUIRE(L != NULL);
+    pdalua_open_apps(L);
+
+    CHECK(!pdalua_dostring(L, "app{ draw = function() end }", "probe", err, sizeof err));
+    CHECK(strstr(err, "title") != NULL);
+
+    CHECK(!pdalua_dostring(L, "app{ title = 'x' }", "probe", err, sizeof err));
+    CHECK(strstr(err, "draw") != NULL);
+
+    shell_scripting sc = pdalua_scripting(L);
+    CHECK_EQ(sc.count(sc.user), 0);
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(the_event_bus_carries_messages_between_scripts)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    char       err[512] = "";
+    lua_State *L = pdalua_open(cat, err, sizeof err);
+    REQUIRE(L != NULL);
+    pdalua_open_apps(L);
+
+    CHECK(run(L,
+        "empfangen = {}\n"
+        "on('etwas', function(a) empfangen[#empfangen+1] = a end)\n"
+        "on('etwas', function(a) empfangen[#empfangen+1] = a .. '!' end)\n"
+        "send('etwas', 'hallo')"));
+
+    CHECK(truth(L, "#empfangen == 2 and empfangen[1] == 'hallo'"
+                   " and empfangen[2] == 'hallo!'"));
+
+    /* Niemanden zu erreichen ist kein Fehler - ein Sender soll nicht wissen
+     * müssen, ob jemand da ist. */
+    CHECK(run(L, "send('hoert.niemand', 1, 2, 3)"));
+
+    /* Und ein Zuhörer, der stolpert, bringt nicht den Sender zu Fall. */
+    CHECK(run(L,
+        "durch = false\n"
+        "on('heikel', function() error('autsch') end)\n"
+        "on('heikel', function() durch = true end)\n"
+        "send('heikel')"));
+    CHECK(truth(L, "durch"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(a_script_that_fails_does_not_take_the_shell_with_it)
+{
+    /* C ruft hier nach Lua, und dabei muss jeder Aufruf abgesichert sein. Ein
+     * Skript, das einen Fehler macht, darf die Oberfläche nicht mitnehmen. */
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    char       err[512] = "";
+    lua_State *L = pdalua_open(cat, err, sizeof err);
+    REQUIRE(L != NULL);
+    pdalua_open_apps(L);
+
+    CHECK(run(L,
+        "app{ title = 'app.notes',\n"
+        "     update = function() error('beim Rechnen') end,\n"
+        "     draw   = function() error('beim Zeichnen') end,\n"
+        "     event  = function() error('beim Bedienen') end }"));
+
+    shell_scripting sc = pdalua_scripting(L);
+    REQUIRE(sc.count(sc.user) == 1);
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 60, 40));
+    gc g;
+    gc_init(&g, &bm);
+
+    /* Alle drei Wege müssen den Fehler schlucken und zurückkehren. */
+    sc.update(sc.user, 0);
+    sc.draw(sc.user, 0, &g, 60, 40);
+
+    event e = { .kind = EV_KEY_DOWN, .key = 'x' };
+    CHECK(!sc.event(sc.user, 0, &e));
+
+    /* Und der Zustand ist danach weiter brauchbar. */
+    CHECK(truth(L, "1 + 1 == 2"));
+
+    bitmap_free(&bm);
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(the_outliner_reads_the_structure_out_of_gemtext)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    collate   *sort = NULL, *search = NULL;
+    lua_State *L = with_store(cat, &sort, &search);
+    REQUIRE(L != NULL);
+    pdalua_open_apps(L);
+
+    char err[512] = "";
+    CHECK(run(L,
+        "store.put('Notizen', { title = 'Zweite', body = 'nur Text\\n' })\n"
+        "store.put('Notizen', { title = 'Erste',"
+        "   body = '# Kopf\\n* Punkt eins\\n* Punkt zwei\\nFliesstext\\n' })"));
+
+    char path[512];
+    snprintf(path, sizeof path, "%s/apps/outline.lua", PDA_DATA_DIR);
+
+    bool loaded = pdalua_dofile(L, path, err, sizeof err);
+    if (!loaded) printf("  outline: %s\n", err);
+    REQUIRE(loaded);
+
+    /* Zugeklappt: eine Zeile je Notiz, nach Titel sortiert. */
+    CHECK(run(L, "outline.rebuild()"));
+    CHECK(truth(L,
+        "return #outline.rows == 2 and outline.rows[1].text == 'Erste'"
+        " and outline.rows[2].text == 'Zweite'"));
+
+    /* Aufgeklappt kommen Überschrift und Punkte dazu - Fließtext nicht, denn
+     * er ist keine Gliederung. */
+    CHECK(run(L, "outline.selected = 1 outline.toggle()"));
+    CHECK(truth(L,
+        "return #outline.rows == 5"
+        " and outline.rows[2].kind == 'heading' and outline.rows[2].text == 'Kopf'"
+        " and outline.rows[3].kind == 'item'    and outline.rows[3].text == 'Punkt eins'"
+        " and outline.rows[5].text == 'Zweite'"));
+
+    /* Und wieder zu. */
+    CHECK(run(L, "outline.toggle()"));
+    CHECK(truth(L, "#outline.rows == 2"));
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 200, 90));
+    gc g;
+    gc_init(&g, &bm);
+
+    shell_scripting sc = pdalua_scripting(L);
+    REQUIRE(sc.count(sc.user) == 1);
+
+    CHECK(run(L, "outline.selected = 1 outline.toggle()"));
+    sc.draw(sc.user, 0, &g, 200, 90);
+    CHECK(golden_check("lua_outline", &bm));
 
     bitmap_free(&bm);
     pdalua_close(L);
@@ -780,6 +952,10 @@ int main(void)
     RUN(a_script_cannot_smuggle_a_newline_into_a_field);
 
     RUN(an_application_written_only_in_lua_runs);
+    RUN(an_application_without_a_title_or_a_draw_is_refused);
+    RUN(the_event_bus_carries_messages_between_scripts);
+    RUN(a_script_that_fails_does_not_take_the_shell_with_it);
+    RUN(the_outliner_reads_the_structure_out_of_gemtext);
 
     return test_summary();
 }
