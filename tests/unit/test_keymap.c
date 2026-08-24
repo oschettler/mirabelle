@@ -348,6 +348,45 @@ TEST(load_skips_comments_and_blank_lines)
     remove(path);
 }
 
+TEST(load_rejects_a_fourth_field)
+{
+    /* Drei Felder, nicht mindestens drei. Ein viertes Wort ist ein Tippfehler,
+     * und wer es übergeht, lässt jemanden glauben, es stünde dort etwas. */
+    char path[256];
+    make_temp_path(path, sizeof path, "pda_test_keymap_vier.keys");
+    REQUIRE(write_text_file(path, "app.quit  Cmd+Q  global  noch.was\n"));
+
+    char err[256];
+    CHECK(keymap_load(path, err, sizeof err) == NULL);
+    CHECK(errbuf_has_location(err, path, 1));
+
+    remove(path);
+}
+
+TEST(load_rejects_names_that_are_too_long)
+{
+    /* Abschneiden wäre die schlechtere Wahl: eine gekürzte Aktion trifft
+     * lautlos auf keine oder - schlimmer - auf eine andere. */
+    char lang[200];
+    memset(lang, 'a', sizeof lang - 1);
+    lang[sizeof lang - 1] = '\0';
+
+    char path[256], zeile[400], err[256];
+    make_temp_path(path, sizeof path, "pda_test_keymap_lang.keys");
+
+    snprintf(zeile, sizeof zeile, "%s  Cmd+Q  global\n", lang);
+    REQUIRE(write_text_file(path, zeile));
+    CHECK(keymap_load(path, err, sizeof err) == NULL);
+    CHECK(errbuf_has_location(err, path, 1));
+
+    snprintf(zeile, sizeof zeile, "app.quit  Cmd+Q  %s\n", lang);
+    REQUIRE(write_text_file(path, zeile));
+    CHECK(keymap_load(path, err, sizeof err) == NULL);
+    CHECK(errbuf_has_location(err, path, 1));
+
+    remove(path);
+}
+
 TEST(load_rejects_missing_file)
 {
     char path[256];
@@ -357,8 +396,12 @@ TEST(load_rejects_missing_file)
     char err[256];
     keymap *km = keymap_load(path, err, sizeof err);
     CHECK(km == NULL);
-    CHECK(err[0] != '\0');
-    CHECK(errbuf_has_location(err, path, 0));
+    CHECK(strstr(err, path) != NULL);
+
+    /* Ein Fehler, der die ganze Datei betrifft, trägt keine Zeilennummer:
+     * „Zeile 0" gibt es nicht, und eine erfundene Nummer schickt die Leserin
+     * an eine Stelle, an der nichts steht. */
+    CHECK(!errbuf_has_location(err, path, 0));
 }
 
 int main(void)
@@ -377,6 +420,8 @@ int main(void)
     RUN(load_rejects_duplicate_action);
     RUN(load_rejects_wrong_field_count);
     RUN(load_skips_comments_and_blank_lines);
+    RUN(load_rejects_a_fourth_field);
+    RUN(load_rejects_names_that_are_too_long);
     RUN(load_rejects_missing_file);
     return test_summary();
 }

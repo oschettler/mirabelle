@@ -1,16 +1,17 @@
 /* Siehe keymap.h für den Vertrag und data/keys/default.keys für das Format
  * und die echte Belegung.
  *
- * Der Parser folgt tools/fontc.c: jeder Fehler bekommt eine Meldung
- * "datei:zeile: meldung", und bei einem Fehler wird keine halbfertige
- * keymap zurückgegeben.
+ * Gelesen wird mit dem gemeinsamen Zeilenleser (core/lines.h): drei Wörter je
+ * Zeile, `#` leitet einen Kommentar ein. Jeder Fehler bekommt eine Meldung
+ * "datei:zeile: meldung", und bei einem Fehler wird keine halbfertige keymap
+ * zurückgegeben - eine Belegung, die zur Hälfte gilt, wäre schlimmer als
+ * keine.
  */
 #include "keymap.h"
 
+#include "core/lines.h"
 #include "plat/plat.h"
 
-#include <errno.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,25 +31,6 @@ struct keymap {
     size_t        count;
     size_t        cap;
 };
-
-/* --- Meldungen ------------------------------------------------------------- */
-
-/* Wie fail() in tools/fontc.c: baut "datei:zeile: meldung" und liefert immer
- * true, damit Aufrufer direkt "return fail(...);" schreiben können. */
-static bool fail(char *err, size_t err_size, const char *path, int line,
-                  const char *fmt, ...)
-{
-    char msg[256];
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(msg, sizeof msg, fmt, ap);
-    va_end(ap);
-
-    if (err && err_size > 0)
-        snprintf(err, err_size, "%s:%d: %s", path, line, msg);
-
-    return true;
-}
 
 /* --- Kürzel zerlegen --------------------------------------------------------
  *
@@ -244,190 +226,87 @@ static bool entries_push(keymap *km, keymap_entry e)
     return true;
 }
 
-/* --- Zeile lesen -------------------------------------------------------------
- *
- * Wie read_line() in tools/fontc.c: eine Zeile ohne Zeilenende in einen
- * wachsenden Puffer. false am echten Dateiende. */
-static bool read_line(FILE *f, char **buf, size_t *cap, int *line_no)
+/* Bricht ab und gibt nichts zurück: der Aufrufer bekommt NULL und eine
+ * Meldung, nie eine Belegung, in der die Hälfte der Zeilen fehlt. */
+static keymap *give_up(keymap *km, linereader *r)
 {
-    size_t len     = 0;
-    bool   got_any = false;
-    int    c;
-
-    for (;;) {
-        c = fgetc(f);
-        if (c == EOF) {
-            if (!got_any) return false;
-            break;
-        }
-        got_any = true;
-        if (c == '\n') break;
-
-        if (len + 2 > *cap) {
-            size_t newcap = (*cap == 0) ? 128 : (*cap * 2);
-            char  *p      = realloc(*buf, newcap);
-            if (!p) return false;
-            *buf = p;
-            *cap = newcap;
-        }
-        (*buf)[len++] = (char)c;
-    }
-
-    (*buf)[len] = '\0';
-    if (len > 0 && (*buf)[len - 1] == '\r') (*buf)[len - 1] = '\0';
-    (*line_no)++;
-    return true;
-}
-
-/* Nächstes durch Leerraum getrenntes Wort ab *cursor, wie in tools/fontc.c. */
-static const char *next_token(const char **cursor, size_t *len)
-{
-    const char *s = *cursor + strspn(*cursor, " \t");
-    size_t      l = strcspn(s, " \t");
-    if (l == 0) { *len = 0; return NULL; }
-
-    *len    = l;
-    *cursor = s + l;
-    return s;
+    lines_close(r);
+    keymap_free(km);
+    return NULL;
 }
 
 keymap *keymap_load(const char *path, char *err, size_t err_size)
 {
     if (err && err_size > 0) err[0] = '\0';
 
-    FILE *f = fopen(path, "rb");
-    if (!f) {
-        fail(err, err_size, path, 0, "Datei kann nicht geöffnet werden: %s",
-             strerror(errno));
-        return NULL;
-    }
+    linereader r;
+    if (!lines_open(&r, path, err, err_size)) return NULL;
 
     keymap *km = calloc(1, sizeof *km);
     if (!km) {
-        fclose(f);
-        fail(err, err_size, path, 0, "Speicher reicht nicht");
+        lines_close(&r);
+        lines_fail_file(path, err, err_size, "Speicher reicht nicht");
         return NULL;
     }
 
-    char  *line     = NULL;
-    size_t line_cap = 0;
-    int    line_no  = 0;
-
-    while (read_line(f, &line, &line_cap, &line_no)) {
-        char *p = line + strspn(line, " \t");
-
-        char *hash = strchr(p, '#');
-        if (hash) *hash = '\0';
-
-        size_t tlen = strlen(p);
-        while (tlen > 0 && (p[tlen - 1] == ' ' || p[tlen - 1] == '\t')) p[--tlen] = '\0';
-        if (tlen == 0) continue;   /* Leerzeile oder reiner Kommentar */
-
-        const char *cur = p;
-        size_t      la, ls, lb, lext;
-        const char *action_tok = next_token(&cur, &la);
-        const char *shortcut_tok = next_token(&cur, &ls);
-        const char *scope_tok = next_token(&cur, &lb);
-        const char *extra_tok = next_token(&cur, &lext);
-
-        if (!action_tok || !shortcut_tok || !scope_tok || extra_tok) {
-            fail(err, err_size, path, line_no,
-                 "erwartet genau drei Felder: Aktion, Kürzel, Bereich");
-            free(line);
-            fclose(f);
-            keymap_free(km);
-            return NULL;
+    while (lines_next(&r)) {
+        if (r.count != 3) {
+            lines_fail(&r, err, err_size,
+                       "erwartet genau drei Felder: Aktion, Kürzel, Bereich");
+            return give_up(km, &r);
         }
 
-        if (la > KEYMAP_NAME_MAX) {
-            fail(err, err_size, path, line_no,
-                 "Aktionsname zu lang (höchstens %d Zeichen)", KEYMAP_NAME_MAX);
-            free(line);
-            fclose(f);
-            keymap_free(km);
-            return NULL;
-        }
-        if (lb > KEYMAP_NAME_MAX) {
-            fail(err, err_size, path, line_no,
-                 "Bereichsname zu lang (höchstens %d Zeichen)", KEYMAP_NAME_MAX);
-            free(line);
-            fclose(f);
-            keymap_free(km);
-            return NULL;
-        }
+        const char *action   = r.word[0];
+        const char *shortcut = r.word[1];
+        const char *scope    = r.word[2];
 
-        char shortcut_buf[128];
-        if (ls >= sizeof shortcut_buf) {
-            fail(err, err_size, path, line_no, "Kürzel zu lang: '%.*s'",
-                 (int)ls, shortcut_tok);
-            free(line);
-            fclose(f);
-            keymap_free(km);
-            return NULL;
+        if (strlen(action) > KEYMAP_NAME_MAX) {
+            lines_fail(&r, err, err_size,
+                       "Aktionsname zu lang (höchstens %d Zeichen)", KEYMAP_NAME_MAX);
+            return give_up(km, &r);
         }
-        memcpy(shortcut_buf, shortcut_tok, ls);
-        shortcut_buf[ls] = '\0';
-
-        int     key;
-        uint8_t mods;
-        if (!keymap_parse_shortcut(shortcut_buf, &key, &mods)) {
-            fail(err, err_size, path, line_no, "Kürzel nicht zerlegbar: '%s'",
-                 shortcut_buf);
-            free(line);
-            fclose(f);
-            keymap_free(km);
-            return NULL;
+        if (strlen(scope) > KEYMAP_NAME_MAX) {
+            lines_fail(&r, err, err_size,
+                       "Bereichsname zu lang (höchstens %d Zeichen)", KEYMAP_NAME_MAX);
+            return give_up(km, &r);
         }
 
         keymap_entry e = {0};
-        e.key  = key;
-        e.mods = mods;
-        e.line = line_no;
-        memcpy(e.action, action_tok, la);
-        e.action[la] = '\0';
-        memcpy(e.scope, scope_tok, lb);
-        e.scope[lb] = '\0';
+        if (!keymap_parse_shortcut(shortcut, &e.key, &e.mods)) {
+            lines_fail(&r, err, err_size, "Kürzel nicht zerlegbar: '%s'", shortcut);
+            return give_up(km, &r);
+        }
+
+        e.line = r.line;
+        snprintf(e.action, sizeof e.action, "%s", action);
+        snprintf(e.scope,  sizeof e.scope,  "%s", scope);
 
         for (size_t i = 0; i < km->count; i++) {
             const keymap_entry *o = &km->entries[i];
-            if (o->key == e.key && o->mods == e.mods && strcmp(o->scope, e.scope) == 0) {
-                fail(err, err_size, path, line_no,
-                     "Kürzel '%s' im Bereich '%s' ist bereits in Zeile %d an '%s' vergeben",
-                     shortcut_buf, e.scope, o->line, o->action);
-                free(line);
-                fclose(f);
-                keymap_free(km);
-                return NULL;
+
+            if (o->key == e.key && o->mods == e.mods &&
+                strcmp(o->scope, e.scope) == 0) {
+                lines_fail(&r, err, err_size,
+                           "Kürzel '%s' im Bereich '%s' ist bereits in Zeile %d "
+                           "an '%s' vergeben",
+                           shortcut, e.scope, o->line, o->action);
+                return give_up(km, &r);
             }
             if (strcmp(o->action, e.action) == 0) {
-                fail(err, err_size, path, line_no,
-                     "Aktion '%s' ist bereits in Zeile %d belegt", e.action, o->line);
-                free(line);
-                fclose(f);
-                keymap_free(km);
-                return NULL;
+                lines_fail(&r, err, err_size,
+                           "Aktion '%s' ist bereits in Zeile %d belegt",
+                           e.action, o->line);
+                return give_up(km, &r);
             }
         }
 
         if (!entries_push(km, e)) {
-            fail(err, err_size, path, line_no, "Speicher reicht nicht");
-            free(line);
-            fclose(f);
-            keymap_free(km);
-            return NULL;
+            lines_fail(&r, err, err_size, "Speicher reicht nicht");
+            return give_up(km, &r);
         }
     }
 
-    bool had_error = ferror(f) != 0;
-    fclose(f);
-    free(line);
-
-    if (had_error) {
-        fail(err, err_size, path, 0, "Datei nicht lesbar: Lesefehler");
-        keymap_free(km);
-        return NULL;
-    }
-
+    lines_close(&r);
     return km;
 }
 
