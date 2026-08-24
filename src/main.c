@@ -63,16 +63,39 @@ static void program_free(program *p)
     bitmap_free(&p->fb);
 }
 
+/* Setzt eine führende Tilde in den Heimatpfad um.
+ *
+ * Die Tilde ist eine Erfindung der Kommandozeile: die Schale ersetzt sie,
+ * bevor ein Programm sie zu sehen bekommt. Wer den Pfad dagegen in eine
+ * Konfigurationsdatei schreibt oder als Voreinstellung im Programm hat, muss
+ * es selbst tun - sonst sucht das Programm ein Verzeichnis, das wörtlich „~"
+ * heißt, und legt es im schlimmsten Fall an.
+ *
+ * Das steht hier und nicht in plat.h: der Vault (store/vault.h) bekommt einen
+ * fertigen Pfad, und wo der herkommt, ist die Entscheidung des Programms. */
+static const char *expand_home(const char *path)
+{
+    static char out[1024];
+
+    if (!path || path[0] != '~' || (path[1] && path[1] != '/')) return path;
+
+    const char *home = getenv("HOME");
+    if (!home || !*home) return path;
+
+    snprintf(out, sizeof out, "%s%s", home, path + 1);
+    return out;
+}
+
 /* Der Vault liegt unter ~/PDA, falls nichts anderes gesagt wird. Ein eigener
  * Ort ist praktisch, um mit einem leeren Stand zu arbeiten, ohne die eigenen
  * Daten anzufassen. */
 static const char *vault_path(int argc, char **argv)
 {
     for (int i = 1; i + 1 < argc; i++)
-        if (strcmp(argv[i], "--vault") == 0) return argv[i + 1];
+        if (strcmp(argv[i], "--vault") == 0) return expand_home(argv[i + 1]);
 
     const char *env = getenv("PDA_VAULT");
-    return env && *env ? env : "~/PDA";
+    return expand_home(env && *env ? env : "~/PDA");
 }
 
 static bool has_flag(int argc, char **argv, const char *name)
@@ -144,9 +167,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    p.vault = vault_open(vault_path(argc, argv), err, sizeof err);
+    const char *vpath = vault_path(argc, argv);
+
+    p.vault = vault_open(vpath, err, sizeof err);
     if (!p.vault) {
-        fprintf(stderr, "Vault: %s\n", err);
+        fprintf(stderr, "Der Vault unter %s ließ sich nicht öffnen: %s\n", vpath, err);
+        fprintf(stderr, "Ein anderer Ort geht mit --vault <verzeichnis>"
+                        " oder über PDA_VAULT.\n");
         program_free(&p);
         plat_shutdown();
         return 1;

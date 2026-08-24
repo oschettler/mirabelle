@@ -24,6 +24,8 @@
 #include "store/vault.h"
 #include "support/golden.h"
 #include "ui/theme.h"
+#include "ui/widget.h"
+#include "ui/window.h"
 
 #ifndef PDA_DATA_DIR
 #define PDA_DATA_DIR "data"
@@ -230,6 +232,22 @@ TEST(a_broken_schema_does_not_take_the_others_with_it)
           "field t\n    kind text\n    label field.title\n", fp);
     fclose(fp);
 
+    /* Eine Datei, die ein gültiges Schema WÄRE, aber nicht so heißt. Ohne die
+     * Prüfung der Endung würde sie mitgezählt - und data/schema/task.lua
+     * beschreibt dieselbe Anwendung wie task.schema, es gäbe sie also
+     * doppelt. */
+    snprintf(file, sizeof file, "%s/notiz.txt", path);
+    fp = fopen(file, "wb");
+    REQUIRE(fp != NULL);
+    fputs("type n\nfolder Notizen\nlabel app.notes\ncolumns t\nform t\n"
+          "field t\n    kind text\n    label field.title\n", fp);
+    fclose(fp);
+
+    /* Und ein Unterverzeichnis, das zufällig so heißt. */
+    char sub[900];
+    snprintf(sub, sizeof sub, "%s/alt.schema", path);
+    mkdir(sub, 0777);
+
     shell_config cfg = {
         .data_dir = dir, .vault = g_vault, .theme = &g_theme,
         .catalog = g_cat, .keymap = g_km, .sort = g_sort, .search = g_search,
@@ -261,6 +279,20 @@ TEST(without_any_schema_there_is_nothing_to_do)
     CHECK(shell_create(&cfg, err, sizeof err) == NULL);
     CHECK(err[0] != '\0');
 
+    /* Auch ein Verzeichnis, das es gibt, in dem aber nichts liegt: dann gäbe
+     * es nichts zu tun, und ein Programm ohne Anwendungen wäre ein leeres
+     * Fenster ohne Erklärung. */
+    char root[600], dir[700], sub[800];
+    temp_root(root, sizeof root);
+    snprintf(dir, sizeof dir, "%s/leer", root);
+    mkdir(dir, 0777);
+    snprintf(sub, sizeof sub, "%s/schema", dir);
+    mkdir(sub, 0777);
+
+    cfg.data_dir = dir;
+    CHECK(shell_create(&cfg, err, sizeof err) == NULL);
+    CHECK(strstr(err, "Schema") != NULL);
+
     /* Und ohne Angaben erst recht nicht. */
     shell_config empty = { 0 };
     CHECK(shell_create(&empty, err, sizeof err) == NULL);
@@ -286,9 +318,14 @@ TEST(opening_an_application_opens_its_window)
     CHECK(shell_open_app(s, tasks, err, sizeof err));
     CHECK(shell_app_is_open(s, tasks));
 
-    /* Zweimal öffnen ergibt kein zweites Fenster. */
+    CHECK_EQ(shell_window_count(s), 1);
+    CHECK_EQ(shell_active_app(s), tasks);
+
+    /* Zweimal öffnen ergibt kein zweites Fenster, sondern holt das vorhandene
+     * nach vorn. */
     CHECK(shell_open_app(s, tasks, err, sizeof err));
     CHECK(shell_app_is_open(s, tasks));
+    CHECK_EQ(shell_window_count(s), 1);
 
     CHECK(!shell_open_app(s, 99, err, sizeof err));
 
@@ -339,6 +376,9 @@ TEST(closing_a_window_leaves_nothing_behind)
 
     shell_run_action(s, "window.close");
     CHECK(!shell_app_is_open(s, tasks));
+    CHECK_EQ(shell_window_count(s), 0);
+    CHECK(shell_app_browser(s, tasks) == NULL);
+    CHECK(shell_app_window(s, tasks) == NULL);
 
     /* Danach muss weiter gezeichnet werden können ... */
     bitmap bm;
@@ -462,6 +502,314 @@ TEST(a_click_reaches_the_list_in_the_active_window)
     teardown();
 }
 
+/* --- Bedienung durchspielen -------------------------------------------------------
+ *
+ * Die Tests hier klicken und tippen, wie ein Nutzer es täte. Sie rechnen dabei
+ * so wenig wie möglich nach: wo genau ein Fenster steht, fragen sie die
+ * Schale, statt es aus der Anordnung herzuleiten - sonst prüften sie, ob ich
+ * beim Testschreiben richtig gerechnet habe.
+ */
+
+/* Klickt in den Inhaltsbereich des Fensters, an eine Stelle relativ zu ihm. */
+static void click_in(shell *s, int app, int dx, int dy, int clicks)
+{
+    rect cr = window_content_rect(shell_app_window(s, app));
+
+    event e = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = clicks,
+                .x = cr.x + dx, .y = cr.y + dy };
+    shell_event(s, &e);
+}
+
+static void press(shell *s, const char *action)
+{
+    int     key  = 0;
+    uint8_t mods = 0;
+    char    text[64];
+
+    if (!keymap_describe(g_km, action, text, sizeof text) ||
+        !keymap_parse_shortcut(text, &key, &mods)) {
+        printf("  kein Kürzel für %s\n", action);
+        return;
+    }
+
+    event e = { .kind = EV_KEY_DOWN, .key = key, .mods = mods };
+    shell_event(s, &e);
+}
+
+/* Klappt das Menü unter dem Titel bei x auf und wählt den Eintrag mit dieser
+ * Nummer. Hinfahren, drücken, loslassen - beim Titel wie beim Eintrag, denn
+ * ein kurzer Klick hält das Menü offen (menu.h). */
+static void pick_menu_item(shell *s, int x, int item)
+{
+    event down = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1, .x = x, .y = 6 };
+    event up   = { .kind = EV_MOUSE_UP,   .button = 1, .x = x, .y = 6 };
+    shell_event(s, &down);
+    shell_event(s, &up);
+
+    int y = g_theme.menubar_h + item * g_theme.menu_item_h + g_theme.menu_item_h / 2;
+
+    event mv = { .kind = EV_MOUSE_MOVE, .x = x + 8, .y = y };
+    event pd = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1, .x = x + 8, .y = y };
+    event pu = { .kind = EV_MOUSE_UP,   .button = 1, .x = x + 8, .y = y };
+
+    shell_event(s, &mv);
+    shell_event(s, &pd);
+    shell_event(s, &pu);
+}
+
+TEST(the_menu_bar_opens_an_application)
+{
+    /* Vom Klick in die Menüleiste bis zum offenen Fenster - der Weg, den
+     * niemand sonst prüft, weil alle anderen Tests shell_run_action rufen. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int notes = app_by_label(s, "app.notes");
+    REQUIRE(notes >= 0);
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, SCREEN_W, SCREEN_H));
+    gc g;
+    gc_init(&g, &bm);
+    shell_draw(s, &g);
+
+    /* Wo „Anwendungen" anfängt, hängt von der Breite der Titel davor ab - und
+     * die hängt an der Schrift. Also wird die Leiste abgeklopft: gesucht ist
+     * der Titel, unter dem der erste Eintrag eine Anwendung öffnet. */
+    int menu_x = -1;
+    for (int x = 4; x < 400 && menu_x < 0; x += 4) {
+        pick_menu_item(s, x, 0);
+        if (strcmp(shell_last_action(s), shell_app_label(s, 0)) == 0) menu_x = x;
+    }
+    REQUIRE(menu_x > 0);
+
+    /* Und jetzt der dritte Eintrag - die dritte Anwendung. */
+    CHECK(!shell_app_is_open(s, notes));
+    pick_menu_item(s, menu_x, notes);
+
+    CHECK(shell_app_is_open(s, notes));
+    CHECK_STR(shell_last_action(s), "app.notes");
+
+    bitmap_free(&bm);
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(return_opens_a_record_and_escape_closes_it_again)
+{
+    /* Return bedeutet in einer Liste etwas anderes als in einem Formular -
+     * dafür hat die Tastenbelegung Bereiche. Ohne die Suche in der richtigen
+     * Reihenfolge täte Return im Formular dasselbe wie in der Liste. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int  tasks = app_by_label(s, "app.tasks");
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, tasks, err, sizeof err));
+
+    browser *br = shell_app_browser(s, tasks);
+    REQUIRE(br != NULL);
+    CHECK_EQ(browser_view_of(br), BROWSE_LIST);
+
+    press(s, "list.open");
+    CHECK_EQ(browser_view_of(br), BROWSE_FORM);
+
+    press(s, "form.cancel");
+    CHECK_EQ(browser_view_of(br), BROWSE_LIST);
+
+    /* Und Return im Formular sichert, statt noch einmal zu öffnen. */
+    press(s, "list.open");
+    CHECK_EQ(browser_view_of(br), BROWSE_FORM);
+    press(s, "form.accept");
+    CHECK_EQ(browser_view_of(br), BROWSE_LIST);
+    CHECK_STR(shell_last_error(s), "");
+
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(the_arrow_keys_still_belong_to_the_list)
+{
+    /* Was die Tastenbelegung einem Bedienelement zuschreibt, darf die Schale
+     * nicht schlucken. Sonst bewegte sich keine Auswahl mehr. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int  tasks = app_by_label(s, "app.tasks");
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, tasks, err, sizeof err));
+
+    browser *br = shell_app_browser(s, tasks);
+    REQUIRE(br != NULL);
+    REQUIRE(browser_count(br) >= 2);
+    CHECK_EQ(browser_selected(br), 0);
+
+    press(s, "list.next");
+    CHECK_EQ(browser_selected(br), 1);
+
+    press(s, "list.prev");
+    CHECK_EQ(browser_selected(br), 0);
+
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(a_double_click_in_the_list_opens_the_record)
+{
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int  tasks = app_by_label(s, "app.tasks");
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, tasks, err, sizeof err));
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, SCREEN_W, SCREEN_H));
+    gc g;
+    gc_init(&g, &bm);
+    shell_draw(s, &g);
+
+    browser *br = shell_app_browser(s, tasks);
+    REQUIRE(br != NULL);
+
+    click_in(s, tasks, 40, 8, 2);
+    CHECK_EQ(browser_view_of(br), BROWSE_FORM);
+
+    bitmap_free(&bm);
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(a_click_on_the_desktop_leaves_the_list_alone)
+{
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int  tasks = app_by_label(s, "app.tasks");
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, tasks, err, sizeof err));
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, SCREEN_W, SCREEN_H));
+    gc g;
+    gc_init(&g, &bm);
+    shell_draw(s, &g);
+
+    browser *br = shell_app_browser(s, tasks);
+    REQUIRE(br != NULL);
+    browser_select(br, 1);
+
+    /* Ganz rechts unten liegt kein Fenster. Käme der Klick trotzdem bei der
+     * Liste an, hätte er dort einen weit negativen Punkt - und die Auswahl
+     * spränge. */
+    event far = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1,
+                  .x = SCREEN_W - 3, .y = SCREEN_H - 3 };
+    shell_event(s, &far);
+
+    CHECK_EQ(browser_selected(br), 1);
+    CHECK_EQ(browser_view_of(br), BROWSE_LIST);
+
+    bitmap_free(&bm);
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(clicking_an_inactive_window_brings_it_forward)
+{
+    /* Aktivieren, verschieben, vergrößern, schließen macht die
+     * Fensterverwaltung. Bekommt sie nichts, ist der Schreibtisch tot. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int  a = app_by_label(s, "app.contacts");
+    int  b = app_by_label(s, "app.tasks");
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, a, err, sizeof err));
+    REQUIRE(shell_open_app(s, b, err, sizeof err));
+
+    CHECK_EQ(shell_active_app(s), b);
+
+    /* Auf die Titelleiste des ersten Fensters klicken. */
+    rect  fa = window_frame(shell_app_window(s, a));
+    event t  = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1,
+                 .x = fa.x + fa.w / 2, .y = fa.y + 4 };
+    shell_event(s, &t);
+
+    CHECK_EQ(shell_active_app(s), a);
+
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(the_scrollbar_next_to_the_list_works)
+{
+    REQUIRE(setup());
+
+    /* Genug Aufgaben, damit die Liste wirklich scrollt. */
+    char err[256] = "";
+    for (int i = 0; i < 40; i++) {
+        char text[256];
+        snprintf(text, sizeof text,
+                 "---\nid: 20260301T09%02d00-%04d\ntitle: Aufgabe %02d\n"
+                 "due: 2026-04-%02d\ndone: no\n---\nx\n",
+                 i, i, i, (i % 28) + 1);
+
+        record *r = record_parse(text, strlen(text), "t", err, sizeof err);
+        REQUIRE(r != NULL);
+
+        char id[RECORD_ID_LEN + 1];
+        vault_save(g_vault, "Aufgaben", r, id, sizeof id, err, sizeof err);
+        record_free(r);
+    }
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int tasks = app_by_label(s, "app.tasks");
+    REQUIRE(shell_open_app(s, tasks, err, sizeof err));
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, SCREEN_W, SCREEN_H));
+    gc g;
+    gc_init(&g, &bm);
+    shell_draw(s, &g);
+
+    browser *br = shell_app_browser(s, tasks);
+    REQUIRE(br != NULL);
+    REQUIRE(browser_count(br) > 20);
+
+    scrollmodel *m = list_scroll(browser_list(br));
+    REQUIRE(scroll_max(m) > 0);
+    CHECK_EQ(m->value, 0);
+
+    /* Auf das untere Pfeilfeld des Rollbalkens: ganz rechts im Inhalt, ganz
+     * unten. */
+    rect cr = window_content_rect(shell_app_window(s, tasks));
+    click_in(s, tasks, cr.w - g_theme.scrollbar_w / 2, cr.h - 4, 1);
+
+    CHECK_EQ(m->value, 1);
+
+    /* Und die Auswahl hat sich dabei NICHT bewegt - ein Rollbalken verschiebt
+     * die Sicht, nicht die Auswahl. */
+    CHECK_EQ(browser_selected(br), 0);
+
+    bitmap_free(&bm);
+    shell_destroy(s);
+    teardown();
+}
+
 /* --- Skriptanwendungen -----------------------------------------------------------
  *
  * Die Schale kennt Lua nicht - sie bekommt eine Handvoll Funktionszeiger. Also
@@ -543,6 +891,15 @@ TEST(scripts_become_applications_too)
     CHECK_STR(shell_app_label(s, 5), "app.outline");
 
     shell_destroy(s);
+
+    /* Ein Skript ohne Titel bekommt keinen Menüeintrag - es gäbe nichts
+     * anzuklicken. Der erfundene Titelgeber liefert nur für zwei einen. */
+    fake_scripts more = { .count = 5 };
+    s = open_shell_with(&more, &sc);
+    REQUIRE(s != NULL);
+    CHECK_EQ(shell_app_count(s), 6);
+
+    shell_destroy(s);
     teardown();
 }
 
@@ -613,11 +970,17 @@ TEST(record_actions_do_nothing_in_a_script_window)
     char err[256] = "";
     REQUIRE(shell_open_app(s, app_by_label(s, "app.agenda"), err, sizeof err));
 
+    /* Es gibt keinen Browser, also auch nichts, worauf diese Aktionen wirken
+     * könnten - und nichts, wovon eine Fehlermeldung käme. */
+    CHECK(shell_app_browser(s, app_by_label(s, "app.agenda")) == NULL);
+    CHECK_STR(shell_last_error(s), "");
+
     shell_run_action(s, "record.new");
     shell_run_action(s, "record.save");
     shell_run_action(s, "record.delete");
 
     CHECK(shell_running(s));
+    CHECK_STR(shell_last_error(s), "");
 
     shell_destroy(s);
     teardown();
@@ -665,6 +1028,14 @@ int main(void)
 
     RUN(a_shortcut_and_the_menu_do_the_same_thing);
     RUN(a_click_reaches_the_list_in_the_active_window);
+
+    RUN(the_menu_bar_opens_an_application);
+    RUN(return_opens_a_record_and_escape_closes_it_again);
+    RUN(the_arrow_keys_still_belong_to_the_list);
+    RUN(a_double_click_in_the_list_opens_the_record);
+    RUN(a_click_on_the_desktop_leaves_the_list_alone);
+    RUN(clicking_an_inactive_window_brings_it_forward);
+    RUN(the_scrollbar_next_to_the_list_works);
 
     RUN(scripts_become_applications_too);
     RUN(a_script_application_gets_a_window_and_draws_itself);

@@ -33,7 +33,9 @@
 #include "core/keymap.h"
 #include "gfx/draw.h"
 #include "plat/plat.h"
+#include "app/browser.h"
 #include "store/vault.h"
+#include "ui/window.h"
 #include "ui/theme.h"
 
 typedef struct shell shell;
@@ -96,6 +98,22 @@ bool shell_open_app(shell *s, int index, char *err, size_t err_size);
 
 /* true, wenn das Fenster dieser Anwendung offen ist. */
 bool shell_app_is_open(const shell *s, int index);
+
+/* Das Fenster einer Anwendung, oder NULL. Gehört der Schale.
+ *
+ * Damit lässt sich der Inhaltsbereich ausrechnen - eine Statuszeile braucht
+ * das, und Tests brauchen es, um dorthin zu klicken, wo ein Nutzer klickt. */
+window *shell_app_window(const shell *s, int index);
+
+/* Der Browser einer Anwendung, oder NULL. Bei Skriptanwendungen immer NULL:
+ * die zeichnen selbst und haben keinen. */
+browser *shell_app_browser(const shell *s, int index);
+
+/* Die Anwendung im aktiven Fenster, oder -1. */
+int shell_active_app(const shell *s);
+
+/* Wie viele Fenster offen sind. */
+int shell_window_count(const shell *s);
 
 /* Die zuletzt ausgelöste Aktion - für Tests und für eine Statuszeile. */
 const char *shell_last_action(const shell *s);

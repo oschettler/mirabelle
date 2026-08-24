@@ -291,6 +291,30 @@ bool shell_app_is_open(const shell *s, int index)
     return s->apps[index].win != NULL;
 }
 
+window *shell_app_window(const shell *s, int index)
+{
+    if (index < 0 || index >= s->app_count) return NULL;
+    return s->apps[index].win;
+}
+
+browser *shell_app_browser(const shell *s, int index)
+{
+    if (index < 0 || index >= s->app_count) return NULL;
+    return s->apps[index].br;
+}
+
+int shell_active_app(const shell *s)
+{
+    window *w = wm_active(s->wm);
+    if (!w) return -1;
+
+    for (int i = 0; i < s->app_count; i++)
+        if (s->apps[i].win == w) return i;
+    return -1;
+}
+
+int shell_window_count(const shell *s) { return wm_count(s->wm); }
+
 const char *shell_last_action(const shell *s) { return s->last_action; }
 const char *shell_last_error(const shell *s)  { return s->last_error; }
 bool        shell_running(const shell *s)     { return s->running; }
@@ -382,12 +406,38 @@ bool shell_open_app(shell *s, int index, char *err, size_t err_size)
 
 static app_entry *active_app(shell *s)
 {
-    window *w = wm_active(s->wm);
-    if (!w) return NULL;
+    int i = shell_active_app(s);
+    return i < 0 ? NULL : &s->apps[i];
+}
 
+/* Was die Schale selbst tut, im Unterschied zu dem, was ein Bedienelement tut.
+ *
+ * Die Tastenbelegung kennt beides nebeneinander: `list.next` bewegt die
+ * Auswahl und gehört der Liste, `list.open` öffnet einen Datensatz und gehört
+ * der Anwendung. Ohne diese Unterscheidung würde die Schale entweder alles
+ * schlucken - dann bewegte sich keine Auswahl mehr - oder alles durchlassen,
+ * und dann täte Return nichts.
+ *
+ * Anwendungsnamen stehen nicht in der Liste: sie werden getrennt geprüft, weil
+ * es sie erst gibt, wenn die Schemadateien gelesen sind. */
+static bool is_app_label(const shell *s, const char *action)
+{
     for (int i = 0; i < s->app_count; i++)
-        if (s->apps[i].win == w) return &s->apps[i];
-    return NULL;
+        if (strcmp(action, s->apps[i].label) == 0) return true;
+    return false;
+}
+
+static bool shell_handles(const char *action)
+{
+    static const char *const OURS[] = {
+        "app.quit", "window.close",
+        "record.new", "record.save", "record.delete",
+        "list.open", "form.accept", "form.cancel",
+    };
+
+    for (size_t i = 0; i < sizeof OURS / sizeof OURS[0]; i++)
+        if (strcmp(OURS[i], action) == 0) return true;
+    return false;
 }
 
 /* Der Inhalt eines Skriptfensters. Getrennt, weil beide Aufrufstellen -
@@ -431,9 +481,16 @@ void shell_run_action(shell *s, const char *action)
     char msg[256] = "";
     bool ok       = true;
 
-    if (strcmp(action, "record.new") == 0)    ok = browser_new(a->br, msg, sizeof msg);
-    else if (strcmp(action, "record.save") == 0)   ok = browser_save(a->br, msg, sizeof msg);
-    else if (strcmp(action, "record.delete") == 0) ok = browser_delete_selected(a->br, msg, sizeof msg);
+    /* Return und Esc bedeuten in einer Liste etwas anderes als in einem
+     * Formular - genau dafür hat die Tastenbelegung Bereiche. Hier stehen
+     * beide Bedeutungen nebeneinander, und welche gilt, hat die Suche nach dem
+     * Bereich schon entschieden. */
+    if (strcmp(action, "record.new") == 0)          ok = browser_new(a->br, msg, sizeof msg);
+    else if (strcmp(action, "record.save") == 0)    ok = browser_save(a->br, msg, sizeof msg);
+    else if (strcmp(action, "form.accept") == 0)    ok = browser_save(a->br, msg, sizeof msg);
+    else if (strcmp(action, "record.delete") == 0)  ok = browser_delete_selected(a->br, msg, sizeof msg);
+    else if (strcmp(action, "list.open") == 0)      ok = browser_open_selected(a->br, msg, sizeof msg);
+    else if (strcmp(action, "form.cancel") == 0)  { browser_cancel(a->br); return; }
     else return;
 
     snprintf(s->last_error, sizeof s->last_error, "%s", ok ? "" : msg);
@@ -513,10 +570,10 @@ void shell_event(shell *s, const event *e)
         if (!action)
             action = keymap_lookup(s->cfg.keymap, e->key, e->mods, "app");
 
-        /* Was in einem Bereich steht, aber hier nichts bedeutet - list.next
-         * etwa -, geht weiter an das Widget. Es kennt seine Tasten selbst. */
-        if (action && strncmp(action, "list.", 5) != 0 &&
-            strncmp(action, "form.", 5) != 0) {
+        /* Was in einem Bereich steht, aber der Schale nichts bedeutet -
+         * `list.next` etwa -, geht weiter an das Widget. Es kennt seine Tasten
+         * selbst, und die Schale hat dazu nichts zu sagen. */
+        if (action && (shell_handles(action) || is_app_label(s, action))) {
             shell_run_action(s, action);
             return;
         }
