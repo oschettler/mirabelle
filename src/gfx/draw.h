@@ -57,6 +57,14 @@ void gfx_line(gc *g, int x0, int y0, int x1, int y1);
 
 void gfx_fill_rect(gc *g, rect r);
 void gfx_frame_rect(gc *g, rect r);         /* ein Pixel breiter Rahmen, innen liegend */
+/* Abgerundetes Rechteck. Der Radius wird auf die halbe kürzere Kante
+ * begrenzt; ein Radius von 0 ergibt ein gewöhnliches Rechteck.
+ *
+ * Gebraucht für Knöpfe: die waren in System 1 abgerundet, mit einem Radius
+ * von vier Pixeln. */
+void gfx_fill_round_rect(gc *g, rect r, int radius);
+void gfx_frame_round_rect(gc *g, rect r, int radius);
+
 void gfx_fill_oval(gc *g, rect r);
 void gfx_frame_oval(gc *g, rect r);
 void gfx_invert_rect(gc *g, rect r);        /* unabhängig von pat und mode */

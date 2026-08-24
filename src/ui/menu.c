@@ -50,7 +50,8 @@ static int menu_title_width(const menubar *mb, int index)
 
 static rect menu_title_rect(const menubar *mb, int index)
 {
-    int x = 0;
+    /* Vor dem ersten Titel steht die Luft, wo im Original das Apfelmenü sitzt. */
+    int x = mb->th.menubar_left;
     for (int i = 0; i < index; i++)
         x += menu_title_width(mb, i);
     return rect_make(x, 0, menu_title_width(mb, index), mb->th.menubar_h);
@@ -75,7 +76,8 @@ static int dropdown_width(const menubar *mb, int menu_index)
         }
     }
 
-    return max_text + mb->th.menu_gap + max_short + 2 * mb->th.menu_pad;
+    return mb->th.menu_text_pad + max_text + mb->th.menu_gap + max_short +
+           mb->th.menu_pad;
 }
 
 static rect dropdown_rect(const menubar *mb)
@@ -245,6 +247,16 @@ static void draw_dropdown(const menubar *mb, gc *g)
 
     g->pat  = PAT_WHITE;
     g->mode = GFX_COPY;
+    /* Schlagschatten unten und rechts, zwei Pixel, wie in System 1. Er wird
+     * VOR dem Menü gezeichnet, damit das weiße Feld ihn nicht überdeckt. */
+    if (th->menu_shadow > 0) {
+        int sh = th->menu_shadow;
+        g->pat = PAT_BLACK;
+        gfx_fill_rect(g, rect_make(dd.x + sh, dd.y + dd.h, dd.w, sh));
+        gfx_fill_rect(g, rect_make(dd.x + dd.w, dd.y + sh, sh, dd.h));
+    }
+
+    g->pat = PAT_WHITE;
     gfx_fill_rect(g, dd);
     g->pat = PAT_BLACK;
     gfx_frame_rect(g, dd);
@@ -264,7 +276,7 @@ static void draw_dropdown(const menubar *mb, gc *g)
 
         int ty = row.y + baseline_offset;
         g->pat = PAT_BLACK;
-        gfx_text(g, &system12, row.x + th->menu_pad, ty, T(mb->cat, it->key));
+        gfx_text(g, &system12, row.x + th->menu_text_pad, ty, T(mb->cat, it->key));
 
         if (it->action && keymap_describe(mb->km, it->action, shortcut, sizeof shortcut)) {
             int sw = text_width(&system12, shortcut);

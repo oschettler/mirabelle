@@ -78,7 +78,8 @@ static int title_width(const theme *th, const catalog *cat, const menu *m, int i
 
 static int title_x(const theme *th, const catalog *cat, const menu *m, int index)
 {
-    int x = 0;
+    /* Vor dem ersten Titel steht die Luft, wo im Original das Apfelmenü sitzt. */
+    int x = th->menubar_left;
     for (int i = 0; i < index; i++)
         x += title_width(th, cat, m, i);
     return x;
@@ -102,7 +103,8 @@ static int dropdown_width(const theme *th, const catalog *cat, const keymap *km,
         }
     }
 
-    return max_text + th->menu_gap + max_short + 2 * th->menu_pad;
+    return th->menu_text_pad + max_text + th->menu_gap + max_short +
+           th->menu_pad;
 }
 
 static int item_center_y(const theme *th, int index)

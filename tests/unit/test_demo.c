@@ -289,8 +289,8 @@ TEST(closing_a_window_by_its_close_box_is_safe)
 
     rect f  = window_frame(st.w_desk);
     event e = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1,
-                .x = f.x + th.box_margin + th.close_box / 2,
-                .y = f.y + th.titlebar_h / 2 };
+                .x = f.x + th.close_box_left + th.close_box / 2,
+                .y = f.y + th.close_box_top + th.close_box / 2 };
     demo_event(&st, &e);
 
     CHECK(st.w_desk == NULL);

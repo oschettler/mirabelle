@@ -1,29 +1,48 @@
-# Thema für den Arbeitsplatz: Mauszeiger, also kleine Bedienelemente und
-# keine zusätzliche Trefferfläche.
+# Thema für den Arbeitsplatz.
 #
-# Für das Gerät gibt es in M15 ein zweites Thema. Dort sind Titelleiste und
-# Felder größer, und hit_slop vergrößert die Trefferfläche, ohne dass die
-# gezeichnete Fläche wächst - ein Finger ist rund 9 mm breit, das sind auf dem
-# Panel etwa 47 Pixel.
+# Die Maße folgen docs/ui-style-guide.md, also den Spezifikationen von
+# Macintosh System 1 bis 6. Sie gelten für die ELEMENTE; Auflösung und
+# Schrifttechnik bleiben, wie sie sind (D-9 und die eigene Bitmapschrift).
+#
+# Für das Gerät gibt es in M15 ein zweites Thema mit größeren Bedienelementen
+# und hit_slop - ein Finger ist auf dem Panel rund 47 Pixel breit.
 
-titlebar_h    20
-border         1
-close_box     11
-grow_box      15
-box_margin     5
-stripe_gap     2
-title_pad      6
-hit_slop       0
-min_w         96
-min_h         48
+# --- Fenster ----------------------------------------------------------------
+titlebar_h      20    # Titelzeile, Style Guide 3
+border          1     # umlaufender Rahmen
+close_box       12    # Schließfeld 12 x 12
+close_box_top   4     # 4 px von oben
+close_box_left  7     # 7 px von links
+grow_box        16    # Größenfeld 16 x 16
+box_margin      0     # Größenfeld sitzt in der Ecke
+stripe_gap      2     # 1 px Linie, 1 px Abstand
+title_pad       6   
+hit_slop        0     # Arbeitsplatz: Mauszeiger, keine Zugabe
+min_w           96  
+min_h           48  
+scrollbar_w     16    # Bildlaufleiste 16 px
+
+# --- Menüs ------------------------------------------------------------------
+menubar_h       20    # Gesamthöhe der Leiste
+menubar_left    16    # vor dem ersten Titel
+menu_pad        8     # je Seite; ergibt 16 px zwischen den Titeln
+menu_item_h     16    # Zeilenhöhe im Aufklappmenü
+menu_text_pad   16    # Einzug, hält Platz für Häkchen frei
+menu_gap        24    # zwischen Eintrag und Kürzel
+menu_shadow     2     # Schlagschatten unten und rechts
+
+# --- Knöpfe und Kästchen ----------------------------------------------------
+button_h        20  
+button_min_w    62  
+button_gap      10  
+button_radius   4     # System 1 rundete Knöpfe ab
+button_pad      6     # mindestens 6 px Luft um den Text
+default_ring    3     # Rahmen um den Voreinstellungsknopf
+default_gap     1     # Weißraum davor
+check_gap       6     # zwischen Kästchen und Beschriftung
+
+# --- Dialoge ----------------------------------------------------------------
+dialog_pad      24    # Rahmen zu Text
+dialog_btn_pad  16    # Knöpfe zum unteren und rechten Rand
+
 font          system12
-
-# --- Menüs und Dialoge (M7) --------------------------------------------------
-menubar_h     20
-menu_item_h   15
-menu_pad      12
-menu_gap      24
-dialog_pad    14
-button_h      18
-button_min_w  62
-button_gap    10

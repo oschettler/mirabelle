@@ -128,7 +128,7 @@ dialog *dialog_open(wm *m, const catalog *cat,
     int row_w = 0;
     for (int i = 0; i < button_count; i++) {
         int tw = text_width(&system12, d->button_label[i]);
-        bw[i] = tw + 2 * th.menu_pad;
+        bw[i] = tw + 2 * th.button_pad;
         if (bw[i] < th.button_min_w) bw[i] = th.button_min_w;
         row_w += bw[i];
         if (i > 0) row_w += th.button_gap;
@@ -136,10 +136,13 @@ dialog *dialog_open(wm *m, const catalog *cat,
 
     int content_w = (max_line_w > row_w ? max_line_w : row_w) + 2 * th.dialog_pad;
     int text_h    = d->line_count * system12.size;
-    int content_h = text_h + th.dialog_pad + th.button_h + 2 * th.dialog_pad;
+    /* Der Text hält Abstand zum Rahmen (dialog_pad), die Knopfreihe einen
+     * eigenen, kleineren zum unteren und rechten Rand (dialog_btn_pad). */
+    int content_h = th.dialog_pad + text_h + th.dialog_pad +
+                    th.button_h + th.dialog_btn_pad;
 
-    int bx = content_w - th.dialog_pad - row_w;
-    int by = content_h - th.dialog_pad - th.button_h;
+    int bx = content_w - th.dialog_btn_pad - row_w;
+    int by = content_h - th.dialog_btn_pad - th.button_h;
     for (int i = 0; i < button_count; i++) {
         d->button_rect[i] = rect_make(bx, by, bw[i], th.button_h);
         bx += bw[i] + th.button_gap;

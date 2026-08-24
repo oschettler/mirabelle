@@ -482,7 +482,27 @@ Zusatzaufwand: von hinten nach vorn zeichnen, von vorn nach hinten treffen.
 ### Themen
 
 Titelleiste, Schließfeld, Größenfeld, Rollbalken und Trefferflächen kommen aus
-einer Beschreibung, nicht aus verstreuten Zahlen im Code:
+einer Beschreibung, nicht aus verstreuten Zahlen im Code.
+
+**Entscheidung D-14: die Maße folgen `docs/ui-style-guide.md`, die Auflösung
+und die Schrifttechnik nicht.** Der Style Guide hält die Pixelmaße von
+Macintosh System 1 bis 6 fest: Titelleiste 20, Schließfeld 12 × 12 vier Pixel
+von oben und sieben von links, Kästchen 12 × 12 mit sechs Pixeln Abstand zur
+Beschriftung, Knöpfe abgerundet mit Radius 4, der Voreinstellungsknopf mit
+einem drei Pixel starken Außenrahmen, Aufklappmenüs mit zwei Pixeln
+Schlagschatten.
+
+Zwei seiner Empfehlungen übernehmen wir bewusst NICHT:
+
+* Er rät, intern mit 512 × 342 oder 640 × 400 zu rechnen und hochzuskalieren.
+  Das widerspricht D-9. Die Auflösung kommt vom Zielgerät, und beide Ziele
+  laufen mit derselben — nur so gelten Sollbilder für beide Seiten.
+* Er rät zu TrueType-Klonen von Chicago und Geneva. Wir haben eigene
+  Bitmapschriften gezeichnet: kein fremdes Material, keine Schriftrasterung zur
+  Laufzeit, und auf dem ESP32 kein zusätzlicher Speicherbedarf.
+
+Ein Style Guide beschreibt, wie etwas aussehen soll. Womit man das erreicht,
+bleibt eine Entscheidung des Projekts.
 
 ```
 # data/themes/desktop.theme      # data/themes/touch.theme weicht ab:
@@ -1031,6 +1051,7 @@ Zeichenkette im Quelltext.
 | D-8 | Eigener Mini-YAML-Parser statt Bibliothek | 150 Zeilen, lehrreich, keine Abhängigkeit |
 | D-9 | 800 × 480 auf beiden Zielen, Vergrößerung nur in der Anzeige | Was du entwickelst, ist pixelgenau was das Gerät zeigt; Sollbilder gelten für beide Seiten. Auf derselben Platine unabhängig bestätigt (12.2) |
 | D-10 | Touch ist ein Zeiger ohne Hover, Trefferflächen kommen aus dem Thema | Die Plattformschicht wächst dadurch nicht |
+| D-14 | Elementmaße nach dem Style Guide, Auflösung und Schrift nicht | Ein Style Guide beschreibt das Aussehen; womit man es erreicht, bleibt Sache des Projekts |
 | D-13 | Textmodell getrennt vom Textwidget | Der schwierigste Teil eines Editors ist die Schreibmarke, nicht das Zeichnen — getrennt ist er ohne Bildschirm prüfbar |
 | D-12 | Textkörper in Gemtext statt Markdown | Ein Parser mit einem Bit Zustand; Notizendarsteller und SPARTAN-Browser werden dieselbe Funktion |
 | D-11 | Bildschirmtastatur ist ein gewöhnliches Fenster | Erzeugt normale Ereignisse; der Rest des Systems merkt nichts. Eine externe Tastatur über USB oder BLE ist damit kein Sonderfall, sondern derselbe Weg (12.5) |

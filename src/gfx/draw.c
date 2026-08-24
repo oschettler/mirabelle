@@ -254,3 +254,71 @@ void gfx_blit(gc *g, const bitmap *src, int x, int y)
 {
     gfx_blit_bits(g, src->bits, src->stride, src->w, src->h, x, y);
 }
+
+/* --- Abgerundete Rechtecke ---------------------------------------------------
+ *
+ * Die Ecken kommen aus derselben ganzzahligen Kreisprüfung wie die Ovale: ein
+ * Punkt gehört zur Ecke, wenn er innerhalb des Viertelkreises liegt. Damit
+ * sehen Rundung und Oval gleich aus, und es gibt nur eine Stelle, die runde
+ * Formen versteht.
+ */
+
+static int clamp_radius(rect r, int radius)
+{
+    int half = (r.w < r.h ? r.w : r.h) / 2;
+    if (radius > half) radius = half;
+    if (radius < 0)    radius = 0;
+    return radius;
+}
+
+/* Liegt (x,y) innerhalb der abgerundeten Fläche? */
+static bool in_round_rect(rect r, int radius, int x, int y)
+{
+    if (!rect_contains(r, x, y)) return false;
+    if (radius == 0) return true;
+
+    int left   = r.x + radius - 1;
+    int right  = r.x + r.w - radius;
+    int top    = r.y + radius - 1;
+    int bottom = r.y + r.h - radius;
+
+    int cx, cy;
+    if      (x <= left  && y <= top)    { cx = left;  cy = top;    }
+    else if (x >= right && y <= top)    { cx = right; cy = top;    }
+    else if (x <= left  && y >= bottom) { cx = left;  cy = bottom; }
+    else if (x >= right && y >= bottom) { cx = right; cy = bottom; }
+    else return true;   /* außerhalb der vier Eckquadrate: immer drin */
+
+    long long dx = x - cx, dy = y - cy;
+    return dx * dx + dy * dy <= (long long)radius * radius;
+}
+
+void gfx_fill_round_rect(gc *g, rect r, int radius)
+{
+    if (rect_empty(r)) return;
+    radius = clamp_radius(r, radius);
+
+    for (int y = r.y; y < r.y + r.h; y++)
+        for (int x = r.x; x < r.x + r.w; x++)
+            if (in_round_rect(r, radius, x, y)) draw_pixel(g, x, y);
+}
+
+void gfx_frame_round_rect(gc *g, rect r, int radius)
+{
+    if (rect_empty(r)) return;
+    radius = clamp_radius(r, radius);
+
+    /* Randpixel sind die, die drin liegen und einen Nachbarn draußen haben.
+     * Dasselbe Verfahren wie beim Oval - schlicht, und die Rundung passt
+     * dadurch genau zur gefüllten Form. */
+    for (int y = r.y; y < r.y + r.h; y++) {
+        for (int x = r.x; x < r.x + r.w; x++) {
+            if (!in_round_rect(r, radius, x, y)) continue;
+            if (!in_round_rect(r, radius, x - 1, y) ||
+                !in_round_rect(r, radius, x + 1, y) ||
+                !in_round_rect(r, radius, x, y - 1) ||
+                !in_round_rect(r, radius, x, y + 1))
+                draw_pixel(g, x, y);
+        }
+    }
+}

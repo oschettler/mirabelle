@@ -129,7 +129,7 @@ typedef struct {
 static void button_measure(widget *w, int *pw, int *ph)
 {
     const button_widget *bw = (const button_widget *)w;
-    int width = text_width(&system12, T(w->cat, bw->key)) + 2 * w->th->menu_pad;
+    int width = text_width(&system12, T(w->cat, bw->key)) + 2 * w->th->button_pad;
     if (width < w->th->button_min_w) width = w->th->button_min_w;
 
     if (pw) *pw = width;
@@ -141,15 +141,25 @@ static void button_draw(const widget *w, gc *g)
     const button_widget *bw = (const button_widget *)w;
     rect                 r  = w->frame;
 
+    int radius = w->th->button_radius;
+
     g->pat  = PAT_WHITE;
     g->mode = GFX_COPY;
-    gfx_fill_rect(g, r);
+    gfx_fill_round_rect(g, r, radius);
     g->pat = PAT_BLACK;
-    gfx_frame_rect(g, r);
+    gfx_frame_round_rect(g, r, radius);
 
+    /* Der Voreinstellungsknopf bekommt einen dicken Außenrahmen mit einem
+     * schmalen Weißraum davor - so hob System 1 die Voreinstellung hervor. */
     if (bw->is_default) {
-        rect outer = rect_make(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
-        gfx_frame_rect(g, outer);
+        int gap  = w->th->default_gap;
+        int ring = w->th->default_ring;
+        for (int i = 0; i < ring; i++) {
+            int off = gap + 1 + i;
+            gfx_frame_round_rect(g, rect_make(r.x - off, r.y - off,
+                                              r.w + 2 * off, r.h + 2 * off),
+                                 radius + off);
+        }
     }
 
     const char *text = T(w->cat, bw->key);
@@ -261,7 +271,7 @@ static void checkbox_measure(widget *w, int *pw, int *ph)
     int                     box = w->th->close_box;
     int                     tw  = text_width(&system12, T(w->cat, cw->key));
 
-    if (pw) *pw = box + w->th->menu_pad + tw;
+    if (pw) *pw = box + w->th->check_gap + tw;
     if (ph) *ph = box > system12.size ? box : system12.size;
 }
 
@@ -289,7 +299,7 @@ static void checkbox_draw(const widget *w, gc *g)
 
     const char *text = T(w->cat, cw->key);
     int         ty   = w->frame.y + (w->frame.h - system12.size) / 2 + system12.ascent;
-    gfx_text(g, &system12, r.x + box + w->th->menu_pad, ty, text);
+    gfx_text(g, &system12, r.x + box + w->th->check_gap, ty, text);
 
     if (!w->enabled) {
         g->pat  = PAT_GRAY50;

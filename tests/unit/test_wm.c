@@ -43,14 +43,16 @@ static theme load_test_theme(void)
 
 /* --- Punkte aus den Themamaßen errechnen, statt sie fest zu verdrahten --- */
 
+/* Das Schließfeld sitzt nicht mittig in der Titelleiste, sondern vier Pixel
+ * von oben und sieben von links - siehe docs/ui-style-guide.md. */
 static int close_box_center_x(const theme *th, rect frame)
 {
-    return frame.x + th->box_margin + th->close_box / 2;
+    return frame.x + th->close_box_left + th->close_box / 2;
 }
 
 static int close_box_center_y(const theme *th, rect frame)
 {
-    return frame.y + (th->titlebar_h - th->close_box) / 2 + th->close_box / 2;
+    return frame.y + th->close_box_top + th->close_box / 2;
 }
 
 static int grow_box_center_x(const theme *th, rect frame)
@@ -124,14 +126,17 @@ TEST(theme_load_reads_real_file)
     CHECK_EQ(err[0], '\0');
     CHECK_EQ(th.titlebar_h, 20);
     CHECK_EQ(th.border, 1);
-    CHECK_EQ(th.close_box, 11);
-    CHECK_EQ(th.grow_box, 15);
-    CHECK_EQ(th.box_margin, 5);
+    /* Die Maße stammen aus docs/ui-style-guide.md. */
+    CHECK_EQ(th.close_box, 12);
+    CHECK_EQ(th.close_box_top, 4);
+    CHECK_EQ(th.close_box_left, 7);
+    CHECK_EQ(th.grow_box, 16);
     CHECK_EQ(th.stripe_gap, 2);
-    CHECK_EQ(th.title_pad, 6);
     CHECK_EQ(th.hit_slop, 0);
-    CHECK_EQ(th.min_w, 96);
-    CHECK_EQ(th.min_h, 48);
+    CHECK_EQ(th.menubar_h, 20);
+    CHECK_EQ(th.menu_item_h, 16);
+    CHECK_EQ(th.button_radius, 4);
+    CHECK_EQ(th.check_gap, 6);
     CHECK_STR(th.font, "system12");
 }
 
@@ -449,8 +454,9 @@ TEST(hit_slop_grows_hit_area)
     window *w2    = wm_open(m2, frame, "A", WIN_CLOSABLE);
     REQUIRE(w1 && w2);
 
-    /* Knapp links neben dem gezeichneten Schließfeld. */
-    int x = frame.x + plain.box_margin - 3;
+    /* Knapp links neben dem gezeichneten Schließfeld, aber noch innerhalb des
+     * Fensterrahmens - außerhalb träfe der Klick gar kein Fenster. */
+    int x = frame.x + plain.close_box_left - 3;
     int y = close_box_center_y(&plain, frame);
 
     hit_part part;
