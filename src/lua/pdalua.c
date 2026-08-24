@@ -327,6 +327,26 @@ lua_State *pdalua_open(const catalog *cat, char *err, size_t err_size)
         lua_setglobal(L, fn->name);
     }
 
+    /* Die Tastennummern als Namen. Ohne sie stünde in jedem Skript eine Zahl
+     * wie 257, und niemand wüsste, welche Taste das ist - am wenigsten der,
+     * der sie in einem halben Jahr wiederliest. */
+    static const struct { const char *name; int key; } KEYS[] = {
+        { "up", KEY_UP }, { "down", KEY_DOWN },
+        { "left", KEY_LEFT }, { "right", KEY_RIGHT },
+        { "home", KEY_HOME }, { "last", KEY_END },
+        { "pageup", KEY_PAGE_UP }, { "pagedown", KEY_PAGE_DOWN },
+        { "enter", KEY_RETURN }, { "escape", KEY_ESCAPE },
+        { "tab", KEY_TAB }, { "space", KEY_SPACE },
+        { "backspace", KEY_BACKSPACE }, { "del", KEY_DELETE },
+    };
+
+    lua_newtable(L);
+    for (size_t i = 0; i < sizeof KEYS / sizeof KEYS[0]; i++) {
+        lua_pushinteger(L, KEYS[i].key);
+        lua_setfield(L, -2, KEYS[i].name);
+    }
+    lua_setglobal(L, "key");
+
     set_ptr(L, KEY_CAT, (void *)(uintptr_t)cat);
     set_ptr(L, KEY_GC, NULL);
 

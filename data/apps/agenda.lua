@@ -86,7 +86,7 @@ app{
   event = function(e)
     -- Return hakt die oberste Aufgabe ab. Mehr Bedienung braucht eine
     -- Übersicht nicht; wer eine Aufgabe ändern will, öffnet die Aufgaben.
-    if e.kind == "key_down" and e.key == 10 and agenda.tasks[1] then
+    if e.kind == "key_down" and e.key == key.enter and agenda.tasks[1] then
       agenda.finish(agenda.tasks[1].id)
       agenda.refresh()
       return true

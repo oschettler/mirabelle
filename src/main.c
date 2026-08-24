@@ -199,6 +199,7 @@ int main(int argc, char **argv)
     p.lua = pdalua_open(p.cat, err, sizeof err);
     if (p.lua) {
         pdalua_open_apps(p.lua);
+        pdalua_open_net(p.lua);
         pdalua_set_vault(p.lua, p.vault, p.sort, p.search);
 
         plat_dirent apps[32];

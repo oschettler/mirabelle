@@ -141,18 +141,17 @@ app{
   event = function(e)
     if e.kind ~= "key_down" then return false end
 
-    -- Die Tastennummern stehen in plat.h: KEY_SPECIAL beginnt bei 256, und
-    -- danach folgen Hoch, Runter, Links, Rechts.
-    local UP, DOWN, LEFT, RIGHT = 256, 257, 258, 259
-    local RETURN, SPACE = 10, 32
-
-    if e.key == DOWN then
+    -- Die Tasten haben Namen. Ihre Zahlen zu raten geht schief: Return ist
+    -- 13 und nicht 10, und wer sich vertut, merkt es erst, wenn die Taste
+    -- nichts tut.
+    if e.key == key.down then
       outline.selected = math.min(outline.selected + 1, #outline.rows)
       return true
-    elseif e.key == UP then
+    elseif e.key == key.up then
       outline.selected = math.max(outline.selected - 1, 1)
       return true
-    elseif e.key == RETURN or e.key == SPACE or e.key == RIGHT or e.key == LEFT then
+    elseif e.key == key.enter or e.key == key.space
+        or e.key == key.right or e.key == key.left then
       outline.toggle()
       return true
     end

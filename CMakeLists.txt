@@ -159,8 +159,9 @@ if(TARGET PkgConfig::LUA)
         src/lua/pdalua_store.c
         src/lua/pdalua_schema.c
         src/lua/pdalua_apps.c
+        src/lua/pdalua_net.c
     )
-    target_link_libraries(pda_lua PUBLIC pda_app pda_gfx PRIVATE PkgConfig::LUA)
+    target_link_libraries(pda_lua PUBLIC pda_app pda_gfx pda_net PRIVATE PkgConfig::LUA)
 else()
     message(STATUS "Lua nicht gefunden - die Skriptanbindung wird nicht gebaut")
 endif()

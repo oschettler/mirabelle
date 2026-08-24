@@ -932,6 +932,333 @@ TEST(the_outliner_reads_the_structure_out_of_gemtext)
     i18n_free(cat);
 }
 
+/* --- Netz und Gemtext für Lua ------------------------------------------------
+ *
+ * Kein Test hier greift ins Netz. Was sich ohne Gegenstelle prüfen lässt, ist
+ * alles außer dem Abruf selbst - und der ist in test_spartan.c geprüft, mit
+ * einem erfundenen Transport.
+ */
+
+static lua_State *with_net(catalog *cat)
+{
+    char       err[512] = "";
+    lua_State *L = pdalua_open(cat, err, sizeof err);
+    if (!L) return NULL;
+
+    pdalua_open_apps(L);
+    pdalua_open_net(L);
+    return L;
+}
+
+TEST(without_pdalua_open_net_there_is_no_way_out)
+{
+    /* Ein Zustand, der nur ein Schema lesen soll, muss nicht ins Netz greifen
+     * können. Wer es nicht einrichtet, hat ein Lua ohne Zugang nach draußen. */
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    char       err[512] = "";
+    lua_State *L = pdalua_open(cat, err, sizeof err);
+    REQUIRE(L != NULL);
+
+    CHECK(truth(L, "net == nil"));
+    CHECK(truth(L, "gemtext == nil"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(gemtext_comes_apart_in_lua_the_same_way)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_net(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(run(L,
+        "seite = gemtext.parse('# Kopf\\nAbsatz\\n"
+        "=> spartan://x/ Ziel\\n* Punkt\\n> Zitat\\n')"));
+
+    CHECK(truth(L, "#seite == 5"));
+    CHECK(truth(L,
+        "return seite[1].kind == 'heading' and seite[1].text == 'Kopf'"
+        " and seite[1].level == 1"));
+    CHECK(truth(L, "seite[2].kind == 'text' and seite[2].text == 'Absatz'"));
+    CHECK(truth(L,
+        "return seite[3].kind == 'link' and seite[3].url == 'spartan://x/'"
+        " and seite[3].text == 'Ziel'"));
+    CHECK(truth(L, "seite[4].kind == 'item' and seite[4].text == 'Punkt'"));
+    CHECK(truth(L, "seite[5].kind == 'quote'"));
+
+    /* Nur Verweise haben eine Adresse, nur Überschriften eine Ebene - sonst
+     * müsste ein Skript prüfen, ob ein Feld etwas bedeutet. */
+    CHECK(truth(L, "seite[2].url == nil and seite[2].level == nil"));
+
+    /* Ein leerer Text ergibt keine Zeilen und keinen Fehler. */
+    CHECK(truth(L, "#gemtext.parse('') == 0"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(links_resolve_in_lua_the_same_way)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_net(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(truth(L,
+        "net.resolve('spartan://x.org/a/seite.gmi', '/anders')"
+        " == 'spartan://x.org/anders'"));
+    CHECK(truth(L,
+        "net.resolve('spartan://x.org/a/seite.gmi', 'nachbar.gmi')"
+        " == 'spartan://x.org/a/nachbar.gmi'"));
+    CHECK(truth(L,
+        "net.resolve('spartan://x.org/a/b/s', '../oben') == 'spartan://x.org/a/oben'"));
+
+    /* Was keine Adresse ergibt, ergibt nil - und nicht etwas Halbes. */
+    CHECK(truth(L, "net.resolve('spartan://x.org/', 'https://y.org/') == nil"));
+    CHECK(truth(L, "net.resolve('kaputt kaputt', 'x') == nil"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(a_fetch_that_cannot_work_says_so_instead_of_stopping)
+{
+    /* .invalid gibt es nicht und wird es nie geben (RFC 2606). Ein Fehler
+     * muss als zweiter Rückgabewert kommen, damit ein Skript ihn anzeigen
+     * kann, statt abzustürzen. */
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_net(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(truth(L,
+        "local page, why = net.fetch('spartan://kein-rechner.invalid/')\n"
+        "return page == nil and type(why) == 'string' and #why > 0"));
+
+    CHECK(truth(L,
+        "local page, why = net.fetch('https://x.org/')\n"
+        "return page == nil and why:find('Adresse') ~= nil"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+/* --- Der Browser ------------------------------------------------------------------ */
+
+static lua_State *with_browser(catalog *cat)
+{
+    lua_State *L = with_net(cat);
+    if (!L) return NULL;
+
+    char path[512], err[512] = "";
+    snprintf(path, sizeof path, "%s/apps/spartan.lua", PDA_DATA_DIR);
+
+    if (!pdalua_dofile(L, path, err, sizeof err)) {
+        printf("  spartan: %s\n", err);
+        pdalua_close(L);
+        return NULL;
+    }
+    return L;
+}
+
+TEST(the_browser_turns_a_page_into_lines_and_links)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_browser(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(run(L,
+        "browser.address = 'spartan://x.org/ordner/seite.gmi'\n"
+        "browser.render('# Kopf\\n=> /eins Erster\\n=> zwei.gmi\\n"
+        "* Punkt\\n', 40)"));
+
+    CHECK(truth(L, "#browser.links == 2"));
+    CHECK(truth(L, "browser.links[1] == '/eins'"));
+
+    /* Verweise werden nummeriert angezeigt - bei einem Bit je Pixel gibt es
+     * keine Farbe, an der man sie erkennen könnte. */
+    CHECK(truth(L, "browser.lines[2].text:sub(1, 4) == '[1] '"));
+    CHECK(truth(L, "browser.lines[2].link == 1"));
+
+    /* Ein Verweis ohne Namen wird durch seine Adresse vertreten. */
+    CHECK(truth(L, "browser.lines[3].text:find('zwei.gmi') ~= nil"));
+
+    /* Und der Aufzählungspunkt kommt aus dem Katalog, nicht aus dem Skript. */
+    CHECK(truth(L, "browser.lines[4].text:sub(1, 1) == T('gemtext.bullet')"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(the_browser_wraps_long_lines_and_never_loses_a_word)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_browser(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(run(L,
+        "local lang = 'wort '\n"
+        "browser.render(lang:rep(30), 20)"));
+
+    CHECK(truth(L, "#browser.lines > 5"));
+
+    /* Keine Zeile ist breiter als erlaubt ... */
+    CHECK(truth(L,
+        "for _, l in ipairs(browser.lines) do\n"
+        "  if #l.text > 22 then return false end\n"
+        "end\n"
+        "return true"));
+
+    /* ... und alle Wörter sind noch da. */
+    CHECK(truth(L,
+        "local n = 0\n"
+        "for _, l in ipairs(browser.lines) do\n"
+        "  for _ in l.text:gmatch('wort') do n = n + 1 end\n"
+        "end\n"
+        "return n == 30"));
+
+    /* Ein Wort, das länger ist als die Zeile, wird hart getrennt - sonst
+     * liefe eine lange Adresse aus dem Fenster. */
+    CHECK(run(L, "browser.render(string.rep('x', 100), 20)"));
+    CHECK(truth(L, "#browser.lines > 3"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(preformatted_text_keeps_its_lines)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_browser(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(run(L,
+        "browser.render('```\\n" 
+        "eine sehr lange vorformatierte zeile die eine zeile bleibt\\n"
+        "```\\n', 20)"));
+
+    CHECK(truth(L, "#browser.lines == 1"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(typing_a_digit_selects_a_link_and_two_digits_select_a_later_one)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_browser(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(run(L,
+        "local page = ''\n"
+        "for i = 1, 12 do page = page .. '=> /' .. i .. ' Ziel ' .. i .. '\\n' end\n"
+        "browser.address = 'spartan://x.org/'\n"
+        "browser.render(page, 40)"));
+    CHECK(truth(L, "#browser.links == 12"));
+
+    shell_scripting sc = pdalua_scripting(L);
+    REQUIRE(sc.count(sc.user) == 1);
+
+    event one = { .kind = EV_TEXT, .text = "1" };
+    event two = { .kind = EV_TEXT, .text = "2" };
+
+    CHECK(sc.event(sc.user, 0, &one));
+    CHECK(truth(L, "browser.selected == 1"));
+
+    CHECK(sc.event(sc.user, 0, &two));
+    CHECK(truth(L, "browser.selected == 12"));
+
+    /* Weiter geht es nicht - 123 gibt es nicht. */
+    event three = { .kind = EV_TEXT, .text = "3" };
+    CHECK(sc.event(sc.user, 0, &three));
+    CHECK(truth(L, "browser.selected == 3"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(a_letter_starts_a_new_address_and_backspace_shortens_it)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_browser(cat);
+    REQUIRE(L != NULL);
+
+    shell_scripting sc = pdalua_scripting(L);
+    REQUIRE(sc.count(sc.user) == 1);
+
+    CHECK(truth(L, "browser.editing == false"));
+
+    event x = { .kind = EV_TEXT, .text = "x" };
+    CHECK(sc.event(sc.user, 0, &x));
+    CHECK(truth(L, "browser.editing and browser.address == 'x'"));
+
+    event dot = { .kind = EV_TEXT, .text = "." };
+    CHECK(sc.event(sc.user, 0, &dot));
+    CHECK(truth(L, "browser.address == 'x.'"));
+
+    /* In der Adresszeile löscht die Rücktaste ein Zeichen, sonst geht sie im
+     * Verlauf zurück. Zwei Bedeutungen für dieselbe Taste, und welche gilt,
+     * sieht man am Strich hinter der Adresse. */
+    event back = { .kind = EV_KEY_DOWN, .key = KEY_BACKSPACE };
+    CHECK(sc.event(sc.user, 0, &back));
+    CHECK(truth(L, "browser.address == 'x'"));
+
+    event esc = { .kind = EV_KEY_DOWN, .key = KEY_ESCAPE };
+    CHECK(sc.event(sc.user, 0, &esc));
+    CHECK(truth(L, "browser.editing == false"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(the_browser_draws_a_page)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_browser(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(run(L,
+        "browser.address = 'spartan://mozz.us/'\n"
+        "browser.status  = 'text/gemini'\n"
+        "browser.render('# Die Hauptseite\\nEin Absatz.\\n"
+        "=> /eins Erster Verweis\\n=> /zwei Zweiter Verweis\\n"
+        "* Ein Punkt\\n', 34)\n"
+        "browser.selected = 2"));
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 250, 150));
+    gc g;
+    gc_init(&g, &bm);
+
+    shell_scripting sc = pdalua_scripting(L);
+    sc.draw(sc.user, 0, &g, 250, 150);
+
+    CHECK(golden_check("lua_spartan", &bm));
+
+    bitmap_free(&bm);
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
 int main(void)
 {
     RUN(a_fresh_state_has_the_api_and_nothing_dangerous);
@@ -956,6 +1283,18 @@ int main(void)
     RUN(the_event_bus_carries_messages_between_scripts);
     RUN(a_script_that_fails_does_not_take_the_shell_with_it);
     RUN(the_outliner_reads_the_structure_out_of_gemtext);
+
+    RUN(without_pdalua_open_net_there_is_no_way_out);
+    RUN(gemtext_comes_apart_in_lua_the_same_way);
+    RUN(links_resolve_in_lua_the_same_way);
+    RUN(a_fetch_that_cannot_work_says_so_instead_of_stopping);
+
+    RUN(the_browser_turns_a_page_into_lines_and_links);
+    RUN(the_browser_wraps_long_lines_and_never_loses_a_word);
+    RUN(preformatted_text_keeps_its_lines);
+    RUN(typing_a_digit_selects_a_link_and_two_digits_select_a_later_one);
+    RUN(a_letter_starts_a_new_address_and_backspace_shortens_it);
+    RUN(the_browser_draws_a_page);
 
     return test_summary();
 }

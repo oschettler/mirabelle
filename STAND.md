@@ -23,6 +23,8 @@ Fahrplan in [ROADMAP.md](ROADMAP.md).
 | M11 | Schemata, Feldtyp-Registratur, generischer Browser |
 | M12 | Datumsrechnung, Monatsansicht, Ansichtsregistratur |
 | M13 | Lua 5.4 eingebettet, API, Schemalader, eine Lua-Anwendung |
+| M17 | SPARTAN-Protokoll, Netz in plat.h, Gemtext-Anzeige |
+| — | Die Schale: Fenster, Menüs, Rollbalken, Skriptanwendungen |
 
 Dazu: Handbuch (14 Kapitel, baut zu PDF/EPUB/HTML), Maße nach
 `docs/ui-style-guide.md`.

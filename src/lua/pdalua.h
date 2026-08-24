@@ -82,6 +82,13 @@ void pdalua_set_vault(lua_State *L, vault *v,
 bool pdalua_schema(lua_State *L, const char *path, schema *out,
                    char *err, size_t err_size);
 
+/* Richtet `net` und `gemtext` ein - Seiten abrufen und zerlegen.
+ *
+ * Getrennt von pdalua_open(), weil ein Zustand, der nur ein Schema lesen soll,
+ * nicht ins Netz greifen können muss. Wer es nicht aufruft, hat ein Lua ohne
+ * Zugang nach draußen. */
+void pdalua_open_net(lua_State *L);
+
 /* Richtet app{}, on() und send() ein - die Anmeldung von Anwendungen und den
  * Ereignisbus (pdalua_apps.c).
  *
