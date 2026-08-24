@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18)
 project(pda C)
 
 set(CMAKE_C_STANDARD 11)
@@ -208,12 +208,32 @@ target_include_directories(pda_fontc PUBLIC src ${CMAKE_CURRENT_SOURCE_DIR})
 
 # --- Zeichensätze ------------------------------------------------------------
 
+# Die Schrift wird aus ihren Teilen zusammengesetzt und dann übersetzt.
+#
+# Die fertige .fnt liegt NICHT im Quellverzeichnis. Sie wäre eine zweite
+# Fassung derselben Zeichnungen, und die beiden liefen auseinander: wer ein
+# Zeichen in einer .part-Datei ändert, sähe die Änderung nirgends, weil der
+# Bau die alte .fnt läse. Genau das ist hier einmal passiert.
+
+set(PDA_FONT_PARTS
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12.head
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12-ascii.part
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12-latin.part
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12-fallback.part)
+
+set(PDA_FONT_FNT ${CMAKE_CURRENT_BINARY_DIR}/system12.fnt)
+add_custom_command(
+    OUTPUT  ${PDA_FONT_FNT}
+    COMMAND ${CMAKE_COMMAND} -E cat ${PDA_FONT_PARTS} > ${PDA_FONT_FNT}
+    DEPENDS ${PDA_FONT_PARTS}
+    COMMENT "Zeichensatz system12 zusammensetzen"
+    VERBATIM)
+
 set(PDA_FONT_SRC ${CMAKE_CURRENT_BINARY_DIR}/font_system12.c)
 add_custom_command(
     OUTPUT  ${PDA_FONT_SRC}
-    COMMAND fontc ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12.fnt
-                  ${PDA_FONT_SRC} system12
-    DEPENDS fontc ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12.fnt
+    COMMAND fontc ${PDA_FONT_FNT} ${PDA_FONT_SRC} system12
+    DEPENDS fontc ${PDA_FONT_FNT}
     COMMENT "Zeichensatz system12 übersetzen"
     VERBATIM)
 

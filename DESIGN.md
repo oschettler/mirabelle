@@ -104,7 +104,7 @@ src/
   plat/    plat.h  plat_sdl3.c  plat_esp32.c  plat_headless.c
   main.c
 data/
-  fonts/    system12.fnt  system16.fnt  text12.fnt  required.set
+  fonts/    system12.head  system12-*.part  required.set  derived.map
   lang/     de.strings  en.strings
   schema/   task.lua  event.lua  contact.lua  note.lua
   keys/     default.keys  osk_de.lua

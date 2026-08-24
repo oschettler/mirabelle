@@ -1,0 +1,12 @@
+name    Systemschrift
+size    12
+ascent  9
+
+# Diese Datei ist der Kopf der Schrift. Die Glyphen stehen in den
+# .part-Dateien daneben; der Bau setzt beides zu system12.fnt zusammen.
+#
+# Deshalb liegt keine fertige system12.fnt im Verzeichnis: sie wäre eine
+# zweite Fassung derselben Zeichnungen, und die beiden liefen früher oder
+# später auseinander. Wer ein Zeichen ändert, ändert die .part-Datei.
+#
+# Metrik siehe system12.metrics, Format siehe docs/fnt-format.md
