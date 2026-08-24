@@ -1,0 +1,47 @@
+# Sortierfaltung für Deutsch, DIN 5007 Variante 1.
+#
+# Beim Sortieren zählt jeder Umlaut wie sein Grundbuchstabe und „ß" wie „ss".
+# „Müller" steht damit zwischen „Mulde" und „Multi", und das Register im
+# Adressbuch führt Ä unter A.
+#
+# Es gibt eine zweite deutsche Ordnung, DIN 5007 Variante 2, die für
+# Namenslisten in Telefonbüchern gedacht ist und ä wie ae einsortiert. Wir
+# nehmen Variante 1: sie ist die Ordnung, die im Duden und in Wörterbüchern
+# gilt, und die, die man beim Blättern erwartet.
+#
+# Für Schwedisch sähe diese Datei anders aus - dort stehen ä, å und ö hinter z.
+# Genau deshalb ist das hier eine Datei und kein if im Programm.
+#
+# Links genau ein Zeichen, rechts sein Ersatz. Großbuchstaben, die hier nicht
+# stehen, werden ohnehin klein geschrieben; die Umlaute brauchen den Eintrag
+# trotzdem, weil ihre Kleinschreibung nicht in ASCII liegt.
+
+ä   a
+ö   o
+ü   u
+Ä   a
+Ö   o
+Ü   u
+ß   ss
+
+# Namen aus Nachbarsprachen kommen im Adressbuch vor und sollen unter ihrem
+# Grundbuchstaben stehen, nicht hinter z. Der Vorrat folgt
+# data/fonts/required.set.
+é   e
+è   e
+ê   e
+à   a
+â   a
+ç   c
+ñ   n
+å   a
+ø   o
+É   e
+È   e
+Ê   e
+À   a
+Â   a
+Ç   c
+Ñ   n
+Å   a
+Ø   o

@@ -1,0 +1,75 @@
+# Diakritika-Faltung für die Suche - sprachunabhängig.
+#
+# Wer „Muller" tippt, soll „Müller" finden, und wer „Strasse" tippt, auch
+# „Straße". Deshalb wird beim Suchen jedes Zeichen auf seinen Grundbuchstaben
+# zurückgeführt, und zwar auf beiden Seiten: die Eingabe genauso wie der
+# gespeicherte Text.
+#
+# Diese Tabelle hängt an keiner Sprache. Sie ist dieselbe Regel, die SQLite
+# unter dem Namen `remove_diacritics 2` anwendet - und sie ist bewusst NICHT
+# dieselbe wie data/lang/de.sort: für Schwedisch gehört ä beim Sortieren hinter
+# z, beim Suchen aber weiterhin zu a. Eine gemeinsame Tabelle müsste sich für
+# eines von beidem entscheiden.
+
+ä   a
+ö   o
+ü   u
+Ä   a
+Ö   o
+Ü   u
+ß   ss
+
+á   a
+à   a
+â   a
+ã   a
+å   a
+Á   a
+À   a
+Â   a
+Ã   a
+Å   a
+
+é   e
+è   e
+ê   e
+ë   e
+É   e
+È   e
+Ê   e
+Ë   e
+
+í   i
+ì   i
+î   i
+ï   i
+Í   i
+Ì   i
+Î   i
+Ï   i
+
+ó   o
+ò   o
+ô   o
+õ   o
+ø   o
+Ó   o
+Ò   o
+Ô   o
+Õ   o
+Ø   o
+
+ú   u
+ù   u
+û   u
+Ú   u
+Ù   u
+Û   u
+
+ç   c
+ñ   n
+ý   y
+ÿ   y
+Ç   c
+Ñ   n
+Ý   y
