@@ -32,36 +32,13 @@ static bool fail(char *err, size_t err_size, const char *path, int line,
     return false;
 }
 
-/* --- Zerteilen ----------------------------------------------------------------- */
-
-/* Schneidet das nächste Wort aus *p heraus und rückt *p dahinter. Liefert
- * false, wenn keins mehr kommt. */
-static bool next_word(char **p, char **word)
-{
-    char *s = *p;
-    while (*s == ' ' || *s == '\t') s++;
-    if (!*s) { *p = s; return false; }
-
-    *word = s;
-    while (*s && *s != ' ' && *s != '\t') s++;
-    if (*s) *s++ = '\0';
-
-    *p = s;
-    return true;
-}
-
-static bool copy_word(char *dst, size_t cap, const char *src,
-                      char *err, size_t err_size, const char *path, int line,
-                      const char *what)
-{
-    if (strlen(src) >= cap)
-        return fail(err, err_size, path, line, "%s ist zu lang (höchstens %zu Zeichen)",
-                    what, cap - 1);
-    snprintf(dst, cap, "%s", src);
-    return true;
-}
-
-/* --- Feldtypen ------------------------------------------------------------------ */
+/* --- Feldtypen ------------------------------------------------------------------
+ *
+ * Die eine Stelle, an der ein Feldtyp einen Namen hat. Der Leser in
+ * lua/pdalua_schema.c geht über schema_kind_name(), statt die Namen ein
+ * zweites Mal aufzuschreiben - sonst hieße derselbe Typ irgendwann an zwei
+ * Stellen verschieden.
+ */
 
 static const struct { const char *name; field_kind kind; } KINDS[] = {
     { "text",    FIELD_TEXT    },
@@ -70,13 +47,6 @@ static const struct { const char *name; field_kind kind; } KINDS[] = {
     { "bool",    FIELD_BOOL    },
     { "choice",  FIELD_CHOICE  },
 };
-
-static bool parse_kind(const char *name, field_kind *out)
-{
-    for (size_t i = 0; i < sizeof KINDS / sizeof KINDS[0]; i++)
-        if (strcmp(KINDS[i].name, name) == 0) { *out = KINDS[i].kind; return true; }
-    return false;
-}
 
 const char *schema_kind_name(field_kind kind)
 {
@@ -98,140 +68,13 @@ const schema_field *schema_field_by_name(const schema *s, const char *name)
  * zeigen, das es gibt, entscheidet sich erst, wenn alle Felder gelesen sind -
  * deshalb wird hier nur gesammelt und ganz am Ende geprüft.
  */
-static bool read_name_list(char (*dst)[SCHEMA_NAME_MAX], int cap, int *count,
-                           char *rest, char *err, size_t err_size,
-                           const char *path, int line, const char *what)
-{
-    *count = 0;
-
-    char *word;
-    while (next_word(&rest, &word)) {
-        if (*count >= cap)
-            return fail(err, err_size, path, line, "%s: höchstens %d Einträge",
-                        what, cap);
-        if (!copy_word(dst[*count], SCHEMA_NAME_MAX, word,
-                       err, err_size, path, line, what)) return false;
-        (*count)++;
-    }
-
-    if (*count == 0)
-        return fail(err, err_size, path, line, "%s: leer", what);
-    return true;
-}
-
-/* --- Laden ----------------------------------------------------------------------- */
-
-/* Die Schlüssel auf oberster Ebene. */
-static bool top_level(schema *s, const char *key, char *rest,
-                      char *err, size_t err_size, const char *path, int line)
-{
-    char *word;
-
-    if (strcmp(key, "type") == 0 || strcmp(key, "folder") == 0 ||
-        strcmp(key, "label") == 0) {
-        if (!next_word(&rest, &word))
-            return fail(err, err_size, path, line, "%s: der Wert fehlt", key);
-
-        char *dst = strcmp(key, "type")   == 0 ? s->type
-                  : strcmp(key, "folder") == 0 ? s->folder
-                                               : s->label;
-        return copy_word(dst, SCHEMA_NAME_MAX, word, err, err_size, path, line, key);
-    }
-
-    if (strcmp(key, "sort") == 0) {
-        if (!next_word(&rest, &word))
-            return fail(err, err_size, path, line, "sort: der Wert fehlt");
-        if (!copy_word(s->sort, SCHEMA_NAME_MAX, word,
-                       err, err_size, path, line, "sort")) return false;
-
-        /* Ein zweites Wort darf die Richtung angeben. */
-        char *dir;
-        if (next_word(&rest, &dir)) {
-            if (strcmp(dir, "desc") == 0)      s->sort_desc = true;
-            else if (strcmp(dir, "asc") == 0)  s->sort_desc = false;
-            else return fail(err, err_size, path, line,
-                             "sort: „%s“ ist keine Richtung (asc oder desc)", dir);
-        }
-        return true;
-    }
-
-    if (strcmp(key, "view") == 0) {
-        if (!next_word(&rest, &word))
-            return fail(err, err_size, path, line, "view: der Wert fehlt");
-
-        if (strcmp(word, "list") == 0) {
-            s->view = VIEW_LIST;
-            return true;
-        }
-        if (strcmp(word, "month") == 0) {
-            s->view = VIEW_MONTH;
-
-            char *field;
-            if (!next_word(&rest, &field))
-                return fail(err, err_size, path, line,
-                            "view month: das Datumsfeld fehlt");
-            return copy_word(s->view_field, SCHEMA_NAME_MAX, field,
-                             err, err_size, path, line, "view month");
-        }
-        return fail(err, err_size, path, line,
-                    "unbekannte Ansicht „%s“ (list oder month)", word);
-    }
-
-    if (strcmp(key, "columns") == 0)
-        return read_name_list(s->columns, SCHEMA_COLUMNS_MAX, &s->column_count,
-                              rest, err, err_size, path, line, "columns");
-
-    if (strcmp(key, "form") == 0)
-        return read_name_list(s->form, SCHEMA_FIELDS_MAX, &s->form_count,
-                              rest, err, err_size, path, line, "form");
-
-    return fail(err, err_size, path, line, "unbekannter Schlüssel „%s“", key);
-}
-
-/* Die Schlüssel innerhalb eines Feldes. */
-static bool field_level(schema_field *f, const char *key, char *rest,
-                        char *err, size_t err_size, const char *path, int line)
-{
-    char *word;
-
-    if (strcmp(key, "kind") == 0) {
-        if (!next_word(&rest, &word))
-            return fail(err, err_size, path, line, "kind: der Wert fehlt");
-        if (!parse_kind(word, &f->kind))
-            return fail(err, err_size, path, line, "unbekannter Feldtyp „%s“", word);
-        return true;
-    }
-
-    if (strcmp(key, "label") == 0) {
-        if (!next_word(&rest, &word))
-            return fail(err, err_size, path, line, "label: der Wert fehlt");
-        return copy_word(f->label, SCHEMA_NAME_MAX, word,
-                         err, err_size, path, line, "label");
-    }
-
-    if (strcmp(key, "required") == 0) {
-        if (!next_word(&rest, &word))
-            return fail(err, err_size, path, line, "required: der Wert fehlt");
-        if (strcmp(word, "yes") == 0)      f->required = true;
-        else if (strcmp(word, "no") == 0)  f->required = false;
-        else return fail(err, err_size, path, line,
-                         "required: „%s“ ist weder yes noch no", word);
-        return true;
-    }
-
-    if (strcmp(key, "values") == 0)
-        return read_name_list(f->values, SCHEMA_VALUES_MAX, &f->value_count,
-                              rest, err, err_size, path, line, "values");
-
-    return fail(err, err_size, path, line, "unbekannter Schlüssel „%s“ in einem Feld", key);
-}
-
 /* Alles, was sich erst beurteilen lässt, wenn das Schema vollständig ist.
  *
- * Öffentlich als schema_check(), weil es zwei Lader gibt - die Textdatei hier
- * und die Lua-Tabelle in lua/pdalua_schema.c - aber nur eine Vorstellung davon,
- * was ein gültiges Schema ist. Läge diese Prüfung zweimal vor, wären es früher
- * oder später zwei verschiedene. */
+ * Getrennt vom Lesen, weil beides verschiedene Fragen beantwortet: der Leser
+ * in lua/pdalua_schema.c prüft, ob die Tabelle die richtige Gestalt hat, und
+ * diese Funktion, ob das Ergebnis eine Anwendung beschreibt, die es geben
+ * kann. Ein Schema, dessen `columns` ein Feld nennt, das es nicht gibt, ist
+ * einwandfrei geschrieben und trotzdem falsch. */
 bool schema_check(const schema *s, const char *path, char *err, size_t err_size)
 {
     if (!s->type[0])   return fail(err, err_size, path, 0, "type fehlt");
@@ -291,91 +134,5 @@ bool schema_check(const schema *s, const char *path, char *err, size_t err_size)
         return fail(err, err_size, path, 0,
                     "sort nennt „%s“, aber es gibt kein solches Feld", s->sort);
 
-    return true;
-}
-
-bool schema_load(schema *s, const char *path, char *err, size_t err_size)
-{
-    FILE *fp = fopen(path, "rb");
-    if (!fp) return fail(err, err_size, path, 0, "nicht lesbar");
-
-    schema tmp;
-    memset(&tmp, 0, sizeof tmp);
-
-    char          line[512];
-    int           lineno  = 0;
-    bool          ok      = true;
-    schema_field *current = NULL;   /* das zuletzt begonnene Feld */
-
-    while (ok && fgets(line, sizeof line, fp)) {
-        lineno++;
-
-        char *hash = strchr(line, '#');
-        if (hash) *hash = '\0';
-
-        /* Der Einzug entscheidet, wohin die Zeile gehört - deshalb wird er
-         * gemessen, bevor er weggeschnitten wird. */
-        bool  indented = (line[0] == ' ' || line[0] == '\t');
-        char *p        = line;
-        while (*p == ' ' || *p == '\t') p++;
-
-        char *end = p + strlen(p);
-        while (end > p && (end[-1] == ' ' || end[-1] == '\t' ||
-                           end[-1] == '\r' || end[-1] == '\n')) end--;
-        *end = '\0';
-        if (!*p) continue;
-
-        char *key;
-        next_word(&p, &key);
-
-        if (indented) {
-            if (!current) {
-                ok = fail(err, err_size, path, lineno,
-                          "eingerückt, aber kein Feld begonnen");
-                break;
-            }
-            ok = field_level(current, key, p, err, err_size, path, lineno);
-            continue;
-        }
-
-        if (strcmp(key, "field") == 0) {
-            char *name;
-            if (!next_word(&p, &name)) {
-                ok = fail(err, err_size, path, lineno, "field: der Name fehlt");
-                break;
-            }
-            if (tmp.field_count >= SCHEMA_FIELDS_MAX) {
-                ok = fail(err, err_size, path, lineno,
-                          "höchstens %d Felder", SCHEMA_FIELDS_MAX);
-                break;
-            }
-            if (schema_field_by_name(&tmp, name)) {
-                ok = fail(err, err_size, path, lineno,
-                          "das Feld „%s“ gibt es schon", name);
-                break;
-            }
-
-            current = &tmp.fields[tmp.field_count];
-            memset(current, 0, sizeof *current);
-            if (!copy_word(current->name, SCHEMA_NAME_MAX, name,
-                           err, err_size, path, lineno, "field")) {
-                ok = false;
-                break;
-            }
-            tmp.field_count++;
-            continue;
-        }
-
-        /* Etwas auf oberster Ebene, das kein Feld beginnt - dann ist das
-         * zuletzt begonnene Feld zu Ende. */
-        current = NULL;
-        ok      = top_level(&tmp, key, p, err, err_size, path, lineno);
-    }
-
-    fclose(fp);
-    if (!ok) return false;
-    if (!schema_check(&tmp, path, err, err_size)) return false;
-
-    *s = tmp;
     return true;
 }

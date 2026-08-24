@@ -1,13 +1,14 @@
--- Aufgaben, in Lua.
+-- Aufgaben.
 --
--- Dieselbe Anwendung wie data/schema/task.schema, in der anderen Schreibweise.
--- Beide ergeben dieselbe Struktur; ein Test lädt sie nebeneinander und
--- vergleicht sie Feld für Feld. Das ist D-15: der Vertrag ist die Struktur,
--- nicht die Sprache.
+-- Diese Datei ist die Anwendung. Es gibt keinen Programmcode für Aufgaben -
+-- der Browser liest diese Tabelle und baut daraus Liste, Formular und Menü.
 --
--- Wozu dann zwei Fassungen? Weil die Textdatei ohne Lua auskommt und auf dem
--- Gerät gebraucht wird, und weil Lua Rechnungen erlaubt - `values` ließe sich
--- hier aus einer Schleife bauen, wo die Textdatei sie ausschreiben muss.
+-- Der Vertrag ist nicht Lua, sondern die Struktur `schema` in app/schema.h
+-- (D-15). Lua ist die Schreibweise, in der sie hier steht, und der Grund für
+-- diese Wahl steht dort: eine Tabelle in einer Sprache, die es ohnehin gibt,
+-- statt eines eigenen kleinen Formats mit eigenem Parser und eigenen
+-- Fehlermeldungen. Nebenbei erlaubt sie Rechnungen - `values` ließe sich aus
+-- einer Schleife bauen.
 
 return {
   type   = "task",

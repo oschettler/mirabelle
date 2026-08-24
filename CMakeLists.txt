@@ -159,15 +159,26 @@ add_library(pda_app
 target_link_libraries(pda_app PUBLIC pda_ui pda_store pda_net)
 
 # --- Lua ---------------------------------------------------------------------
-# Eigene Bibliothek, damit nichts anderes Lua kennt. Fehlt Lua, wird sie nicht
-# gebaut - die Anwendungen laufen trotzdem, weil der Schemavertrag die
-# C-Struktur ist und nicht die Lua-Tabelle (D-15).
+# Eigene Bibliothek, damit nichts anderes Lua kennt: alles ausserhalb von
+# src/lua/ redet ueber Funktionszeiger mit ihr, nicht ueber lua_State.
+#
+# Lua ist Pflicht (D-15). Die Schemadateien in data/schema sind Lua-Tabellen,
+# und ohne sie gibt es keine einzige Anwendung - ein Programm ohne Lua haette
+# nichts zu zeigen. Der Vertrag bleibt trotzdem die C-Struktur `schema`; Lua
+# ist die Schreibweise, in der sie in einer Datei steht.
 
 if(PkgConfig_FOUND)
     pkg_check_modules(LUA IMPORTED_TARGET lua5.4 lua-5.4 lua)
 endif()
 
-if(TARGET PkgConfig::LUA)
+if(NOT TARGET PkgConfig::LUA)
+    message(FATAL_ERROR
+        "Lua 5.4 nicht gefunden. Es wird gebraucht: data/schema/*.lua sind "
+        "Lua-Tabellen, und ohne sie gibt es keine Anwendungen. "
+        "Unter macOS: brew install lua; unter Debian: apt install liblua5.4-dev")
+endif()
+
+if(TRUE)
     add_library(pda_lua
         src/lua/pdalua.c
         src/lua/pdalua_store.c
@@ -177,15 +188,13 @@ if(TARGET PkgConfig::LUA)
         src/lua/pdalua_widgets.c
     )
     target_link_libraries(pda_lua PUBLIC pda_app pda_gfx pda_net PRIVATE PkgConfig::LUA)
-else()
-    message(STATUS "Lua nicht gefunden - die Skriptanbindung wird nicht gebaut")
 endif()
 
 # --- Das Programm ------------------------------------------------------------
-# Ganz zum Schluss, weil es sich zusammensucht, was da ist: die Oberfläche in
-# jedem Fall, Lua und der Index nur, wenn sie gebaut wurden. Stünde es weiter
-# oben, wüsste CMake an dieser Stelle noch nichts von ihnen - und die
-# Skriptanwendungen fehlten stillschweigend.
+# Ganz zum Schluss, weil es sich zusammensucht, was da ist: Oberfläche und Lua
+# in jedem Fall, der Index nur, wenn er gebaut wurde. Stünde es weiter oben,
+# wüsste CMake an dieser Stelle noch nichts davon - und der Index fiele
+# stillschweigend weg.
 
 if(TARGET pda_plat_sdl3)
     add_executable(pda src/main.c)
@@ -194,12 +203,7 @@ if(TARGET pda_plat_sdl3)
     # Jede Bibliothek genau einmal nennen. pda_ui bringt pda_fonts mit,
     # pda_lua bringt pda_app mit, und die Plattformschicht steht weiter unten -
     # etwas doppelt zu nennen ergibt eine Warnung des Binders.
-    if(TARGET pda_lua)
-        target_compile_definitions(pda PRIVATE PDA_WITH_LUA)
-        target_link_libraries(pda PRIVATE pda_lua)
-    else()
-        target_link_libraries(pda PRIVATE pda_app)
-    endif()
+    target_link_libraries(pda PRIVATE pda_lua)
 
     if(UNIX AND NOT APPLE)
         target_link_libraries(pda PRIVATE
@@ -311,7 +315,8 @@ if(TARGET pda_index)
         PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 endif()
 
-target_link_libraries(test_shell       PRIVATE pda_app pda_plat_headless)
+target_link_libraries(test_shell       PRIVATE pda_lua pda_plat_headless
+                                              PkgConfig::LUA)
 target_compile_definitions(test_shell
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
@@ -323,7 +328,8 @@ target_link_libraries(test_monthview   PRIVATE pda_app)
 target_compile_definitions(test_monthview
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_browser     PRIVATE pda_app pda_plat_headless)
+target_link_libraries(test_browser     PRIVATE pda_lua pda_plat_headless
+                                              PkgConfig::LUA)
 target_compile_definitions(test_browser
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 

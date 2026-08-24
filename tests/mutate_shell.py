@@ -3,7 +3,7 @@
 Drei Mutationen ueberleben, und alle drei aus gutem Grund:
 
   "auch Verzeichnisse als Schema" - ein Verzeichnis laesst sich zwar oeffnen,
-  aber nicht als Schema lesen; schema_load weist es ohnehin ab. Die Pruefung
+  aber nicht als Schema lesen; der Lader weist es ohnehin ab. Die Pruefung
   auf is_dir spart nur den Versuch.
 
   "Schliessen raeumt nicht auf" - das waere ein Speicherleck, kein falsches
@@ -16,6 +16,9 @@ Drei Mutationen ueberleben, und alle drei aus gutem Grund:
   ab. Die Pruefung spart den Weg dorthin.
 """
 import subprocess, pathlib, tempfile, os
+
+LUA_CFLAGS = subprocess.run(["pkg-config","--cflags","--libs","lua5.4"],
+                            capture_output=True, text=True).stdout.split()
 
 SRC  = pathlib.Path("src/app/shell.c")
 DEPS = ["src/app/schema.c", "src/app/fieldkind.c", "src/app/browser.c",
@@ -32,14 +35,23 @@ DEPS = ["src/app/schema.c", "src/app/fieldkind.c", "src/app/browser.c",
         "src/ui/menu.c", "src/ui/dialog.c",
         "src/gfx/bitmap.c", "src/gfx/pbm.c", "src/gfx/draw.c", "src/gfx/pattern.c",
         "src/gfx/font.c", "src/gfx/text.c", "build/font_system12.c",
-        "tests/support/golden.c", "tests/unit/test_shell.c"]
+        "tests/support/golden.c", "src/net/spartan.c", "src/net/plat_transport.c",
+        "src/lua/pdalua.c", "src/lua/pdalua_store.c",
+        "src/lua/pdalua_schema.c", "src/lua/pdalua_apps.c",
+        "src/lua/pdalua_net.c", "src/lua/pdalua_widgets.c",
+        "tests/unit/test_shell.c"]
 orig = SRC.read_text(encoding="utf-8")
 
 MUTS = [
  ("nur die erste Schemadatei", "    for (int i = 0; i < n && s->app_count < APPS_MAX; i++) {\n        if (entries[i].is_dir) continue;", "    for (int i = 0; i < 1; i++) {\n        if (entries[i].is_dir) continue;"),
  ("auch Verzeichnisse als Schema", "        if (entries[i].is_dir) continue;", "        (void)0;"),
- ("jede Datei als Schema",      '        if (!ends_with(entries[i].name, ".schema")) continue;', "        (void)0;"),
- ("kaputtes Schema zaehlt mit", "        if (!schema_load(&a->sch, path, msg, sizeof msg)) {", "        if (schema_load(&a->sch, path, msg, sizeof msg), false) {"),
+ ("jede Datei als Schema",      "        if (!ends_with(entries[i].name, s->cfg.schemas->suffix)) continue;", "        (void)0;"),
+ ("kaputtes Schema zaehlt mit",
+  "        if (!s->cfg.schemas->load(s->cfg.schemas->user, path, &a->sch,\n                                  msg, sizeof msg)) {",
+  "        if (s->cfg.schemas->load(s->cfg.schemas->user, path, &a->sch,\n                                 msg, sizeof msg), false) {"),
+ ("ohne Lader wird trotzdem gesucht",
+  "    if (!s->cfg.schemas || !s->cfg.schemas->load || !s->cfg.schemas->suffix) {",
+  "    if (false) {"),
  ("Fehler wird nicht gemeldet", "            snprintf(s->last_error, sizeof s->last_error, \"%s\", msg);\n            continue;", "            continue;"),
  ("ohne Schema kein Fehler",    "    if (s->app_count == 0) {\n        snprintf(err, err_size, \"%s: kein brauchbares Schema\", dir);\n        return false;\n    }", "    (void)0;"),
  ("unsortierte Reihenfolge",    "    qsort(s->apps, (size_t)s->app_count, sizeof s->apps[0], by_name);", "    (void)by_name;"),
@@ -98,7 +110,7 @@ def run(text):
         b = subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Wpedantic",
                             "-fsanitize=address,undefined","-g","-Isrc","-Itests",
                             "-DPDA_DATA_DIR=\"data\"",
-                            "-DPDA_GOLDEN_DIR=\"tests/golden\"", src] + DEPS +
+                            "-DPDA_GOLDEN_DIR=\"tests/golden\"", src] + DEPS + LUA_CFLAGS +
                            ["-o", exe], capture_output=True, text=True)
         if b.returncode != 0: return None, b.stderr
         env = dict(os.environ, TMPDIR=d)

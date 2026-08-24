@@ -83,6 +83,11 @@ void pdalua_set_vault(lua_State *L, vault *v,
 bool pdalua_schema(lua_State *L, const char *path, schema *out,
                    char *err, size_t err_size);
 
+/* Dasselbe als Lader für die Schale: sie sucht Dateien mit der genannten
+ * Endung und reicht jede hierher. Die Schale kennt Lua damit weiterhin nicht,
+ * sie kennt nur einen Funktionszeiger. */
+shell_schemas pdalua_schema_loader(lua_State *L);
+
 /* Hinterlegt das Thema. Muss vor pdalua_open_widgets() gerufen werden.
  *
  * Der Zustand legt eine Kopie an - Widgets halten einen Zeiger auf ihr Thema

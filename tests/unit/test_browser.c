@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include "app/browser.h"
+#include "lua/pdalua.h"
 #include "app/fieldkind.h"
 #include "app/monthview.h"
 #include "app/schema.h"
@@ -34,6 +35,9 @@
 #endif
 
 /* --- Gerüst -------------------------------------------------------------------- */
+
+static char       g_tmp[600];
+static lua_State *g_lua;
 
 static void temp_root(char *buf, size_t n)
 {
@@ -89,12 +93,22 @@ static bool setup(void)
     snprintf(path, sizeof path, "%s/collate/search.fold", PDA_DATA_DIR);
     g_search = collate_load(path, err, sizeof err);
 
-    if (!g_cat || !g_sort || !g_search) printf("  Aufbau: %s\n", err);
-    return g_cat && g_sort && g_search;
+    g_lua = pdalua_open(g_cat, err, sizeof err);
+
+    /* Ein eigenes Verzeichnis für die Schemata, die dieser Test selbst
+     * schreibt. In /tmp abgelegt kollidierten zwei Läufe miteinander. */
+    temp_root(g_tmp, sizeof g_tmp);
+    mkdir(g_tmp, 0777);
+
+    if (!g_cat || !g_sort || !g_search || !g_lua) printf("  Aufbau: %s\n", err);
+    return g_cat && g_sort && g_search && g_lua;
 }
 
 static void teardown(void)
 {
+    pdalua_close(g_lua);
+    g_lua = NULL;
+
     i18n_free(g_cat);
     collate_free(g_sort);
     collate_free(g_search);
@@ -102,12 +116,37 @@ static void teardown(void)
     g_sort = g_search = NULL;
 }
 
+/* Schemadateien sind Lua-Tabellen (D-15), also braucht dieser Test einen
+ * Lua-Zustand. Er liest damit die echten mitgelieferten Dateien - ein in C
+ * zusammengesetztes Schema würde prüfen, was der Test selbst gebaut hat. */
 static bool load_schema(schema *s, const char *name)
 {
     char path[512], err[256] = "";
-    snprintf(path, sizeof path, "%s/schema/%s.schema", PDA_DATA_DIR, name);
+    snprintf(path, sizeof path, "%s/schema/%s.lua", PDA_DATA_DIR, name);
 
-    if (!schema_load(s, path, err, sizeof err)) { printf("  %s\n", err); return false; }
+    if (!pdalua_schema(g_lua, path, s, err, sizeof err)) {
+        printf("  %s\n", err);
+        return false;
+    }
+    return true;
+}
+
+/* Ein Schema aus einer Zeichenkette, für die Fälle, die keine mitgelieferte
+ * Datei abdeckt. */
+static bool load_schema_text(schema *s, const char *file, const char *lua)
+{
+    char path[512], err[256] = "";
+    snprintf(path, sizeof path, "%s/%s", g_tmp, file);
+
+    FILE *fp = fopen(path, "wb");
+    if (!fp) return false;
+    fputs(lua, fp);
+    fclose(fp);
+
+    if (!pdalua_schema(g_lua, path, s, err, sizeof err)) {
+        printf("  %s\n", err);
+        return false;
+    }
     return true;
 }
 
@@ -543,18 +582,18 @@ TEST(a_multiline_column_shows_only_its_first_line)
      * Umbruch als Kästchen. */
     REQUIRE(setup());
 
-    const char *path = "/tmp/pda_browser_body.schema";
-    FILE       *fp   = fopen(path, "wb");
-    REQUIRE(fp != NULL);
-    fputs("type n\nfolder Notizen\nlabel app.notes\nsort title\n"
-          "columns title body\nform title body\n"
-          "field title\n    kind text\n    label field.title\n"
-          "field body\n    kind gemtext\n    label field.notes\n", fp);
-    fclose(fp);
-
     schema s;
-    char   err[256] = "";
-    REQUIRE(schema_load(&s, path, err, sizeof err));
+    REQUIRE(load_schema_text(&s, "pda_browser_body.lua",
+        "return {\n"
+        "  type = 'n', folder = 'Notizen', label = 'app.notes',\n"
+        "  sort = 'title',\n"
+        "  columns = { 'title', 'body' },\n"
+        "  form    = { 'title', 'body' },\n"
+        "  fields = {\n"
+        "    { name = 'title', kind = 'text',    label = 'field.title' },\n"
+        "    { name = 'body',  kind = 'gemtext', label = 'field.notes' },\n"
+        "  },\n"
+        "}\n"));
 
     static const char *const notes[] = {
         "---\nid: 20260501T090000-0001\ntitle: Titel\n---\nerste Zeile\nzweite Zeile\n",
@@ -923,19 +962,20 @@ TEST(the_calendar_reads_the_field_the_schema_names)
      * und genau daran zeigt sich, ob der Kalender das richtige liest. */
     REQUIRE(setup());
 
-    const char *path = "/tmp/pda_browser_zweifeld.schema";
-    FILE       *fp   = fopen(path, "wb");
-    REQUIRE(fp != NULL);
-    fputs("type e\nfolder Termine\nlabel app.events\n"
-          "view month starts\nsort title asc\n"
-          "columns title starts\nform title starts\n"
-          "field title\n    kind text\n    label field.title\n"
-          "field starts\n    kind date\n    label field.date\n", fp);
-    fclose(fp);
-
     schema s;
     char   err[256] = "";
-    REQUIRE(schema_load(&s, path, err, sizeof err));
+    REQUIRE(load_schema_text(&s, "pda_browser_zweifeld.lua",
+        "return {\n"
+        "  type = 'e', folder = 'Termine', label = 'app.events',\n"
+        "  view = 'month', view_field = 'starts',\n"
+        "  sort = 'title',\n"
+        "  columns = { 'title', 'starts' },\n"
+        "  form    = { 'title', 'starts' },\n"
+        "  fields = {\n"
+        "    { name = 'title',  kind = 'text', label = 'field.title' },\n"
+        "    { name = 'starts', kind = 'date', label = 'field.date' },\n"
+        "  },\n"
+        "}\n"));
     CHECK_STR(s.view_field, "starts");
     CHECK_STR(s.sort, "title");
 

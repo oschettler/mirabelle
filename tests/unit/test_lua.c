@@ -301,15 +301,11 @@ TEST(a_script_really_draws)
 
 /* --- Ein Schema aus Lua (D-15) ------------------------------------------------------ */
 
-static void report_diff(const char *what, const char *a, const char *b)
+TEST(the_shipped_applications_are_four_files)
 {
-    printf("  %s: Text „%s“, Lua „%s“\n", what, a, b);
-}
-
-TEST(the_two_schema_loaders_agree)
-{
-    /* Der Beweis für D-15. Dieselbe Anwendung, zwei Schreibweisen, eine
-     * Struktur - und der Browser sieht den Unterschied nicht. */
+    /* Es gibt keinen Programmcode für Aufgaben, Kontakte, Notizen und Termine
+     * - es gibt vier Dateien. Dieser Test liest sie so, wie die Schale es tut,
+     * und prüft, dass daraus vier brauchbare Schemata werden. */
     catalog *cat = load_cat();
     REQUIRE(cat != NULL);
 
@@ -317,51 +313,65 @@ TEST(the_two_schema_loaders_agree)
     lua_State *L = pdalua_open(cat, err, sizeof err);
     REQUIRE(L != NULL);
 
-    char path[512];
-    schema text, lua;
+    static const struct { const char *file, *type, *folder, *label; } APPS[] = {
+        { "task.lua",    "task",    "Aufgaben", "app.tasks"    },
+        { "contact.lua", "contact", "Kontakte", "app.contacts" },
+        { "note.lua",    "note",    "Notizen",  "app.notes"    },
+        { "event.lua",   "event",   "Termine",  "app.events"   },
+    };
 
-    snprintf(path, sizeof path, "%s/schema/task.schema", PDA_DATA_DIR);
-    if (!schema_load(&text, path, err, sizeof err)) printf("  Text: %s\n", err);
-    REQUIRE(schema_load(&text, path, err, sizeof err));
+    for (size_t i = 0; i < sizeof APPS / sizeof APPS[0]; i++) {
+        char   path[512];
+        schema s;
 
-    snprintf(path, sizeof path, "%s/schema/task.lua", PDA_DATA_DIR);
-    if (!pdalua_schema(L, path, &lua, err, sizeof err)) printf("  Lua: %s\n", err);
-    REQUIRE(pdalua_schema(L, path, &lua, err, sizeof err));
+        snprintf(path, sizeof path, "%s/schema/%s", PDA_DATA_DIR, APPS[i].file);
 
-    if (strcmp(text.type, lua.type) != 0) report_diff("type", text.type, lua.type);
-    CHECK_STR(lua.type, text.type);
-    CHECK_STR(lua.folder, text.folder);
-    CHECK_STR(lua.label, text.label);
-    CHECK_STR(lua.sort, text.sort);
-    CHECK_EQ(lua.sort_desc, text.sort_desc);
-    CHECK_EQ(lua.view, text.view);
+        if (!pdalua_schema(L, path, &s, err, sizeof err))
+            printf("  %s: %s\n", APPS[i].file, err);
+        REQUIRE(pdalua_schema(L, path, &s, err, sizeof err));
 
-    CHECK_EQ(lua.column_count, text.column_count);
-    for (int i = 0; i < text.column_count && i < lua.column_count; i++)
-        CHECK_STR(lua.columns[i], text.columns[i]);
+        CHECK_STR(s.type,   APPS[i].type);
+        CHECK_STR(s.folder, APPS[i].folder);
+        CHECK_STR(s.label,  APPS[i].label);
 
-    CHECK_EQ(lua.form_count, text.form_count);
-    for (int i = 0; i < text.form_count && i < lua.form_count; i++)
-        CHECK_STR(lua.form[i], text.form[i]);
-
-    CHECK_EQ(lua.field_count, text.field_count);
-    for (int i = 0; i < text.field_count && i < lua.field_count; i++) {
-        const schema_field *a = &text.fields[i];
-        const schema_field *b = &lua.fields[i];
-
-        if (strcmp(a->name, b->name) != 0) report_diff("Feldname", a->name, b->name);
-        CHECK_STR(b->name, a->name);
-        CHECK_EQ(b->kind, a->kind);
-        CHECK_STR(b->label, a->label);
-        CHECK_EQ(b->required, a->required);
-        CHECK_EQ(b->value_count, a->value_count);
-
-        for (int j = 0; j < a->value_count && j < b->value_count; j++)
-            CHECK_STR(b->values[j], a->values[j]);
+        /* Jede hat Felder, jede hat mindestens eine Spalte, und jede lässt
+         * sich in ein Formular bringen. */
+        CHECK(s.field_count > 0);
+        CHECK(s.column_count > 0);
+        CHECK(s.form_count > 0);
     }
 
-    /* Und ganz hart: Byte für Byte dieselbe Struktur. */
-    CHECK_MEM(&lua, &text, sizeof text);
+    /* Pflichtfelder stehen ebenfalls in der Datei. Ohne diese Prüfung ließe
+     * sich eine Aufgabe ohne Titel sichern. */
+    char   path0[512];
+    schema task;
+    snprintf(path0, sizeof path0, "%s/schema/task.lua", PDA_DATA_DIR);
+    REQUIRE(pdalua_schema(L, path0, &task, err, sizeof err));
+
+    const schema_field *title = schema_field_by_name(&task, "title");
+    const schema_field *due   = schema_field_by_name(&task, "due");
+    REQUIRE(title != NULL);
+    REQUIRE(due != NULL);
+    CHECK(title->required);
+    CHECK(!due->required);
+
+    /* Und die Auswahlwerte, die in der Datei als Zahlen stehen, kommen als
+     * Text heraus - im Datensatz ist alles Text. */
+    const schema_field *prio = schema_field_by_name(&task, "priority");
+    REQUIRE(prio != NULL);
+    CHECK_EQ(prio->kind, FIELD_CHOICE);
+    CHECK_EQ(prio->value_count, 5);
+    CHECK_STR(prio->values[0], "1");
+    CHECK_STR(prio->values[4], "5");
+
+    /* Der Kalender ist der einzige Sonderfall - und er steht in der Datei,
+     * nicht im Code. */
+    char   path[512];
+    schema ev;
+    snprintf(path, sizeof path, "%s/schema/event.lua", PDA_DATA_DIR);
+    REQUIRE(pdalua_schema(L, path, &ev, err, sizeof err));
+    CHECK_EQ(ev.view, VIEW_MONTH);
+    CHECK_STR(ev.view_field, "date");
 
     pdalua_close(L);
     i18n_free(cat);
@@ -379,7 +389,7 @@ static const char *write_lua(const char *name, const char *code)
     return path;
 }
 
-TEST(a_lua_schema_is_checked_as_strictly_as_a_text_one)
+TEST(a_schema_is_checked_strictly)
 {
     catalog *cat = load_cat();
     REQUIRE(cat != NULL);
@@ -454,6 +464,54 @@ TEST(a_lua_schema_is_checked_as_strictly_as_a_text_one)
     REQUIRE(pdalua_schema(L, good, &s, err, sizeof err));
     CHECK_EQ(s.view, VIEW_MONTH);
     CHECK_STR(s.view_field, "d");
+
+    /* Ein Name, der nicht mehr in die Struktur passt, wird abgelehnt und
+     * nicht abgeschnitten. Ein gekürzter Name trifft lautlos auf kein Feld
+     * oder, schlimmer, auf ein anderes. */
+    bad = write_lua("langer_name",
+        "return { type='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',"
+        " folder='X', label='l', columns={'t'}, form={'t'},"
+        " fields={ {name='t', kind='text', label='lt'} } }");
+    CHECK(!pdalua_schema(L, bad, &s, err, sizeof err));
+    CHECK(strstr(err, "zu lang") != NULL);
+
+    /* Mehr Felder, als die Struktur trägt. */
+    bad = write_lua("zu_viele_felder",
+        "local f = {}\n"
+        "for i = 1, 200 do\n"
+        "  f[i] = { name = 'f' .. i, kind = 'text', label = 'l' }\n"
+        "end\n"
+        "return { type='x', folder='X', label='l',"
+        " columns={'f1'}, form={'f1'}, fields=f }");
+    CHECK(!pdalua_schema(L, bad, &s, err, sizeof err));
+    CHECK(strstr(err, "Felder") != NULL);
+
+    /* Ein Auswahlwert, der weder Zahl noch Text ist. */
+    bad = write_lua("werte_falsch",
+        "return { type='x', folder='X', label='l',"
+        " columns={'p'}, form={'p'},"
+        " fields={ {name='p', kind='choice', label='lp', values={ {} }} } }");
+    CHECK(!pdalua_schema(L, bad, &s, err, sizeof err));
+
+    /* Ein Listeneintrag, der nicht in die Struktur passt. Abschneiden wäre
+     * hier besonders tückisch: die Meldung nennte dann einen Namen, den
+     * niemand geschrieben hat. */
+    bad = write_lua("langer_eintrag",
+        "return { type='x', folder='X', label='l',"
+        " columns={'ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt'},"
+        " form={'t'},"
+        " fields={ {name='t', kind='text', label='lt'} } }");
+    CHECK(!pdalua_schema(L, bad, &s, err, sizeof err));
+    CHECK(strstr(err, "Eintrag") != NULL);
+    CHECK(strstr(err, "columns") != NULL);
+
+    /* Eine Auswahl ohne values - das findet erst die Schlussprüfung. */
+    bad = write_lua("auswahl_leer",
+        "return { type='x', folder='X', label='l',"
+        " columns={'p'}, form={'p'},"
+        " fields={ {name='p', kind='choice', label='lp'} } }");
+    CHECK(!pdalua_schema(L, bad, &s, err, sizeof err));
+    CHECK(strstr(err, "values") != NULL);
 
     /* Keine Tabelle zurück. */
     bad = write_lua("keine_tabelle", "return 42");
@@ -1502,9 +1560,11 @@ TEST(a_key_the_shell_cannot_use_reaches_the_script)
     REQUIRE(km != NULL);
 
     shell_scripting sc  = pdalua_scripting(L);
+    shell_schemas   ld  = pdalua_schema_loader(L);
     shell_config    cfg = {
         .data_dir = PDA_DATA_DIR, .vault = g_vault, .theme = &th,
         .catalog = cat, .keymap = km, .sort = sort, .search = search,
+        .schemas = &ld,
         .screen_w = 800, .screen_h = 480, .scripts = &sc,
     };
 
@@ -1552,8 +1612,8 @@ int main(void)
     RUN(drawing_without_a_target_does_nothing_instead_of_crashing);
     RUN(a_script_really_draws);
 
-    RUN(the_two_schema_loaders_agree);
-    RUN(a_lua_schema_is_checked_as_strictly_as_a_text_one);
+    RUN(the_shipped_applications_are_four_files);
+    RUN(a_schema_is_checked_strictly);
 
     RUN(a_script_can_read_the_vault);
     RUN(taking_the_vault_away_takes_store_with_it);

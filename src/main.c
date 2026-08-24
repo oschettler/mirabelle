@@ -25,9 +25,7 @@
 #include "ui/caret.h"
 #include "ui/theme.h"
 
-#ifdef PDA_WITH_LUA
 #include "lua/pdalua.h"
-#endif
 
 #ifndef PDA_DATA_DIR
 #define PDA_DATA_DIR "data"
@@ -44,17 +42,13 @@ typedef struct {
     shell   *sh;
     bitmap   fb;
 
-#ifdef PDA_WITH_LUA
     lua_State *lua;
-#endif
 } program;
 
 static void program_free(program *p)
 {
     if (p->sh) shell_destroy(p->sh);
-#ifdef PDA_WITH_LUA
     if (p->lua) pdalua_close(p->lua);
-#endif
     if (p->vault) vault_close(p->vault);
 
     collate_free(p->search);
@@ -192,13 +186,22 @@ int main(int argc, char **argv)
         .screen_h = h,
     };
 
-#ifdef PDA_WITH_LUA
-    /* Skriptanwendungen, falls Lua dabei ist. Fehlt es, fehlen sie - die
-     * Anwendungen aus den Schemadateien laufen weiter. */
+    /* Lua richtet zweierlei ein: die Schemadateien, aus denen die vier
+     * mitgelieferten Anwendungen entstehen, und die Skriptanwendungen. Ohne
+     * Lua gibt es beides nicht, und dann gibt es nichts zu zeigen - deshalb
+     * ist es keine Option mehr, sondern eine Bedingung. */
     static shell_scripting scripting;
+    static shell_schemas   schemas;
 
     p.lua = pdalua_open(p.cat, err, sizeof err);
-    if (p.lua) {
+    if (!p.lua) {
+        fprintf(stderr, "Lua ließ sich nicht einrichten: %s\n", err);
+        program_free(&p);
+        plat_shutdown();
+        return 1;
+    }
+
+    {
         pdalua_open_apps(p.lua);
         pdalua_open_net(p.lua);
         pdalua_set_theme(p.lua, &th);
@@ -224,12 +227,12 @@ int main(int argc, char **argv)
             }
         }
 
+        schemas    = pdalua_schema_loader(p.lua);
+        sc.schemas = &schemas;
+
         scripting  = pdalua_scripting(p.lua);
         sc.scripts = &scripting;
-    } else {
-        fprintf(stderr, "Lua: %s\n", err);
     }
-#endif
 
     p.sh = shell_create(&sc, err, sizeof err);
     if (!p.sh) {

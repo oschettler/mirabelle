@@ -96,6 +96,11 @@ static bool ends_with(const char *s, const char *suffix)
 
 static bool load_schemas(shell *s, char *err, size_t err_size)
 {
+    if (!s->cfg.schemas || !s->cfg.schemas->load || !s->cfg.schemas->suffix) {
+        snprintf(err, err_size, "kein Lader für Schemadateien");
+        return false;
+    }
+
     char dir[512];
     snprintf(dir, sizeof dir, "%s/schema", s->cfg.data_dir);
 
@@ -109,12 +114,7 @@ static bool load_schemas(shell *s, char *err, size_t err_size)
 
     for (int i = 0; i < n && s->app_count < APPS_MAX; i++) {
         if (entries[i].is_dir) continue;
-
-        /* Nur die Textfassung. Es gibt auch Lua-Schemata (D-15), aber
-         * data/schema/task.lua beschreibt dieselbe Anwendung wie task.schema -
-         * beide zu laden ergäbe sie zweimal. Die Lua-Fassung ist der Beweis,
-         * dass zwei Lader dieselbe Struktur liefern, kein zweiter Vorrat. */
-        if (!ends_with(entries[i].name, ".schema")) continue;
+        if (!ends_with(entries[i].name, s->cfg.schemas->suffix)) continue;
 
         char path[700];
         snprintf(path, sizeof path, "%s/%s", dir, entries[i].name);
@@ -123,7 +123,8 @@ static bool load_schemas(shell *s, char *err, size_t err_size)
         memset(a, 0, sizeof *a);
 
         char msg[256] = "";
-        if (!schema_load(&a->sch, path, msg, sizeof msg)) {
+        if (!s->cfg.schemas->load(s->cfg.schemas->user, path, &a->sch,
+                                  msg, sizeof msg)) {
             /* Eine kaputte Datei nimmt nicht die ganze Anwendung mit - sie
              * fehlt eben, und der Nutzer erfährt warum. */
             snprintf(s->last_error, sizeof s->last_error, "%s", msg);

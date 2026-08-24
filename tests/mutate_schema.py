@@ -6,35 +6,28 @@ DEPS = ["tests/unit/test_schema.c"]
 orig = SRC.read_text(encoding="utf-8")
 
 MUTS = [
- ("Einzug wird nicht gemessen", "        bool  indented = (line[0] == ' ' || line[0] == '\\t');", "        bool  indented = false;"),
- ("alles gilt als eingerueckt", "        bool  indented = (line[0] == ' ' || line[0] == '\\t');", "        bool  indented = (current != NULL);"),
- ("offenes Feld bleibt offen",  "        current = NULL;\n        ok      = top_level(", "        ok      = top_level("),
- ("Kommentar bleibt stehen",    "        char *hash = strchr(line, '#');\n        if (hash) *hash = '\\0';", "        char *hash = NULL;\n        if (hash) *hash = '\\0';"),
- ("Feldnamen doppelt erlaubt",  "            if (schema_field_by_name(&tmp, name)) {", "            if (false) {"),
- ("zu viele Felder erlaubt",    "            if (tmp.field_count >= SCHEMA_FIELDS_MAX) {", "            if (false) {"),
- ("Namen werden abgeschnitten", "    if (strlen(src) >= cap)\n        return fail(err, err_size, path, line, \"%s ist zu lang (höchstens %zu Zeichen)\",\n                    what, cap - 1);", "    (void)err; (void)err_size; (void)path; (void)line; (void)what;"),
- ("leere Listen erlaubt",       "    if (*count == 0)\n        return fail(err, err_size, path, line, \"%s: leer\", what);", "    (void)0;"),
- ("Listen laufen ueber",        "        if (*count >= cap)\n            return fail(err, err_size, path, line, \"%s: höchstens %d Einträge\",\n                        what, cap);", "        if (false) return false;"),
- ("unbekannter Schluessel egal","    return fail(err, err_size, path, line, \"unbekannter Schlüssel „%s“\", key);", "    (void)key; return true;"),
- ("unbekannter Feldtyp egal",   "        if (!parse_kind(word, &f->kind))\n            return fail(err, err_size, path, line, \"unbekannter Feldtyp „%s“\", word);", "        parse_kind(word, &f->kind);"),
- ("Richtung nicht geprueft",    "            else return fail(err, err_size, path, line,\n                             \"sort: „%s“ ist keine Richtung (asc oder desc)\", dir);", "            else s->sort_desc = false;"),
- ("desc wird ignoriert",        "            if (strcmp(dir, \"desc\") == 0)      s->sort_desc = true;", "            if (strcmp(dir, \"desc\") == 0)      s->sort_desc = false;"),
- ("columns nicht geprueft",     "    for (int i = 0; i < s->column_count; i++)\n        if (!schema_field_by_name(s, s->columns[i]))", "    for (int i = 0; i < 0; i++)\n        if (!schema_field_by_name(s, s->columns[i]))"),
- ("form nicht geprueft",        "    for (int i = 0; i < s->form_count; i++)\n        if (!schema_field_by_name(s, s->form[i]))", "    for (int i = 0; i < 0; i++)\n        if (!schema_field_by_name(s, s->form[i]))"),
- ("sort nicht geprueft",        "    if (s->sort[0] && !schema_field_by_name(s, s->sort))", "    if (false)"),
- ("Ansicht ohne Datumsfeld erlaubt", "        if (f->kind != FIELD_DATE)", "        if (false)"),
- ("Ansicht mit unbekanntem Feld",    "        const schema_field *f = schema_field_by_name(s, s->view_field);\n        if (!f)", "        const schema_field *f = schema_field_by_name(s, s->view_field);\n        if (false)"),
- ("unbekannte Ansicht erlaubt",      "        return fail(err, err_size, path, line,\n                    \"unbekannte Ansicht „%s“ (list oder month)\", word);", "        s->view = VIEW_LIST; return true;"),
- ("view month ohne Feld",            "            if (!next_word(&rest, &field))\n                return fail(err, err_size, path, line,\n                            \"view month: das Datumsfeld fehlt\");", "            if (!next_word(&rest, &field)) return true;"),
  ("Kopf nicht geprueft",        "    if (!s->type[0])   return fail(err, err_size, path, 0, \"type fehlt\");", "    if (false)   return false;"),
  ("folder nicht geprueft",      "    if (!s->folder[0]) return fail(err, err_size, path, 0, \"folder fehlt\");", "    if (false) return false;"),
  ("label oben nicht geprueft",  "    if (!s->label[0])  return fail(err, err_size, path, 0, \"label fehlt\");", "    if (false)  return false;"),
+ ("kein Feld erlaubt",          "    if (s->field_count == 0) return fail(err, err_size, path, 0, \"kein einziges Feld\");", "    (void)0;"),
+
  ("Feld ohne label erlaubt",    "        if (!f->label[0])\n            return fail(err, err_size, path, 0, \"Feld „%s“: label fehlt\", f->name);", "        (void)0;"),
  ("choice ohne values erlaubt", "        if (f->kind == FIELD_CHOICE && f->value_count == 0)", "        if (false)"),
  ("values ohne choice erlaubt", "        if (f->kind != FIELD_CHOICE && f->value_count > 0)", "        if (false)"),
- ("kein Feld erlaubt",          "    if (s->field_count == 0) return fail(err, err_size, path, 0, \"kein einziges Feld\");", "    (void)0;"),
- ("Halbfertiges wird uebernommen", "    if (!ok) return false;\n    if (!schema_check(&tmp, path, err, err_size)) return false;\n\n    *s = tmp;", "    *s = tmp;\n    if (!ok) return false;\n    if (!schema_check(&tmp, path, err, err_size)) return false;"),
- ("required no wird true",      "        else if (strcmp(word, \"no\") == 0)  f->required = false;", "        else if (strcmp(word, \"no\") == 0)  f->required = true;"),
+ ("zwei Koerper erlaubt",       "    if (gemtext > 1)", "    if (false)"),
+ ("Koerper wird nicht gezaehlt","        if (s->fields[i].kind == FIELD_GEMTEXT) gemtext++;", "        (void)i;"),
+
+ ("columns nicht geprueft",     "    for (int i = 0; i < s->column_count; i++)\n        if (!schema_field_by_name(s, s->columns[i]))", "    for (int i = 0; i < 0; i++)\n        if (!schema_field_by_name(s, s->columns[i]))"),
+ ("form nicht geprueft",        "    for (int i = 0; i < s->form_count; i++)\n        if (!schema_field_by_name(s, s->form[i]))", "    for (int i = 0; i < 0; i++)\n        if (!schema_field_by_name(s, s->form[i]))"),
+ ("sort nicht geprueft",        "    if (s->sort[0] && !schema_field_by_name(s, s->sort))", "    if (false)"),
+ ("leerer sort wird geprueft",  "    if (s->sort[0] && !schema_field_by_name(s, s->sort))", "    if (!schema_field_by_name(s, s->sort))"),
+
+ ("Ansicht ohne Datumsfeld erlaubt", "        if (f->kind != FIELD_DATE)", "        if (false)"),
+ ("Ansicht mit unbekanntem Feld",    "        const schema_field *f = schema_field_by_name(s, s->view_field);\n        if (!f)", "        const schema_field *f = schema_field_by_name(s, s->view_field);\n        if (false)"),
+ ("Ansicht wird nicht unterschieden","    if (s->view == VIEW_MONTH) {", "    if (false) {"),
+
+ ("Feldsuche findet immer das erste", "        if (strcmp(s->fields[i].name, name) == 0) return &s->fields[i];", "        return &s->fields[i];"),
+ ("Dateiname fehlt in der Meldung",   "        else          snprintf(err, err_size, \"%s: %s\", path, msg);", "        else          snprintf(err, err_size, \"%s\", msg);"),
 ]
 
 def run(text):

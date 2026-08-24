@@ -2,6 +2,9 @@
 Der Sollbildtest bleibt aussen vor - er braucht das Bausystem."""
 import subprocess, pathlib, tempfile, os
 
+LUA_CFLAGS = subprocess.run(["pkg-config","--cflags","--libs","lua5.4"],
+                            capture_output=True, text=True).stdout.split()
+
 SRC  = pathlib.Path("src/app/browser.c")
 DEPS = ["src/app/schema.c", "src/app/fieldkind.c", "src/app/monthview.c",
         "src/core/date.c",
@@ -10,12 +13,17 @@ DEPS = ["src/app/schema.c", "src/app/fieldkind.c", "src/app/monthview.c",
         "src/store/record.c", "src/store/frontmatter.c", "src/store/gemtext.c",
         "src/store/query.c", "src/store/vault.c",
         "src/plat/plat_headless.c", "src/plat/plat_files_posix.c", "src/plat/expand.c",
+        "src/plat/plat_net_posix.c", "src/app/gemview.c",
         "src/ui/theme.c", "src/ui/widget.c", "src/ui/widget_list.c",
         "src/ui/widget_text.c", "src/ui/caret.c", "src/ui/widget_scroll.c", "src/ui/scroll.c",
         "src/ui/textbuf.c", "src/ui/panel.c",
         "src/gfx/bitmap.c", "src/gfx/pbm.c", "src/gfx/draw.c", "src/gfx/pattern.c",
         "src/gfx/font.c", "src/gfx/text.c", "build/font_system12.c",
-        "tests/support/golden.c", "tests/unit/test_browser.c"]
+        "tests/support/golden.c", "src/net/spartan.c", "src/net/plat_transport.c",
+        "src/lua/pdalua.c", "src/lua/pdalua_store.c",
+        "src/lua/pdalua_schema.c", "src/lua/pdalua_apps.c",
+        "src/lua/pdalua_net.c", "src/lua/pdalua_widgets.c",
+        "tests/unit/test_browser.c"]
 orig = SRC.read_text(encoding="utf-8")
 
 MUTS = [
@@ -64,7 +72,7 @@ def run(text):
         b = subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Wpedantic",
                             "-fsanitize=address,undefined","-g","-Isrc","-Itests",
                             "-DPDA_DATA_DIR=\"data\"",
-                            "-DPDA_GOLDEN_DIR=\"tests/golden\"", src] + DEPS +
+                            "-DPDA_GOLDEN_DIR=\"tests/golden\"", src] + DEPS + LUA_CFLAGS +
                            ["-o", exe], capture_output=True, text=True)
         if b.returncode != 0: return None, b.stderr
         env = dict(os.environ, TMPDIR=d)

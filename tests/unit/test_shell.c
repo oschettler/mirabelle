@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include "app/shell.h"
+#include "lua/pdalua.h"
 #include "core/collate.h"
 #include "core/i18n.h"
 #include "core/keymap.h"
@@ -72,6 +73,8 @@ static void rmrf(const char *path)
 
 static theme    g_theme;
 static catalog *g_cat;
+static lua_State   *g_lua;
+static shell_schemas g_schemas;
 static keymap  *g_km;
 static collate *g_sort, *g_search;
 static vault   *g_vault;
@@ -118,11 +121,17 @@ static bool setup(void)
     snprintf(path, sizeof path, "%s/collate/search.fold", PDA_DATA_DIR);
     g_search = collate_load(path, err, sizeof err);
 
+    /* Schemadateien sind Lua-Tabellen (D-15). Die Schale liest sie nicht
+     * selbst, sie bekommt einen Lader - hier den echten, damit dieser Test
+     * die mitgelieferten Dateien prüft und nicht seine eigenen Kopien. */
+    g_lua = pdalua_open(g_cat, err, sizeof err);
+    g_schemas = pdalua_schema_loader(g_lua);
+
     temp_root(root, sizeof root);
     rmrf(root);
     g_vault = vault_open(root, err, sizeof err);
 
-    if (!g_cat || !g_km || !g_sort || !g_search || !g_vault) {
+    if (!g_cat || !g_km || !g_sort || !g_search || !g_vault || !g_lua) {
         printf("  Aufbau: %s\n", err);
         return false;
     }
@@ -134,6 +143,9 @@ static bool setup(void)
 
 static void teardown(void)
 {
+    pdalua_close(g_lua);
+    g_lua = NULL;
+
     char root[600];
     temp_root(root, sizeof root);
 
@@ -161,6 +173,7 @@ static shell *open_shell(void)
         .keymap   = g_km,
         .sort     = g_sort,
         .search   = g_search,
+        .schemas  = &g_schemas,
         .screen_w = SCREEN_W,
         .screen_h = SCREEN_H,
     };
@@ -218,40 +231,45 @@ TEST(a_broken_schema_does_not_take_the_others_with_it)
     snprintf(path, sizeof path, "%s/schema", dir);
     mkdir(path, 0777);
 
+    static const char GUT[] =
+        "return { type = 'g', folder = 'Gut', label = 'app.notes',\n"
+        "  columns = { 't' }, form = { 't' },\n"
+        "  fields = { { name = 't', kind = 'text', label = 'field.title' } } }\n";
+
     char file[900];
-    snprintf(file, sizeof file, "%s/gut.schema", path);
+    snprintf(file, sizeof file, "%s/gut.lua", path);
     FILE *fp = fopen(file, "wb");
     REQUIRE(fp != NULL);
-    fputs("type g\nfolder Gut\nlabel app.notes\ncolumns t\nform t\n"
-          "field t\n    kind text\n    label field.title\n", fp);
+    fputs(GUT, fp);
     fclose(fp);
 
-    snprintf(file, sizeof file, "%s/kaputt.schema", path);
+    snprintf(file, sizeof file, "%s/kaputt.lua", path);
     fp = fopen(file, "wb");
     REQUIRE(fp != NULL);
-    fputs("type k\nfolder Kaputt\nlabel app.notes\ncolumns gibtsnicht\nform t\n"
-          "field t\n    kind text\n    label field.title\n", fp);
+    fputs("return { type = 'k', folder = 'Kaputt', label = 'app.notes',\n"
+          "  columns = { 'gibtsnicht' }, form = { 't' },\n"
+          "  fields = { { name = 't', kind = 'text', label = 'field.title' } } }\n",
+          fp);
     fclose(fp);
 
     /* Eine Datei, die ein gültiges Schema WÄRE, aber nicht so heißt. Ohne die
-     * Prüfung der Endung würde sie mitgezählt - und data/schema/task.lua
-     * beschreibt dieselbe Anwendung wie task.schema, es gäbe sie also
-     * doppelt. */
+     * Prüfung der Endung würde jede Datei im Verzeichnis mitgezählt - auch
+     * eine Notiz, die jemand dort abgelegt hat. */
     snprintf(file, sizeof file, "%s/notiz.txt", path);
     fp = fopen(file, "wb");
     REQUIRE(fp != NULL);
-    fputs("type n\nfolder Notizen\nlabel app.notes\ncolumns t\nform t\n"
-          "field t\n    kind text\n    label field.title\n", fp);
+    fputs(GUT, fp);
     fclose(fp);
 
     /* Und ein Unterverzeichnis, das zufällig so heißt. */
     char sub[900];
-    snprintf(sub, sizeof sub, "%s/alt.schema", path);
+    snprintf(sub, sizeof sub, "%s/alt.lua", path);
     mkdir(sub, 0777);
 
     shell_config cfg = {
         .data_dir = dir, .vault = g_vault, .theme = &g_theme,
         .catalog = g_cat, .keymap = g_km, .sort = g_sort, .search = g_search,
+        .schemas = &g_schemas,
         .screen_w = SCREEN_W, .screen_h = SCREEN_H,
     };
 
@@ -266,6 +284,26 @@ TEST(a_broken_schema_does_not_take_the_others_with_it)
     teardown();
 }
 
+TEST(without_a_loader_the_shell_says_so)
+{
+    /* Die Schale liest Schemadateien nicht selbst, sie bekommt einen Lader
+     * (shell.h). Fehlt er, gibt es keine Anwendungen - und das ist eine
+     * Meldung wert, keine leere Menüleiste. */
+    REQUIRE(setup());
+
+    shell_config cfg = {
+        .data_dir = PDA_DATA_DIR, .vault = g_vault, .theme = &g_theme,
+        .catalog = g_cat, .keymap = g_km, .sort = g_sort, .search = g_search,
+        .screen_w = SCREEN_W, .screen_h = SCREEN_H,
+    };
+
+    char err[256] = "";
+    CHECK(shell_create(&cfg, err, sizeof err) == NULL);
+    CHECK(strstr(err, "Lader") != NULL);
+
+    teardown();
+}
+
 TEST(without_any_schema_there_is_nothing_to_do)
 {
     REQUIRE(setup());
@@ -273,6 +311,7 @@ TEST(without_any_schema_there_is_nothing_to_do)
     shell_config cfg = {
         .data_dir = "/tmp/gibt-es-nicht-pda", .vault = g_vault,
         .theme = &g_theme, .catalog = g_cat, .keymap = g_km,
+        .schemas = &g_schemas,
         .screen_w = SCREEN_W, .screen_h = SCREEN_H,
     };
 
@@ -978,6 +1017,7 @@ static shell *open_shell_with_keys(fake_scripts *f, shell_scripting *sc,
     shell_config cfg = {
         .data_dir = PDA_DATA_DIR, .vault = g_vault, .theme = &g_theme,
         .catalog = g_cat, .keymap = km, .sort = g_sort, .search = g_search,
+        .schemas = &g_schemas,
         .screen_w = SCREEN_W, .screen_h = SCREEN_H, .scripts = sc,
     };
 
@@ -1275,6 +1315,7 @@ int main(void)
 {
     RUN(every_schema_file_becomes_an_application);
     RUN(a_broken_schema_does_not_take_the_others_with_it);
+    RUN(without_a_loader_the_shell_says_so);
     RUN(without_any_schema_there_is_nothing_to_do);
 
     RUN(opening_an_application_opens_its_window);

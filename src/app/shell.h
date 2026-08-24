@@ -40,15 +40,31 @@
 
 typedef struct shell shell;
 
+/* --- Schemadateien lesen ----------------------------------------------------
+ *
+ * Die Schale liest kein Schema selbst. Sie durchsucht das Verzeichnis nach
+ * Dateien mit der genannten Endung und reicht jede an `load` weiter.
+ *
+ * Der Grund ist derselbe wie bei den Skripten unten: die Schale kennt Lua
+ * nicht. Sie weiß, dass es Schemadateien gibt und wie eine `schema`-Struktur
+ * aussieht - nicht, in welcher Sprache sie geschrieben sind. Ein Test kann
+ * damit einen eigenen Lader einsetzen, ohne Lua zu übersetzen.
+ *
+ * pdalua_schema_loader() in lua/pdalua.h liefert eine gefüllte Struktur.
+ */
+typedef struct {
+    void       *user;
+    const char *suffix;      /* z. B. ".lua"; nur solche Dateien werden gelesen */
+
+    bool (*load)(void *user, const char *path, schema *out,
+                 char *err, size_t err_size);
+} shell_schemas;
+
 /* --- Anwendungen aus Skripten ----------------------------------------------
  *
- * Die Schale kennt Lua nicht. Sie bekommt eine Handvoll Funktionszeiger und
- * ruft sie auf; ob dahinter Lua steckt, ein anderes Skriptsystem oder gar
- * nichts, sieht sie nicht.
- *
- * Das ist dieselbe Vorsichtsmaßnahme wie beim Index und bei der Schrift: auf
- * dem Gerät kann Lua fehlen, und dann fehlen eben die Skriptanwendungen. Die
- * vier aus den Schemadateien laufen weiter.
+ * Dieselbe Vorsichtsmaßnahme, eine Ebene weiter: die Schale bekommt eine
+ * Handvoll Funktionszeiger und ruft sie auf; ob dahinter Lua steckt, ein
+ * anderes Skriptsystem oder gar nichts, sieht sie nicht.
  *
  * pdalua_scripting() in lua/pdalua.h liefert eine gefüllte Struktur.
  */
@@ -73,6 +89,10 @@ typedef struct {
 
     const collate *sort;     /* darf NULL sein */
     const collate *search;
+
+    /* Ohne Lader gibt es keine Anwendungen aus Schemadateien, und
+     * shell_create() sagt das. */
+    const shell_schemas *schemas;
 
     /* Darf NULL sein; dann gibt es keine Skriptanwendungen. */
     const shell_scripting *scripts;

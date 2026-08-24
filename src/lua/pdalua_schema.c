@@ -290,3 +290,17 @@ bool pdalua_schema(lua_State *L, const char *path, schema *out,
     *out = tmp;
     return true;
 }
+
+/* --- Als Lader für die Schale ----------------------------------------------- */
+
+static bool loader(void *user, const char *path, schema *out,
+                   char *err, size_t err_size)
+{
+    return pdalua_schema((lua_State *)user, path, out, err, err_size);
+}
+
+shell_schemas pdalua_schema_loader(lua_State *L)
+{
+    shell_schemas ld = { L, ".lua", loader };
+    return ld;
+}
