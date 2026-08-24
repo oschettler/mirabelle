@@ -19,8 +19,16 @@
 
 typedef enum {
     LAYOUT_VSTACK,   /* untereinander, volle Breite */
-    LAYOUT_HSTACK,   /* nebeneinander, volle Höhe */
-    LAYOUT_FORM      /* paarweise: Beschriftung links, Element rechts */
+    LAYOUT_HSTACK,   /* nebeneinander, jedes in seiner Wunschbreite */
+    LAYOUT_FORM,     /* paarweise: Beschriftung links, Element rechts */
+
+    /* Nebeneinander, aber das ERSTE Element bekommt, was übrig bleibt.
+     *
+     * Das ist das Muster „Inhalt und Beiwerk": ein Textfeld mit einem
+     * Rollbalken daneben, eine Liste mit einer Leiste. Das Beiwerk hat eine
+     * feste Breite - ein Rollbalken ist so breit, wie das Thema sagt -, und
+     * der Inhalt nimmt den Rest. */
+    LAYOUT_HSTACK_FILL
 } layout_kind;
 
 typedef struct panel panel;

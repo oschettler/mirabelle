@@ -999,6 +999,68 @@ TEST(paging_the_calendar_moves_the_marks_along)
     teardown();
 }
 
+TEST(a_long_note_gets_a_scrollbar_beside_it)
+{
+    /* Ohne Balken sieht der Nutzer nicht, dass unter dem sichtbaren Text noch
+     * etwas steht - und im Zweifel schreibt er es ein zweites Mal. */
+    REQUIRE(setup());
+
+    schema note;
+    REQUIRE(load_schema(&note, "note"));
+
+    /* Eine Notiz mit mehr Zeilen, als in ein Feld passen. */
+    static char body[2048];
+    int         n = 0;
+    n += snprintf(body + n, sizeof body - (size_t)n,
+                  "---\nid: 20260701T090000-0001\ntitle: Lang\n---\n");
+    for (int i = 0; i < 60; i++)
+        n += snprintf(body + n, sizeof body - (size_t)n, "Zeile %d\n", i);
+
+    const char *const one[] = { body };
+    vault *v = fresh_vault(note.folder, one, 1);
+    REQUIRE(v != NULL);
+
+    browser *b = open_browser(&note, v);
+    REQUIRE(b != NULL);
+
+    char err[256] = "";
+    REQUIRE(browser_open_selected(b, err, sizeof err));
+
+    /* Das Feld selbst kommt weiter über seinen Namen heraus - der Rahmen
+     * darum ist Sache des Formulars. */
+    widget *area = browser_form_widget(b, "body");
+    REQUIRE(area != NULL);
+
+    scrollmodel *m = text_widget_scroll(area);
+    REQUIRE(m != NULL);
+
+    /* Damit die Höhe feststeht, muss einmal gezeichnet werden. */
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 320, 240));
+    gc g;
+    gc_init(&g, &bm);
+    browser_layout(b, rect_make(0, 0, 320, 240));
+    browser_draw(b, &g);
+
+    m = text_widget_scroll(area);
+    REQUIRE(scroll_max(m) > 0);
+
+    /* Und der Balken daneben zeigt dasselbe Modell. Ein Klick auf sein
+     * unteres Pfeilfeld verschiebt den Text. */
+    int before = m->value;
+
+    event down = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1,
+                   .x = area->frame.x + area->frame.w + g_theme.scrollbar_w / 2,
+                   .y = area->frame.y + area->frame.h - 4 };
+    CHECK(browser_event(b, &down));
+    CHECK_EQ(m->value, before + 1);
+
+    bitmap_free(&bm);
+    browser_destroy(b);
+    drop_vault(v);
+    teardown();
+}
+
 /* --- Aussehen ---------------------------------------------------------------------- */
 
 TEST(two_applications_from_two_files)
@@ -1072,6 +1134,8 @@ int main(void)
     RUN(deleting_takes_the_mark_away);
     RUN(the_calendar_reads_the_field_the_schema_names);
     RUN(paging_the_calendar_moves_the_marks_along);
+
+    RUN(a_long_note_gets_a_scrollbar_beside_it);
 
     RUN(two_applications_from_two_files);
 

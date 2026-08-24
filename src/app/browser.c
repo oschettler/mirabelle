@@ -349,7 +349,41 @@ static bool form_build(browser *b, record *rec, char *err, size_t err_size)
             return false;
         }
 
-        if (!panel_add(b->form, label) || !panel_add(b->form, w)) {
+        /* Ein mehrzeiliges Feld bekommt einen Rollbalken daneben. Beide
+         * zusammen sind ein verschachteltes Panel (panel.h) - für das
+         * Formular ist es ein Element, für den Nutzer ein Textfeld, an dem
+         * man sieht, wie weit man ist.
+         *
+         * b->widgets[i] bleibt dabei das Textfeld: gelesen und geschrieben
+         * wird dort, nicht am Rahmen darum. */
+        widget *cell = w;
+        if (f->kind == FIELD_GEMTEXT) {
+            panel  *row = panel_create(&b->th, b->cat);
+            widget *bar = row ? scrollbar_create(&b->th, b->cat, SCROLLBAR_VERTICAL,
+                                                 text_widget_scroll(w))
+                              : NULL;
+            widget *wrapped = NULL;
+
+            if (row && bar) {
+                panel_set_layout(row, LAYOUT_HSTACK_FILL, 0, 0);
+
+                if (panel_add(row, w) && panel_add(row, bar))
+                    wrapped = panel_as_widget(row);
+            }
+
+            if (!wrapped) {
+                if (row) panel_destroy(row);
+                else     { widget_destroy(w); widget_destroy(bar); }
+
+                widget_destroy(label);
+                form_close(b);
+                if (err && err_size) snprintf(err, err_size, "kein Speicher für ein Feld");
+                return false;
+            }
+            cell = wrapped;
+        }
+
+        if (!panel_add(b->form, label) || !panel_add(b->form, cell)) {
             form_close(b);
             if (err && err_size) snprintf(err, err_size, "das Formular ist voll");
             return false;

@@ -133,6 +133,36 @@ static void measure_vstack(const panel *p, int *pw, int *ph)
     *ph = h;
 }
 
+/* Nebeneinander, das erste Element bekommt den Rest.
+ *
+ * Ein Pixel Überlappung zwischen den Nachbarn, damit sie sich ihre Randlinie
+ * teilen - dieselbe Regel wie beim Rollbalken am Fensterrand, und aus
+ * demselben Grund: sonst stünden dort zwei Rahmen nebeneinander. */
+static void layout_hstack_fill(panel *p, rect area)
+{
+    int y = area.y + p->pad;
+    int h = area.h - 2 * p->pad;
+
+    int fixed = 0;
+    for (int i = 1; i < p->count; i++) {
+        int mw, mh;
+        widget_measure(p->items[i], &mw, &mh);
+        fixed += mw - 1;
+    }
+
+    int x = area.x;
+    for (int i = 0; i < p->count; i++) {
+        int mw, mh;
+        widget_measure(p->items[i], &mw, &mh);
+
+        int w = (i == 0) ? area.w - fixed : mw;
+        if (w < 1) w = 1;
+
+        p->items[i]->frame = rect_make(x, y, w, h);
+        x += w - 1;
+    }
+}
+
 static void layout_hstack(panel *p, rect area)
 {
     int y = area.y + p->pad;
@@ -262,9 +292,10 @@ static void measure_form(const panel *p, int *pw, int *ph)
 void panel_layout(panel *p, rect area)
 {
     switch (p->kind) {
-    case LAYOUT_VSTACK: layout_vstack(p, area); break;
-    case LAYOUT_HSTACK: layout_hstack(p, area); break;
-    case LAYOUT_FORM:   layout_form(p, area);   break;
+    case LAYOUT_VSTACK:      layout_vstack(p, area);      break;
+    case LAYOUT_HSTACK:      layout_hstack(p, area);      break;
+    case LAYOUT_HSTACK_FILL: layout_hstack_fill(p, area); break;
+    case LAYOUT_FORM:        layout_form(p, area);        break;
     }
 }
 
@@ -272,7 +303,13 @@ void panel_measure(panel *p, int *pw, int *ph)
 {
     switch (p->kind) {
     case LAYOUT_VSTACK: measure_vstack(p, pw, ph); break;
-    case LAYOUT_HSTACK: measure_hstack(p, pw, ph); break;
+
+    /* Für die Wunschgröße sind beide gleich: die Summe der Breiten. Dass das
+     * erste Element später mehr bekommt, ändert nichts daran, wie viel
+     * mindestens gebraucht wird. */
+    case LAYOUT_HSTACK:
+    case LAYOUT_HSTACK_FILL: measure_hstack(p, pw, ph); break;
+
     case LAYOUT_FORM:   measure_form(p, pw, ph);   break;
     }
 }
