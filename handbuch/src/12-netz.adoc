@@ -115,20 +115,32 @@ einfrieren.
 
 === Der Browser ist ein Skript
 
-`data/apps/spartan.lua` ist gut vierhundert Zeilen Lua, die Hälfte davon
-Kommentar. Es benutzt aus C
-genau drei Dinge:
+`data/apps/spartan.lua` ist knapp dreihundert Zeilen Lua, die Hälfte davon
+Kommentar. Es benutzt aus C wenige Dinge:
 
 [source,lua]
 ----
 net.fetch(adresse)           -- holt eine Seite
 net.resolve(basis, verweis)  -- löst einen Verweis auf
 gemtext.parse(text)          -- zerlegt eine Seite in Zeilen
+scrollbar()                  -- der Rollbalken des Programms
+caret()                      -- der Takt der Schreibmarke
 ----
 
 Alles andere macht es selbst: den Umbruch, die Nummerierung der Verweise, die
-Auswahl, den Verlauf, die Tastatur — und seinen Rollbalken, den es Pixel für
-Pixel zeichnet, weil ein Widget für ein Skript nicht erreichbar ist.
+Auswahl, den Verlauf, die Tastatur.
+
+Der Rollbalken und die Schreibmarke stehen bewusst in dieser Liste, obwohl das
+Skript beide auch selbst zeichnen könnte.
+
+[NOTE]
+====
+Ein nachgebautes Bedienelement ist eine zweite Wahrheit. Sie geht auseinander,
+sobald sich das Original ändert, und niemand merkt es: der Nachbau hat eigene
+Tests oder gar keine, und ein fehlender Pfeil fällt erst auf, wenn jemand ein
+Bild davon ansieht. Wenn ein Skript etwas nachbaut, das es im Programm schon
+gibt, ist das ein Loch in der Schnittstelle, kein Fleiß.
+====
 
 Verweise werden nummeriert und als `[3] Name` gezeigt. Das ist die Darstellung
 textbasierter Gemini-Browser, und sie hat hier einen handfesten Grund: bei

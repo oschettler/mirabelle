@@ -493,7 +493,60 @@ mode("xor")                    -- copy, or, xor, clear, notcopy
 pattern(p)
 font("system12")
 textwidth(s)
+textheight()
+caret()                        -- blinkt die Schreibmarke gerade sichtbar?
 ----
+
+`caret()` gibt es, damit ein Skript, das ein Eingabefeld selbst zeichnet, im
+selben Takt blinkt wie jedes Textfeld des Programms. Zwei Schreibmarken, die
+gegeneinander blinken, sehen aus wie ein Fehler. Der Takt kommt aus
+`ui/caret.h` und wird nur im Hauptprogramm gestellt; ein Skript kann ihn
+abfragen, aber nicht verstellen.
+
+=== Bedienelemente
+
+Ein Skript baut ein Bedienelement nicht nach, es bekommt das echte. Der
+Rollbalken ist derselbe, den der Browser und das Notizfeld benutzen — mit
+denselben Tests und demselben Aussehen:
+
+[source,lua]
+----
+local bar = scrollbar()
+
+bar:place(x, y, w, h)          -- Lage im Fenster
+bar:set(gesamt, sichtbar)      -- Umfang und Seitengröße
+bar:draw()
+
+if bar:event(e) then oben = bar:value() + 1 end
+
+bar:value()                    -- Bildlaufposition
+bar:scroll_to(v)
+bar:scroll_by(d)
+bar:max()
+bar:width()
+bar:frame()                    -- x, y, w, h
+----
+
+Der Balken hält seine Position selbst; für ein Skript ist er damit die Wahrheit
+darüber, wo die Anzeige steht — genauso wie in C das `scrollmodel`.
+
+Das Mausrad nimmt der Balken nur über sich an, weil er dort neben anderen
+Bedienelementen sitzt. Ein Fenster, das nur eine Sache zeigt, rollt überall:
+dann ruft das Skript `bar:scroll_by(-e.wheel)` selbst.
+
+Die Maße kommen aus dem Thema, nicht aus dem Skript:
+
+[source,lua]
+----
+theme.scrollbar_w   theme.titlebar_h    theme.border
+theme.menubar_h     theme.menubar_left  theme.menu_item_h
+theme.menu_pad      theme.button_h      theme.button_gap
+theme.dialog_pad
+----
+
+Ohne diese Tabelle stünde die Breite eines Rollbalkens zweimal im System —
+einmal im Thema und einmal als Zahl in einem Skript. Beim Gerätethema aus M15
+gingen die beiden auseinander.
 
 === Eingabe
 
