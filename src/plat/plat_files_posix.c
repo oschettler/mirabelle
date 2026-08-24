@@ -1,7 +1,7 @@
 /* Die Dateifunktionen der Plattformschicht für alles, was ein POSIX-artiges
  * Dateisystem hat - also für plat_sdl3 und plat_headless gleichermaßen.
  *
- * Der ESP32 bekommt eine eigene Umsetzung; deshalb liegen diese sechs
+ * Der ESP32 bekommt eine eigene Umsetzung; deshalb liegen diese acht
  * Funktionen getrennt und nicht in einem der beiden Backends.
  */
 
@@ -80,4 +80,16 @@ bool plat_mkdir(const char *path)
 {
     if (mkdir(path, 0777) == 0) return true;
     return errno == EEXIST;
+}
+
+bool plat_rename(const char *from, const char *to)
+{
+    /* rename() ersetzt ein vorhandenes Ziel auf POSIX bereits atomar. */
+    return rename(from, to) == 0;
+}
+
+bool plat_remove(const char *path)
+{
+    if (remove(path) == 0) return true;
+    return errno == ENOENT;
 }

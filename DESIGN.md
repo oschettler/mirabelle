@@ -28,7 +28,7 @@ Rangfolge: bei Zweifeln gewinnt die weiter oben stehende Regel.
    Speicher. SDL3 zeigt diese Bitmap nur an. Deshalb lässt sich praktisch alles
    — Fensterrahmen, Menüs, Umlaute, ganze Bedienabläufe — headless,
    deterministisch und pixelgenau prüfen.
-5. **Portabel.** Zwischen Kern und Außenwelt liegt eine Schicht aus dreizehn
+5. **Portabel.** Zwischen Kern und Außenwelt liegt eine Schicht aus vierzehn
    Funktionen. SDL3 und der ESP32-S3 sind zwei Implementierungen davon, mehr nicht.
 
 ---
@@ -149,17 +149,23 @@ size_t     plat_write(plat_file *f, const void *buf, size_t n);
 void       plat_close(plat_file *f);
 bool       plat_list(const char *dir, plat_dirent *out, int cap, int *count);
 bool       plat_mkdir(const char *path);   /* true auch, wenn es schon da ist */
+bool       plat_rename(const char *from, const char *to);
+bool       plat_remove(const char *path);
 ```
 
-Dreizehn Funktionen. `plat_headless` schreibt `plat_present` in eine Bitmap,
+Vierzehn Funktionen. `plat_headless` schreibt `plat_present` in eine Bitmap,
 liest Ereignisse aus einer Warteschlange, die der Test füllt, und lässt die Uhr
 stillstehen, bis jemand sie stellt — deshalb laufen fast alle Tests ohne Fenster
 und ohne Grafikkarte, und jeder Lauf ist gleich.
 
-Beim Entwurf standen hier zwölf Funktionen; `plat_mkdir` kam in M4 dazu, weil
-der Vault in M9 Verzeichnisse anlegen muss. Die Zahl ist keine Zusage, wohl aber
-die Größenordnung: diese Schicht bleibt klein genug, dass eine Portierung
-überschaubar ist.
+Beim Entwurf standen hier zwölf Funktionen. `plat_mkdir` kam in M4 dazu, weil
+der Vault Verzeichnisse anlegen muss, `plat_rename` und `plat_remove` in M9 für
+sicheres Speichern: erst vollständig in eine Nebendatei schreiben, dann
+darüberlegen. Bricht das Programm mittendrin ab, steht die alte Fassung noch da
+statt einer halben neuen — bei Nutzerdaten ist das kein Luxus.
+
+Die Zahl ist keine Zusage, wohl aber die Größenordnung: diese Schicht bleibt
+klein genug, dass eine Portierung überschaubar ist.
 
 **Touch wächst diese Schicht nicht.** Ein Fingertipp ist ein Mausereignis mit
 `button = 1`; nur ein Merker `is_touch` am Ereignis sagt der Oberfläche, dass es
@@ -841,7 +847,7 @@ zu je 16 Bytes: ein Quellbyte wird acht Pixel, ein `memcpy` pro Byte.
 
 **Entscheidung D-5 bleibt damit unangetastet.** Die Optimierung sitzt vollständig
 in der Plattformschicht; `gfx/` und `ui/` erfahren nichts davon. Genau dafür gibt
-es die dreizehn Funktionen — das ist der erste echte Beleg, dass die Schichtung trägt.
+es die vierzehn Funktionen — das ist der erste echte Beleg, dass die Schichtung trägt.
 
 Gegen Reißen bekommt `esp_lcd_rgb_panel` Bounce-Puffer im internen RAM. Die
 bewährten Werte stehen in Abschnitt 12.6 und sind aus einem laufenden Port auf

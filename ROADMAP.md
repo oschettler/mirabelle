@@ -37,7 +37,7 @@ Textformat für Zeichensätze, Übersetzer nach C, Glyphentabelle, `utf8_next` u
 **M4 · Plattformschicht und Hauptschleife**
 `plat.h`, `plat_sdl3.c`, `plat_headless.c`. Bild mit 800 × 480 anzeigen,
 wahlweise ganzzahlig vergrößert (2fach ergibt 1600 × 960 auf dem Monitor).
-*Lehrstoff:* Dreizehn Funktionen als einzige Naht zur Außenwelt, warum die
+*Lehrstoff:* Vierzehn Funktionen als einzige Naht zur Außenwelt, warum die
 Headless-Variante zuerst entsteht, und warum die Vergrößerung ausschließlich in
 der Anzeige passiert: die logische Auflösung ist auf beiden Zielen dieselbe (D-9),
 sonst gälten deine Sollbilder nur für eine Seite.
@@ -132,7 +132,7 @@ Zeitlage, PCLK, Bounce-Puffer, Flash-Modus und die vertauschte Farbreihenfolge
 sind auf genau dieser Platine verifiziert und stehen dort fertig. Wer das
 übergeht, verbrennt einen Tag an einem Bootloader, der nicht startet, und einen
 zweiten an blauem Text, der rot sein sollte.
-*Lehrstoff:* Hier geht die Rechnung für die dreizehn Funktionen auf — oder eben
+*Lehrstoff:* Hier geht die Rechnung für die vierzehn Funktionen auf — oder eben
 nicht, und dann weißt du warum. Miss die Bildstabilität am Anfang des Kapitels,
 nicht am Ende: unser Ausklappen nach RGB565 erzeugt Last, die der Referenzport
 so nicht hatte.
@@ -154,7 +154,7 @@ Lua nach den Anwendungen, weil du erst weißt, welche API du brauchst, wenn du s
 in C schon zweimal geschrieben hast.
 Der Aufnahmeapparat vor dem Touch-Thema, weil er der einzige Weg ist, die
 Touch-Bedienung ohne Gerät zu prüfen.
-Das Gerät zum Schluss, weil bis dahin alles Portierungsrelevante hinter dreizehn
+Das Gerät zum Schluss, weil bis dahin alles Portierungsrelevante hinter vierzehn
 Funktionen liegt.
 
 ## Was zuerst schiefgehen wird

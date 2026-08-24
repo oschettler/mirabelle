@@ -1,6 +1,6 @@
 /* Die Plattformschicht: die gesamte Schnittstelle zur Außenwelt.
  *
- * Dreizehn Funktionen. Wer auf ein neues Gerät portiert, implementiert genau
+ * Vierzehn Funktionen. Wer auf ein neues Gerät portiert, implementiert genau
  * das und sonst nichts. Alles darüber ist portables C und weiß weder von SDL noch
  * von einem Betriebssystem.
  *
@@ -120,5 +120,16 @@ bool plat_list(const char *dir, plat_dirent *out, int cap, int *count);
 /* Legt ein Verzeichnis an. true auch dann, wenn es schon existiert - der
  * Aufrufer will, dass es da ist, nicht dass er es angelegt hat. */
 bool plat_mkdir(const char *path);
+
+/* Benennt um und ersetzt dabei ein etwaiges Ziel.
+ *
+ * Gebraucht für sicheres Speichern: erst vollständig in eine Nebendatei
+ * schreiben, dann darüberlegen. Bricht das Programm mittendrin ab, steht die
+ * alte Fassung noch da statt einer halben neuen. Bei Nutzerdaten ist das kein
+ * Luxus. */
+bool plat_rename(const char *from, const char *to);
+
+/* Löscht eine Datei. true auch, wenn sie schon nicht mehr da war. */
+bool plat_remove(const char *path);
 
 #endif /* PDA_PLAT_H */
