@@ -434,6 +434,62 @@ TEST(lists_that_are_too_long_are_refused)
     CHECK(strstr(err, "values") != NULL);
 }
 
+TEST(the_view_registry_takes_list_and_month)
+{
+    schema s;
+    char   err[256] = "";
+
+    const char *head =
+        "type e\nfolder E\nlabel l\ncolumns t\nform t\n"
+        "field t\n    kind text\n    label lt\n"
+        "field d\n    kind date\n    label ld\n";
+
+    char text[1024];
+
+    /* Ohne Angabe eine Liste. */
+    REQUIRE(load_text(&s, "ansicht_ohne", head, err, sizeof err));
+    CHECK_EQ(s.view, VIEW_LIST);
+
+    snprintf(text, sizeof text, "view list\n%s", head);
+    REQUIRE(load_text(&s, "ansicht_liste", text, err, sizeof err));
+    CHECK_EQ(s.view, VIEW_LIST);
+
+    snprintf(text, sizeof text, "view month d\n%s", head);
+    REQUIRE(load_text(&s, "ansicht_monat", text, err, sizeof err));
+    CHECK_EQ(s.view, VIEW_MONTH);
+    CHECK_STR(s.view_field, "d");
+}
+
+TEST(a_calendar_without_a_date_field_is_refused)
+{
+    /* Ein Kalender über einem Textfeld wäre ein leeres Raster, und der Fehler
+     * fiele erst auf, wenn jemand ihn öffnet. */
+    schema s;
+    char   err[256] = "";
+
+    const char *head =
+        "type e\nfolder E\nlabel l\ncolumns t\nform t\n"
+        "field t\n    kind text\n    label lt\n";
+
+    char text[1024];
+
+    snprintf(text, sizeof text, "view month t\n%s", head);
+    CHECK(!load_text(&s, "monat_ohne_datum", text, err, sizeof err));
+    CHECK(strstr(err, "date") != NULL);
+
+    snprintf(text, sizeof text, "view month gibtsnicht\n%s", head);
+    CHECK(!load_text(&s, "monat_falsches_feld", text, err, sizeof err));
+    CHECK(strstr(err, "gibtsnicht") != NULL);
+
+    snprintf(text, sizeof text, "view month\n%s", head);
+    CHECK(!load_text(&s, "monat_ohne_feld", text, err, sizeof err));
+    CHECK(strstr(err, "Datumsfeld") != NULL);
+
+    snprintf(text, sizeof text, "view raster t\n%s", head);
+    CHECK(!load_text(&s, "ansicht_unbekannt", text, err, sizeof err));
+    CHECK(strstr(err, "raster") != NULL);
+}
+
 TEST(a_missing_file_says_so)
 {
     schema s;
@@ -482,6 +538,8 @@ int main(void)
     RUN(required_no_means_no);
     RUN(too_many_fields_are_refused_not_written_past_the_end);
     RUN(lists_that_are_too_long_are_refused);
+    RUN(the_view_registry_takes_list_and_month);
+    RUN(a_calendar_without_a_date_field_is_refused);
     RUN(a_missing_file_says_so);
     RUN(a_broken_schema_leaves_the_target_untouched);
 

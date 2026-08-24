@@ -91,3 +91,6 @@ field.email              = E-mail
 value.privat             = Personal
 value.arbeit             = Work
 value.einkauf            = Shopping
+app.events               = Events
+field.date               = Date
+field.time               = Time

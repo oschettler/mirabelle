@@ -44,9 +44,20 @@
 typedef struct browser browser;
 
 typedef enum {
-    BROWSE_LIST,   /* die Übersicht */
-    BROWSE_FORM    /* ein einzelner Datensatz */
+    BROWSE_LIST,    /* die Übersicht - Liste oder Monatsraster, je nach Schema */
+    BROWSE_FORM     /* ein einzelner Datensatz */
 } browser_view;
+
+/* Welche Übersicht das Schema will, steht im Schema (schema.h). Der Browser
+ * baut sie daraus; von außen ist der Unterschied nur zu sehen, wenn man ihn
+ * sucht:
+ *
+ *   - browser_month() liefert das Kalender-Widget, sonst NULL.
+ *   - browser_list()  liefert das Listen-Widget, sonst NULL.
+ *
+ * Alles andere - laden, filtern, öffnen, speichern, löschen - ist für beide
+ * dasselbe. Das ist der Sinn einer Ansichtsregistratur: die Ansicht wechselt,
+ * die Anwendung nicht. */
 
 /* Legt einen Browser für dieses Schema an.
  *
@@ -84,8 +95,12 @@ const char *browser_selected_id(const browser *b);
 const char *browser_row_text(const browser *b, int index);
 
 /* Das Listen-Widget selbst, etwa um einen Rollbalken daranzuhängen
- * (list_scroll) oder zu prüfen, was es anzeigt. Gehört dem Browser. */
+ * (list_scroll) oder zu prüfen, was es anzeigt. NULL, wenn das Schema ein
+ * Monatsraster will. Gehört dem Browser. */
 widget *browser_list(const browser *b);
+
+/* Das Kalender-Widget, oder NULL. Gehört dem Browser. */
+widget *browser_month(const browser *b);
 
 /* --- Was der Nutzer tun kann ---------------------------------------------------
  *

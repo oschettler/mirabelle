@@ -793,12 +793,29 @@ kind.date = {
 
 ### Wo Generik aufhört
 
-Der **Kalender** bekommt zusätzlich eine eigene Ansicht mit Monatsraster und
-Wochenspalten. Man *könnte* auch das in Daten pressen; man sollte es nicht. Die
+Der **Kalender** bekommt zusätzlich eine eigene Ansicht mit Monatsraster. Man *könnte* auch das in Daten pressen; man sollte es nicht. Die
 Regel dazu ist ein eigenes Kurskapitel wert: *generisch bis zu dem Punkt, an dem
 die Konfiguration komplizierter würde als der Sonderfall.* Der Kalender bleibt
 also eine Schemadatei **plus** eine Ansicht mit rund 200 Zeilen, die sich in
 dieselbe Ansichtsregistratur einträgt wie `list` und `form`.
+
+**Umsetzung seit M12:** Die Registratur ist `schema_view` in `app/schema.h`, und
+ein Schema tritt mit einer Zeile ein:
+
+```
+view     month date
+```
+
+`data/schema/event.schema` ist die vierte Anwendung und die einzige, die davon
+Gebrauch macht. Alles andere - laden, filtern, öffnen, speichern, löschen -
+ist für Liste und Raster derselbe Code; von außen ist der Unterschied nur zu
+sehen, wenn man ihn sucht (`browser_list()` gegen `browser_month()`). Genau das
+ist der Sinn einer Ansichtsregistratur: die Ansicht wechselt, die Anwendung
+nicht.
+
+Die Registratur soll kurz bleiben. Eine Ansicht kommt dazu, wenn sich ihr
+Sonderfall nicht mehr sinnvoll konfigurieren lässt - nicht jedes Mal, wenn eine
+Sammlung anders aussehen soll.
 
 ---
 

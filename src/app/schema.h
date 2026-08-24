@@ -78,6 +78,18 @@ typedef struct {
     int  value_count;
 } schema_field;
 
+/* Die Ansichten, in die ein Schema eintreten kann.
+ *
+ * Das ist die Registratur, von der DESIGN.md Abschnitt 10 spricht. Sie ist
+ * kurz, und das soll sie bleiben: eine Ansicht kommt dazu, wenn sich ihr
+ * Sonderfall nicht mehr sinnvoll konfigurieren lässt (monthview.h), nicht
+ * jedes Mal, wenn eine Sammlung anders aussehen soll.
+ */
+typedef enum {
+    VIEW_LIST,    /* die Übersicht als Liste - der Normalfall */
+    VIEW_MONTH    /* ein Monatsraster; braucht ein Feld vom Typ date */
+} schema_view;
+
 typedef struct {
     char type[SCHEMA_NAME_MAX];     /* kurzer Name, etwa "task" */
     char folder[SCHEMA_NAME_MAX];   /* Sammlung im Vault, etwa "Aufgaben" */
@@ -95,6 +107,17 @@ typedef struct {
     /* Die Formularansicht: welche Felder in welcher Reihenfolge. */
     char form[SCHEMA_FIELDS_MAX][SCHEMA_NAME_MAX];
     int  form_count;
+
+    /* Die Übersichtsansicht. Ohne Angabe eine Liste.
+     *
+     *     view month date
+     *
+     * Bei VIEW_MONTH nennt view_field das Feld, das den Tag trägt; es muss
+     * vom Typ date sein, und schema_load besteht darauf. Ein Kalender ohne
+     * Datum wäre ein leeres Raster, und der Fehler fiele erst auf, wenn
+     * jemand ihn öffnet. */
+    schema_view view;
+    char        view_field[SCHEMA_NAME_MAX];
 } schema;
 
 /* Bei einem Fehler false und eine Meldung "datei:zeile: text" in err. Ein

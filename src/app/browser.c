@@ -13,6 +13,8 @@
 #include <string.h>
 
 #include "app/fieldkind.h"
+#include "app/monthview.h"
+#include "core/date.h"
 #include "gfx/font.h"
 #include "gfx/text.h"
 #include "store/query.h"
@@ -39,9 +41,16 @@ struct browser {
     /* Die Liste. ids und rows laufen parallel: Zeile i zeigt Datensatz ids[i]. */
     char ids[RECORDS_MAX][RECORD_ID_LEN + 1];
     char rows[RECORDS_MAX][ROW_MAX];
+
+    /* Nur bei VIEW_MONTH gefüllt: der Tag, an dem Datensatz i liegt. Ohne
+     * gültiges Datum hat er keinen Tag und taucht im Raster nicht auf. */
+    date days[RECORDS_MAX];
+    bool has_day[RECORDS_MAX];
     int  count;
 
+    /* Genau eines von beiden, je nach Schema. */
     widget *list;
+    widget *month;
 
     /* Das Formular. widgets[i] gehört zu s->form[i]. */
     panel  *form;
@@ -71,8 +80,16 @@ browser *browser_create(const schema *s, vault *v, const theme *th,
     b->th     = *th;          /* kopieren, nie zeigen */
     b->view   = BROWSE_LIST;
 
-    b->list = list_create(&b->th, cat);
-    if (!b->list) {
+    /* Welche Übersicht es wird, entscheidet das Schema - und diese eine
+     * Verzweigung ist alles, was der Browser davon merkt. */
+    if (s->view == VIEW_MONTH) {
+        date start = { 2026, 1, 1 };
+        b->month = monthview_create(&b->th, cat, start);
+    } else {
+        b->list = list_create(&b->th, cat);
+    }
+
+    if (!b->list && !b->month) {
         free(b);
         return NULL;
     }
@@ -92,6 +109,7 @@ void browser_destroy(browser *b)
     if (!b) return;
     form_close(b);
     widget_destroy(b->list);
+    widget_destroy(b->month);
     free(b);
 }
 
@@ -140,6 +158,21 @@ static void build_row(const browser *b, record *rec, char *out, size_t out_size)
         if (n >= out_size - 1) { n = out_size - 1; break; }
     }
     out[n] = '\0';
+}
+
+/* Trägt die Tage des angezeigten Monats ins Raster ein.
+ *
+ * Wird nach jedem Neuladen gerufen und nach jedem Ereignis, das den Monat
+ * gewechselt haben kann. Der Kalender vergisst seine Markierungen beim
+ * Blättern selbst (monthview.h) - sonst stünden Striche an Tagen, an denen
+ * nichts ist. */
+static void refresh_marks(browser *b)
+{
+    if (!b->month) return;
+
+    monthview_clear_marks(b->month);
+    for (int i = 0; i < b->count; i++)
+        if (b->has_day[i]) monthview_mark(b->month, b->days[i]);
 }
 
 /* Der Vergleich für qsort. Die Abfrage und die Tabelle stehen in Dateiglobalen,
@@ -193,22 +226,33 @@ bool browser_reload(browser *b, char *err, size_t err_size)
     g_query = NULL;
     g_sort  = NULL;
 
+    const schema_field *daysrc = b->s->view == VIEW_MONTH
+                               ? schema_field_by_name(b->s, b->s->view_field)
+                               : NULL;
+
     const char *rows[RECORDS_MAX];
     for (int i = 0; i < kept; i++) {
         snprintf(b->ids[i], sizeof b->ids[i], "%s", keep[i].id);
         build_row(b, keep[i].rec, b->rows[i], ROW_MAX);
         rows[i] = b->rows[i];
+
+        b->has_day[i] = daysrc &&
+                        date_from_iso(field_value(daysrc, keep[i].rec), &b->days[i]);
+
         record_free(keep[i].rec);
     }
     b->count = kept;
 
-    /* Kopieren lassen: rows zeigt in b->rows, und das nächste Neuladen
-     * überschreibt es. Die Liste soll nicht darauf angewiesen sein, wann das
-     * geschieht. */
-    if (!list_set_items_copy(b->list, rows, kept)) {
-        if (err && err_size) snprintf(err, err_size, "kein Speicher für die Liste");
-        return false;
+    if (b->list) {
+        /* Kopieren lassen: rows zeigt in b->rows, und das nächste Neuladen
+         * überschreibt es. Die Liste soll nicht darauf angewiesen sein, wann
+         * das geschieht. */
+        if (!list_set_items_copy(b->list, rows, kept)) {
+            if (err && err_size) snprintf(err, err_size, "kein Speicher für die Liste");
+            return false;
+        }
     }
+    refresh_marks(b);
 
     if (err && err_size) err[0] = '\0';
     return true;
@@ -216,21 +260,38 @@ bool browser_reload(browser *b, char *err, size_t err_size)
 
 browser_view browser_view_of(const browser *b) { return b->view; }
 int          browser_count(const browser *b)   { return b->count; }
-int          browser_selected(const browser *b){ return list_selected(b->list); }
 
-widget *browser_list(const browser *b)
+widget *browser_list(const browser *b)  { return b->list; }
+widget *browser_month(const browser *b) { return b->month; }
+
+/* Der Index des Datensatzes, auf dem die Übersicht gerade steht.
+ *
+ * Im Raster gibt es keinen Index, sondern einen Tag - also den ersten
+ * Datensatz dieses Tages. Liegt an dem Tag nichts, ist nichts ausgewählt; das
+ * ist im Kalender ein gewöhnlicher Zustand und kein Fehler. */
+int browser_selected(const browser *b)
 {
-    return b->list;
+    if (b->list) return list_selected(b->list);
+
+    date sel = monthview_selected(b->month);
+    for (int i = 0; i < b->count; i++)
+        if (b->has_day[i] && date_compare(b->days[i], sel) == 0) return i;
+    return -1;
 }
 
 void browser_select(browser *b, int index)
 {
-    list_select(b->list, index);
+    if (b->list) { list_select(b->list, index); return; }
+
+    if (index >= 0 && index < b->count && b->has_day[index]) {
+        monthview_select(b->month, b->days[index]);
+        refresh_marks(b);
+    }
 }
 
 const char *browser_selected_id(const browser *b)
 {
-    int i = list_selected(b->list);
+    int i = browser_selected(b);
     if (i < 0 || i >= b->count) return NULL;
     return b->ids[i];
 }
@@ -324,9 +385,23 @@ bool browser_open_selected(browser *b, char *err, size_t err_size)
 
 bool browser_new(browser *b, char *err, size_t err_size)
 {
-    bool ok = form_build(b, NULL, err, err_size);
-    if (ok) b->editing[0] = '\0';
-    return ok;
+    if (!form_build(b, NULL, err, err_size)) return false;
+    b->editing[0] = '\0';
+
+    /* Im Kalender ist der ausgewählte Tag die Antwort auf die Frage „wann".
+     * Ihn nicht zu übernehmen hieße, den Nutzer nach etwas zu fragen, das er
+     * gerade angeklickt hat. */
+    if (b->month) {
+        const schema_field *f = schema_field_by_name(b->s, b->s->view_field);
+        widget             *w = browser_form_widget(b, b->s->view_field);
+
+        if (f && w) {
+            char iso[16];
+            date_to_iso(monthview_selected(b->month), iso, sizeof iso);
+            fieldkind_of(f)->write(f, b->cat, w, iso);
+        }
+    }
+    return true;
 }
 
 void browser_cancel(browser *b)
@@ -422,9 +497,12 @@ bool browser_save(browser *b, char *err, size_t err_size)
     if (!browser_reload(b, err, err_size)) return false;
 
     /* Auf den gerade gespeicherten Datensatz stellen - der Nutzer soll sehen,
-     * wo das gelandet ist, was er geschrieben hat. */
+     * wo das gelandet ist, was er geschrieben hat.
+     *
+     * Über browser_select() und nicht über die Liste: im Kalender gibt es
+     * keine, und dort heißt „dorthin stellen", den Tag aufzuschlagen. */
     for (int i = 0; i < b->count; i++)
-        if (strcmp(b->ids[i], id) == 0) { list_select(b->list, i); break; }
+        if (strcmp(b->ids[i], id) == 0) { browser_select(b, i); break; }
 
     return true;
 }
@@ -439,15 +517,17 @@ bool browser_delete_selected(browser *b, char *err, size_t err_size)
 
     char keep[RECORD_ID_LEN + 1];
     snprintf(keep, sizeof keep, "%s", id);
-    int was = list_selected(b->list);
+    int was = browser_selected(b);
 
     if (!vault_delete(b->v, b->s->folder, keep, err, err_size)) return false;
     if (!browser_reload(b, err, err_size)) return false;
 
     /* Die Auswahl dort lassen, wo sie war, statt an den Anfang zu springen -
      * wer drei Einträge hintereinander löscht, will nicht jedes Mal wieder
-     * nach unten scrollen. */
-    if (b->count > 0) list_select(b->list, was < b->count ? was : b->count - 1);
+     * nach unten scrollen. Im Kalender bleibt der Tag ohnehin stehen; dort
+     * tut dieser Aufruf nichts, und das ist richtig so. */
+    if (b->list && b->count > 0)
+        list_select(b->list, was < b->count ? was : b->count - 1);
     return true;
 }
 
@@ -462,18 +542,25 @@ widget *browser_form_widget(const browser *b, const char *field)
 
 /* --- Oberfläche ------------------------------------------------------------------ */
 
+/* Das Widget der Übersicht - Liste oder Raster. Ab hier interessiert der
+ * Unterschied nicht mehr. */
+static widget *overview(const browser *b)
+{
+    return b->list ? b->list : b->month;
+}
+
 void browser_layout(browser *b, rect area)
 {
     b->area = area;
 
     if (b->view == BROWSE_FORM && b->form) panel_layout(b->form, area);
-    else                                   b->list->frame = area;
+    else                                   overview(b)->frame = area;
 }
 
 void browser_draw(const browser *b, gc *g)
 {
     if (b->view == BROWSE_FORM && b->form) panel_draw(b->form, g);
-    else                                   widget_draw(b->list, g);
+    else                                   widget_draw(overview(b), g);
 }
 
 bool browser_event(browser *b, const event *e)
@@ -481,13 +568,21 @@ bool browser_event(browser *b, const event *e)
     if (b->view == BROWSE_FORM && b->form)
         return panel_event(b->form, e, NULL);
 
-    /* Die Liste bekommt den Fokus fest: es gibt in dieser Ansicht nichts
+    widget *w = overview(b);
+
+    /* Die Übersicht bekommt den Fokus fest: es gibt in dieser Ansicht nichts
      * anderes, was ihn haben könnte. */
-    b->list->focused = true;
-    return widget_event(b->list, e);
+    w->focused = true;
+    bool used = widget_event(w, e);
+
+    /* Ein Ereignis kann den Monat gewechselt haben, und das Raster hat seine
+     * Markierungen dabei vergessen. Sie stehen in den geladenen Datensätzen,
+     * lassen sich also wieder eintragen, ohne den Vault zu fragen. */
+    if (used) refresh_marks(b);
+    return used;
 }
 
 bool browser_was_opened(browser *b)
 {
-    return list_was_opened(b->list);
+    return b->list ? list_was_opened(b->list) : monthview_was_opened(b->month);
 }

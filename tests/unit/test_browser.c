@@ -16,7 +16,9 @@
 
 #include "app/browser.h"
 #include "app/fieldkind.h"
+#include "app/monthview.h"
 #include "app/schema.h"
+#include "core/date.h"
 #include "core/collate.h"
 #include "core/i18n.h"
 #include "gfx/bitmap.h"
@@ -680,6 +682,323 @@ TEST(empty_fields_are_not_written_at_all)
     teardown();
 }
 
+/* --- Der Kalender als dritte Ansicht ------------------------------------------
+ *
+ * Dieselbe Anwendung, dieselben Aufrufe - nur dass die Übersicht ein
+ * Monatsraster ist statt einer Liste. Was das Schema sagt, baut der Browser;
+ * von außen sieht man den Unterschied nur, wenn man ihn sucht.
+ */
+
+static const char *const EVENTS[] = {
+    "---\nid: 20260601T090000-0001\ntitle: Zahnarzt\ndate: 2026-03-05\ntime: 09:00\n---\nPflichttermin.\n",
+    "---\nid: 20260602T090000-0001\ntitle: Konzert\ndate: 2026-03-17\ntime: 20:00\n---\nMit Karten.\n",
+    "---\nid: 20260603T090000-0001\ntitle: Probe\ndate: 2026-03-17\ntime: 18:00\n---\nVorher.\n",
+    "---\nid: 20260604T090000-0001\ntitle: Urlaub\ndate: 2026-04-02\n---\nAnderer Monat.\n",
+};
+
+static date D(int y, int m, int d)
+{
+    date x = { y, m, d };
+    return x;
+}
+
+TEST(a_schema_can_ask_for_a_calendar_instead_of_a_list)
+{
+    REQUIRE(setup());
+
+    schema ev;
+    REQUIRE(load_schema(&ev, "event"));
+    CHECK_EQ(ev.view, VIEW_MONTH);
+    CHECK_STR(ev.view_field, "date");
+
+    vault *v = fresh_vault(ev.folder, EVENTS, 4);
+    REQUIRE(v != NULL);
+
+    browser *b = open_browser(&ev, v);
+    REQUIRE(b != NULL);
+
+    /* Die eine sichtbare Folge: es gibt ein Raster und keine Liste. */
+    CHECK(browser_month(b) != NULL);
+    CHECK(browser_list(b) == NULL);
+
+    /* Alles andere ist dasselbe wie überall - geladen wird die ganze
+     * Sammlung, auch was in anderen Monaten liegt. */
+    CHECK_EQ(browser_count(b), 4);
+
+    browser_destroy(b);
+    drop_vault(v);
+    teardown();
+}
+
+TEST(the_calendar_marks_the_days_that_have_something)
+{
+    REQUIRE(setup());
+
+    schema ev;
+    REQUIRE(load_schema(&ev, "event"));
+    vault *v = fresh_vault(ev.folder, EVENTS, 4);
+    REQUIRE(v != NULL);
+
+    browser *b = open_browser(&ev, v);
+    REQUIRE(b != NULL);
+
+    widget *cal = browser_month(b);
+    REQUIRE(cal != NULL);
+    CHECK(monthview_select(cal, D(2026, 3, 1)));
+
+    /* Nach dem Blättern vergisst das Raster seine Markierungen - der Browser
+     * trägt sie neu ein, ohne den Vault noch einmal zu fragen. */
+    char err[256] = "";
+    CHECK(browser_reload(b, err, sizeof err));
+
+    CHECK(monthview_is_marked(cal, 5));
+    CHECK(monthview_is_marked(cal, 17));
+    CHECK(!monthview_is_marked(cal, 6));
+    CHECK(!monthview_is_marked(cal, 2));    /* der 2. April, anderer Monat */
+
+    browser_destroy(b);
+    drop_vault(v);
+    teardown();
+}
+
+TEST(the_selected_day_decides_which_record_is_selected)
+{
+    REQUIRE(setup());
+
+    schema ev;
+    REQUIRE(load_schema(&ev, "event"));
+    vault *v = fresh_vault(ev.folder, EVENTS, 4);
+    REQUIRE(v != NULL);
+
+    browser *b = open_browser(&ev, v);
+    REQUIRE(b != NULL);
+
+    widget *cal = browser_month(b);
+    REQUIRE(cal != NULL);
+
+    CHECK(monthview_select(cal, D(2026, 3, 5)));
+    const char *id = browser_selected_id(b);
+    REQUIRE(id != NULL);
+    CHECK_STR(id, "20260601T090000-0001");
+
+    /* Ein Tag ohne Termin: nichts ausgewählt. Im Kalender ist das ein
+     * gewöhnlicher Zustand und kein Fehler. */
+    CHECK(monthview_select(cal, D(2026, 3, 6)));
+    CHECK(browser_selected_id(b) == NULL);
+    CHECK_EQ(browser_selected(b), -1);
+
+    /* Liegen mehrere an einem Tag, ist es der erste in der Sortierung des
+     * Schemas - hier nach Datum, und bei gleichem Datum nach Kennung. */
+    CHECK(monthview_select(cal, D(2026, 3, 17)));
+    CHECK_STR(browser_selected_id(b), "20260602T090000-0001");
+
+    browser_destroy(b);
+    drop_vault(v);
+    teardown();
+}
+
+TEST(opening_a_day_opens_its_record)
+{
+    REQUIRE(setup());
+
+    schema ev;
+    REQUIRE(load_schema(&ev, "event"));
+    vault *v = fresh_vault(ev.folder, EVENTS, 4);
+    REQUIRE(v != NULL);
+
+    browser *b = open_browser(&ev, v);
+    REQUIRE(b != NULL);
+
+    widget *cal = browser_month(b);
+    CHECK(monthview_select(cal, D(2026, 3, 5)));
+
+    char err[256] = "";
+    CHECK(browser_open_selected(b, err, sizeof err));
+    CHECK_EQ(browser_view_of(b), BROWSE_FORM);
+
+    widget *title = browser_form_widget(b, "title");
+    REQUIRE(title != NULL);
+    CHECK_STR(text_widget_value(title), "Zahnarzt");
+
+    /* Das Datum steht im Formular in der Anzeigeform. */
+    widget *dt = browser_form_widget(b, "date");
+    REQUIRE(dt != NULL);
+    CHECK_STR(text_widget_value(dt), "05.03.2026");
+
+    browser_cancel(b);
+    CHECK_EQ(browser_view_of(b), BROWSE_LIST);
+
+    browser_destroy(b);
+    drop_vault(v);
+    teardown();
+}
+
+TEST(a_new_appointment_gets_the_day_that_was_clicked)
+{
+    /* Den Nutzer nach etwas zu fragen, das er gerade angeklickt hat, wäre die
+     * Art von Kleinigkeit, an der man merkt, dass niemand das Programm
+     * benutzt hat. */
+    REQUIRE(setup());
+
+    schema ev;
+    REQUIRE(load_schema(&ev, "event"));
+    vault *v = fresh_vault(ev.folder, EVENTS, 4);
+    REQUIRE(v != NULL);
+
+    browser *b = open_browser(&ev, v);
+    REQUIRE(b != NULL);
+
+    widget *cal = browser_month(b);
+    CHECK(monthview_select(cal, D(2026, 3, 24)));
+
+    char err[256] = "";
+    CHECK(browser_new(b, err, sizeof err));
+
+    widget *dt = browser_form_widget(b, "date");
+    REQUIRE(dt != NULL);
+    CHECK_STR(text_widget_value(dt), "24.03.2026");
+
+    /* Und gespeichert liegt er auch dort. */
+    const schema_field *tf = schema_field_by_name(&ev, "title");
+    REQUIRE(tf != NULL);
+    fieldkind_of(tf)->write(tf, g_cat, browser_form_widget(b, "title"), "Neuer Termin");
+
+    CHECK(browser_save(b, err, sizeof err));
+    CHECK_EQ(browser_count(b), 5);
+
+    CHECK(monthview_select(browser_month(b), D(2026, 3, 24)));
+    CHECK(browser_reload(b, err, sizeof err));
+    CHECK(monthview_is_marked(browser_month(b), 24));
+
+    record *saved = vault_load(v, ev.folder, browser_selected_id(b), err, sizeof err);
+    REQUIRE(saved != NULL);
+    CHECK_STR(frontmatter_get(record_fields(saved), "date"), "2026-03-24");
+    record_free(saved);
+
+    browser_destroy(b);
+    drop_vault(v);
+    teardown();
+}
+
+TEST(deleting_takes_the_mark_away)
+{
+    /* Die Markierungen werden bei jedem Neuladen frisch gesetzt. Würden sie
+     * nur ergänzt, bliebe der Strich an einem Tag stehen, an dem längst nichts
+     * mehr ist - und im Kalender sieht man das erst, wenn man draufklickt. */
+    REQUIRE(setup());
+
+    schema ev;
+    REQUIRE(load_schema(&ev, "event"));
+    vault *v = fresh_vault(ev.folder, EVENTS, 4);
+    REQUIRE(v != NULL);
+
+    browser *b = open_browser(&ev, v);
+    REQUIRE(b != NULL);
+
+    widget *cal = browser_month(b);
+    char    err[256] = "";
+    CHECK(monthview_select(cal, D(2026, 3, 5)));
+    CHECK(browser_reload(b, err, sizeof err));
+    CHECK(monthview_is_marked(cal, 5));
+
+    CHECK(browser_delete_selected(b, err, sizeof err));
+    CHECK_EQ(browser_count(b), 3);
+    CHECK(!monthview_is_marked(cal, 5));
+    CHECK(monthview_is_marked(cal, 17));      /* der andere Tag bleibt */
+
+    /* Und ohne Auswahl gibt es nichts zu löschen. Der 6. März ist leer. */
+    CHECK(monthview_select(cal, D(2026, 3, 6)));
+    CHECK(!browser_delete_selected(b, err, sizeof err));
+    CHECK_EQ(browser_count(b), 3);
+
+    browser_destroy(b);
+    drop_vault(v);
+    teardown();
+}
+
+TEST(the_calendar_reads_the_field_the_schema_names)
+{
+    /* Sortierfeld und Kalenderfeld sind zwei verschiedene Dinge. Im
+     * mitgelieferten Terminschema heißen sie zufällig gleich - hier nicht,
+     * und genau daran zeigt sich, ob der Kalender das richtige liest. */
+    REQUIRE(setup());
+
+    const char *path = "/tmp/pda_browser_zweifeld.schema";
+    FILE       *fp   = fopen(path, "wb");
+    REQUIRE(fp != NULL);
+    fputs("type e\nfolder Termine\nlabel app.events\n"
+          "view month starts\nsort title asc\n"
+          "columns title starts\nform title starts\n"
+          "field title\n    kind text\n    label field.title\n"
+          "field starts\n    kind date\n    label field.date\n", fp);
+    fclose(fp);
+
+    schema s;
+    char   err[256] = "";
+    REQUIRE(schema_load(&s, path, err, sizeof err));
+    CHECK_STR(s.view_field, "starts");
+    CHECK_STR(s.sort, "title");
+
+    static const char *const two[] = {
+        "---\nid: 20260701T090000-0001\ntitle: Zweiter\nstarts: 2026-03-09\n---\n",
+        "---\nid: 20260702T090000-0001\ntitle: Erster\nstarts: 2026-03-11\n---\n",
+    };
+    vault *v = fresh_vault(s.folder, two, 2);
+    REQUIRE(v != NULL);
+
+    browser *b = open_browser(&s, v);
+    REQUIRE(b != NULL);
+
+    widget *cal = browser_month(b);
+    REQUIRE(cal != NULL);
+    CHECK(monthview_select(cal, D(2026, 3, 1)));
+    CHECK(browser_reload(b, err, sizeof err));
+
+    CHECK(monthview_is_marked(cal, 9));
+    CHECK(monthview_is_marked(cal, 11));
+
+    /* Und sortiert wird nach dem Titel, nicht nach dem Tag. */
+    CHECK(strstr(browser_row_text(b, 0), "Erster") != NULL);
+
+    browser_destroy(b);
+    drop_vault(v);
+    teardown();
+}
+
+TEST(paging_the_calendar_moves_the_marks_along)
+{
+    REQUIRE(setup());
+
+    schema ev;
+    REQUIRE(load_schema(&ev, "event"));
+    vault *v = fresh_vault(ev.folder, EVENTS, 4);
+    REQUIRE(v != NULL);
+
+    browser *b = open_browser(&ev, v);
+    REQUIRE(b != NULL);
+
+    widget *cal = browser_month(b);
+    char    err[256] = "";
+    CHECK(monthview_select(cal, D(2026, 3, 1)));
+    CHECK(browser_reload(b, err, sizeof err));
+    CHECK(monthview_is_marked(cal, 5));
+
+    /* Einen Monat weiter - über ein Ereignis, so wie ein Nutzer es täte. Der
+     * Browser muss die Markierungen des neuen Monats nachtragen, ohne dass
+     * jemand browser_reload aufruft. */
+    cal->focused = true;
+    event pg = { .kind = EV_KEY_DOWN, .key = KEY_PAGE_DOWN };
+    CHECK(browser_event(b, &pg));
+
+    CHECK_EQ(monthview_month(cal).month, 4);
+    CHECK(monthview_is_marked(cal, 2));      /* der Urlaub am 2. April */
+    CHECK(!monthview_is_marked(cal, 5));     /* der Zahnarzt war im März */
+
+    browser_destroy(b);
+    drop_vault(v);
+    teardown();
+}
+
 /* --- Aussehen ---------------------------------------------------------------------- */
 
 TEST(two_applications_from_two_files)
@@ -744,6 +1063,15 @@ int main(void)
     RUN(an_input_that_does_not_fit_its_kind_is_refused);
     RUN(a_newline_smuggled_into_a_scalar_is_refused);
     RUN(empty_fields_are_not_written_at_all);
+
+    RUN(a_schema_can_ask_for_a_calendar_instead_of_a_list);
+    RUN(the_calendar_marks_the_days_that_have_something);
+    RUN(the_selected_day_decides_which_record_is_selected);
+    RUN(opening_a_day_opens_its_record);
+    RUN(a_new_appointment_gets_the_day_that_was_clicked);
+    RUN(deleting_takes_the_mark_away);
+    RUN(the_calendar_reads_the_field_the_schema_names);
+    RUN(paging_the_calendar_moves_the_marks_along);
 
     RUN(two_applications_from_two_files);
 

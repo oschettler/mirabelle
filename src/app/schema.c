@@ -155,6 +155,28 @@ static bool top_level(schema *s, const char *key, char *rest,
         return true;
     }
 
+    if (strcmp(key, "view") == 0) {
+        if (!next_word(&rest, &word))
+            return fail(err, err_size, path, line, "view: der Wert fehlt");
+
+        if (strcmp(word, "list") == 0) {
+            s->view = VIEW_LIST;
+            return true;
+        }
+        if (strcmp(word, "month") == 0) {
+            s->view = VIEW_MONTH;
+
+            char *field;
+            if (!next_word(&rest, &field))
+                return fail(err, err_size, path, line,
+                            "view month: das Datumsfeld fehlt");
+            return copy_word(s->view_field, SCHEMA_NAME_MAX, field,
+                             err, err_size, path, line, "view month");
+        }
+        return fail(err, err_size, path, line,
+                    "unbekannte Ansicht „%s“ (list oder month)", word);
+    }
+
     if (strcmp(key, "columns") == 0)
         return read_name_list(s->columns, SCHEMA_COLUMNS_MAX, &s->column_count,
                               rest, err, err_size, path, line, "columns");
@@ -247,6 +269,18 @@ static bool check_whole(const schema *s, char *err, size_t err_size, const char 
             return fail(err, err_size, path, 0,
                         "form nennt „%s“, aber es gibt kein solches Feld",
                         s->form[i]);
+
+    if (s->view == VIEW_MONTH) {
+        const schema_field *f = schema_field_by_name(s, s->view_field);
+        if (!f)
+            return fail(err, err_size, path, 0,
+                        "view month nennt „%s“, aber es gibt kein solches Feld",
+                        s->view_field);
+        if (f->kind != FIELD_DATE)
+            return fail(err, err_size, path, 0,
+                        "view month braucht ein Feld vom Typ date; „%s“ ist %s",
+                        s->view_field, schema_kind_name(f->kind));
+    }
 
     if (s->sort[0] && !schema_field_by_name(s, s->sort))
         return fail(err, err_size, path, 0,

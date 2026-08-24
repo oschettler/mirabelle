@@ -21,20 +21,20 @@ Fahrplan in [ROADMAP.md](ROADMAP.md).
 | M9 | Gemtext, Front Matter, Datensätze, Vault |
 | M10 | Sortierung, Abfragen, SQLite-Index mit FTS5 |
 | M11 | Schemata, Feldtyp-Registratur, generischer Browser |
+| M12 | Datumsrechnung, Monatsansicht, Ansichtsregistratur |
 
 Dazu: Handbuch (14 Kapitel, baut zu PDF/EPUB/HTML), Maße nach
 `docs/ui-style-guide.md`.
 
 ## Was als Nächstes dran ist
 
-**M12 - Kalender: wo Generik aufhört.** Monats- und Wochenansicht als eigene
-Ansicht in derselben Registratur. Der Kalender bleibt eine Schemadatei *plus*
-eine Ansicht - generisch bis zu dem Punkt, an dem die Konfiguration
-komplizierter würde als der Sonderfall.
+**M13 - Lua-Anbindung.** Lua 5.4 einbetten, die API aus DESIGN.md Abschnitt 11
+exportieren, und einen zweiten Schemalader schreiben, der eine Lua-Tabelle in
+dieselbe `schema`-Struktur füllt (D-15). Zum Schluss eine reine Lua-Anwendung
+als Beweis.
 
-Danach M13: Lua 5.4 einbetten, die API aus DESIGN.md Abschnitt 11 exportieren,
-und einen zweiten Schemalader schreiben, der eine Lua-Tabelle in dieselbe
-`schema`-Struktur füllt (D-15).
+Danach ist Teil V abgeschlossen; es folgen M14 bis M17 (Härten und Portieren)
+und die Überarbeitung des Handbuchs.
 
 ## Offene Punkte
 

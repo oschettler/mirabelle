@@ -1,0 +1,34 @@
+# Termine. Dieselbe Anwendung wie Aufgaben und Kontakte - mit einer Ausnahme:
+# die Übersicht ist ein Monatsraster und keine Liste.
+#
+# Das ist die Stelle, an der die Generik aufhört. Ein Monatsraster in
+# Konfiguration zu fassen wäre komplizierter als der Sonderfall; deshalb gibt
+# es eine Ansicht dafür, und das Schema sagt nur, welche es will und welches
+# Feld den Tag trägt.
+
+type     event
+folder   Termine
+label    app.events
+
+view     month date
+sort     date asc
+columns  date title
+form     title date time body
+
+field title
+    kind      text
+    label     field.title
+    required  yes
+
+field date
+    kind      date
+    label     field.date
+    required  yes
+
+field time
+    kind   text
+    label  field.time
+
+field body
+    kind   gemtext
+    label  field.notes

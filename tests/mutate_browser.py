@@ -3,7 +3,8 @@ Der Sollbildtest bleibt aussen vor - er braucht das Bausystem."""
 import subprocess, pathlib, tempfile, os
 
 SRC  = pathlib.Path("src/app/browser.c")
-DEPS = ["src/app/schema.c", "src/app/fieldkind.c",
+DEPS = ["src/app/schema.c", "src/app/fieldkind.c", "src/app/monthview.c",
+        "src/core/date.c",
         "src/core/i18n.c", "src/core/utf8.c", "src/core/keymap.c",
         "src/core/collate.c",
         "src/store/record.c", "src/store/frontmatter.c", "src/store/gemtext.c",
@@ -37,14 +38,23 @@ MUTS = [
  ("Zeilenumbruch im Skalar erlaubt",        "        if (strchr(value, '\\n')) {", "        if (false) {"),
  ("leere Felder werden geschrieben",        "        if (!value[0]) continue;      /* leere Felder gar nicht erst schreiben */", "        (void)0;"),
  ("Formular bleibt nach Speichern offen",   "    form_close(b);\n    b->view = BROWSE_LIST;\n\n    if (!browser_reload(b, err, err_size)) return false;", "    if (!browser_reload(b, err, err_size)) return false;"),
- ("nach Speichern keine Neuwahl",           "        if (strcmp(b->ids[i], id) == 0) { list_select(b->list, i); break; }", "        if (false) { list_select(b->list, i); break; }"),
- ("Loeschen ohne Auswahl erlaubt",          "    const char *id = browser_selected_id(b);\n    if (!id) {\n        if (err && err_size) snprintf(err, err_size, \"nichts ausgewählt\");\n        return false;\n    }\n\n    char keep[RECORD_ID_LEN + 1];", "    const char *id = browser_selected_id(b);\n    if (!id) return true;\n\n    char keep[RECORD_ID_LEN + 1];"),
+ ("nach Speichern keine Neuwahl",           "        if (strcmp(b->ids[i], id) == 0) { browser_select(b, i); break; }", "        if (false) { browser_select(b, i); break; }"),
+ ("Loeschen ohne Auswahl erlaubt",          "        if (err && err_size) snprintf(err, err_size, \"nichts ausgewählt\");\n        return false;\n    }\n\n    char keep", "        if (err && err_size) snprintf(err, err_size, \"nichts ausgewählt\");\n        return true;\n    }\n\n    char keep"),
  ("Oeffnen ohne Auswahl erlaubt",           "    const char *id = browser_selected_id(b);\n    if (!id) {\n        if (err && err_size) snprintf(err, err_size, \"nichts ausgewählt\");\n        return false;\n    }\n\n    record *rec", "    const char *id = browser_selected_id(b);\n    if (!id) return true;\n\n    record *rec"),
  ("Formular zeigt nicht die Schemafelder",  "    for (int i = 0; i < b->s->form_count; i++) {\n        const schema_field *f = schema_field_by_name(b->s, b->s->form[i]);", "    for (int i = 0; i < 1; i++) {\n        const schema_field *f = schema_field_by_name(b->s, b->s->form[i]);"),
  ("Formular wird nicht gefuellt",           "        if (rec) ops->write(f, b->cat, w, field_value(f, rec));", "        (void)rec;"),
  ("Ansicht wechselt nicht",                 "    b->view = BROWSE_FORM;", "    (void)0;"),
  ("Abbrechen bleibt im Formular",           "    form_close(b);\n    b->view = BROWSE_LIST;\n}", "    form_close(b);\n}"),
  ("Feldzugriff im Formular ohne Namen",     "        if (strcmp(b->s->form[i], field) == 0) return b->widgets[i];", "        if (i == 0) return b->widgets[i];"),
+
+ ("Ansicht kommt nicht aus dem Schema",     "    if (s->view == VIEW_MONTH) {", "    if (false) {"),
+ ("Marken werden nicht eingetragen",        "        if (b->has_day[i]) monthview_mark(b->month, b->days[i]);", "        (void)i;"),
+ ("Marken werden nicht geraeumt",           "    monthview_clear_marks(b->month);\n    for (int i = 0", "    for (int i = 0"),
+ ("Marken nach einem Ereignis veraltet",    "    if (used) refresh_marks(b);", "    (void)0;"),
+ ("Tag wird nicht gelesen",                 "        b->has_day[i] = daysrc &&\n                        date_from_iso(field_value(daysrc, keep[i].rec), &b->days[i]);", "        b->has_day[i] = false;"),
+ ("Datumsfeld kommt nicht aus dem Schema",  "                               ? schema_field_by_name(b->s, b->s->view_field)", "                               ? schema_field_by_name(b->s, b->s->sort)"),
+ ("Auswahl im Raster ohne Tagesvergleich",  "        if (b->has_day[i] && date_compare(b->days[i], sel) == 0) return i;", "        if (b->has_day[i]) return i;"),
+ ("neuer Termin ohne Tag",                  "            fieldkind_of(f)->write(f, b->cat, w, iso);", "            (void)iso;"),
 ]
 
 def run(text):
