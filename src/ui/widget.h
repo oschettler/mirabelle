@@ -106,8 +106,8 @@ void    checkbox_set_value(widget *w, bool value);
  * dem Speicher und liegen dort ohnehin.
  *
  * Gescrollt wird zeilenweise, und die Liste sorgt selbst dafür, dass die
- * Auswahl sichtbar bleibt. Ein Rollbalken kommt später; bis dahin genügt das
- * Mausrad und die Tastatur. */
+ * Auswahl sichtbar bleibt. Bedient wird sie mit Tastatur und Mausrad; wer
+ * einen Rollbalken daneben will, hängt ihn an list_scroll(). */
 widget *list_create(const theme *th, const catalog *cat);
 
 /* keys sind Katalogschlüssel, count ihre Anzahl. Setzt die Auswahl auf den
@@ -123,8 +123,17 @@ void list_select(widget *w, int index);     /* außerhalb: bleibt, wie es war */
  * je Ereignis abfragen, wie bei button_was_pressed. */
 bool list_was_opened(widget *w);
 
-/* Erster sichtbarer Eintrag; für Tests und einen späteren Rollbalken. */
+/* Erster sichtbarer Eintrag. */
 int list_top(const widget *w);
+
+/* Das Bildlaufmodell der Liste, für einen Rollbalken daneben:
+ *
+ *     widget *bar = scrollbar_create(th, cat, SCROLLBAR_VERTICAL,
+ *                                    list_scroll(lst));
+ *
+ * Es gehört der Liste und lebt genauso lange wie sie. Umfang und Seitengröße
+ * zieht die Liste selbst nach - der Balken zeigt, was sie zuletzt wusste. */
+scrollmodel *list_scroll(widget *w);
 
 /* --- Rollbalken -----------------------------------------------------------
  *
@@ -186,8 +195,15 @@ bool        text_widget_set_value(widget *w, const char *utf8);
  * setzen. Gehört dem Widget. */
 textbuf *text_widget_buf(widget *w);
 
-/* Erste sichtbare Anzeigezeile im mehrzeiligen Feld; für Tests und einen
- * späteren Rollbalken. Beim einzeiligen immer 0. */
+/* Erste sichtbare Anzeigezeile im mehrzeiligen Feld. Beim einzeiligen immer 0. */
 int text_widget_top_line(const widget *w);
+
+/* Das Bildlaufmodell des mehrzeiligen Felds, für einen Rollbalken daneben -
+ * wie list_scroll(). Gezählt wird in Anzeigezeilen, also nach dem Umbruch:
+ * ein Feld schmaler zu ziehen macht mehr Zeilen daraus, und der Balken folgt.
+ *
+ * NULL beim einzeiligen Feld. Das scrollt waagerecht mit der Schreibmarke und
+ * hat nichts, was ein Balken anzeigen könnte. */
+scrollmodel *text_widget_scroll(widget *w);
 
 #endif /* PDA_UI_WIDGET_H */

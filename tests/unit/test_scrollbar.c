@@ -16,11 +16,15 @@
 #include "core/i18n.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
+#include "gfx/font.h"
+#include "gfx/pattern.h"
 #include "plat/plat.h"
 #include "support/golden.h"
 #include "ui/scroll.h"
 #include "ui/theme.h"
 #include "ui/widget.h"
+
+extern const font system12;
 
 #ifndef PDA_DATA_DIR
 #define PDA_DATA_DIR "data"
@@ -43,6 +47,16 @@ static const theme *load_test_theme(void)
     }
     loaded = true;
     return &g_theme;
+}
+
+static catalog *load_test_catalog(void)
+{
+    char path[512], err[256] = "";
+    snprintf(path, sizeof path, "%s/lang/de.strings", PDA_DATA_DIR);
+
+    catalog *c = i18n_load(path, err, sizeof err);
+    if (!c) printf("  Katalog nicht ladbar: %s\n", err);
+    return c;
 }
 
 /* Ein senkrechter Balken über einem Modell, das der Aufrufer hält. Der Rahmen
@@ -353,6 +367,276 @@ TEST(a_bar_too_short_for_a_trough_is_safe)
     widget_destroy(w);
 }
 
+/* --- Zusammenspiel mit einer Liste --------------------------------------------
+ *
+ * Der Balken hängt am Modell der Liste. Zu prüfen ist deshalb nur eines: dass
+ * es wirklich dasselbe Modell ist und nicht zwei, die abgeglichen werden
+ * müssten. Beide Richtungen zählen - die Liste bewegt den Balken, und der
+ * Balken bewegt die Liste.
+ */
+
+static const char *const items[] = {
+    "ok", "cancel", "save", "open", "close", "quit",
+    "cut", "copy", "paste", "undo", "redo", "new"
+};
+
+TEST(a_list_and_its_bar_share_one_position)
+{
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *lst = list_create(load_test_theme(), cat);
+    REQUIRE(lst != NULL);
+    list_set_items(lst, items, 12);
+    lst->frame = rect_make(0, 0, 120, 4 * g_theme.menu_item_h);   /* vier Zeilen */
+
+    widget *bar = scrollbar_create(load_test_theme(), cat, SCROLLBAR_VERTICAL,
+                                   list_scroll(lst));
+    REQUIRE(bar != NULL);
+    bar->frame = rect_make(120, 0, 16, 4 * g_theme.menu_item_h);
+
+    /* Die Liste kennt jetzt zwölf Einträge und zeigt vier davon. */
+    scrollmodel *m = scrollbar_model(bar);
+    CHECK_EQ(m->total, 12);
+    CHECK_EQ(m->page, 4);
+
+    /* Mit der Tastatur ans Ende: der Balken folgt, ohne dass jemand etwas
+     * abgleicht. */
+    lst->focused = true;
+    CHECK(widget_event(lst, &(event){ .kind = EV_KEY_DOWN, .key = KEY_END }));
+    CHECK_EQ(list_top(lst), 8);
+    CHECK_EQ(m->value, 8);
+
+    /* Und zurück über das Pfeilfeld des Balkens. */
+    event up = click_at(128, 4);
+    CHECK(widget_event(bar, &up));
+    CHECK_EQ(list_top(lst), 7);
+
+    widget_destroy(bar);
+    widget_destroy(lst);
+    i18n_free(cat);
+}
+
+TEST(drawing_the_list_brings_its_model_up_to_date)
+{
+    /* Die Höhe setzt das Layout, und die Liste erfährt sie erst beim
+     * Zeichnen. Ein Balken daneben wird im selben Durchgang gezeichnet und
+     * muss die neue Seitengröße schon sehen - sonst zeigt er beim ersten Bild
+     * nach jeder Größenänderung einen Schieber falscher Länge. */
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *lst = list_create(load_test_theme(), cat);
+    REQUIRE(lst != NULL);
+    list_set_items(lst, items, 12);
+
+    scrollmodel *m = list_scroll(lst);
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 160, 200));
+    gc g;
+    gc_init(&g, &bm);
+
+    lst->frame = rect_make(0, 0, 120, 6 * g_theme.menu_item_h);
+    widget_draw(lst, &g);
+    CHECK_EQ(m->page, 6);
+
+    /* Und noch einmal, ohne dass ein Ereignis dazwischenkommt. */
+    lst->frame = rect_make(0, 0, 120, 3 * g_theme.menu_item_h);
+    widget_draw(lst, &g);
+    CHECK_EQ(m->page, 3);
+
+    bitmap_free(&bm);
+    widget_destroy(lst);
+    i18n_free(cat);
+}
+
+TEST(the_list_brings_its_model_up_to_date_before_an_event)
+{
+    /* Dieselbe Frage von der anderen Seite: ein Rad-Ereignis darf nicht auf
+     * einer veralteten Seitengröße rechnen, sonst scrollt die Liste über ihr
+     * Ende hinaus und zeigt Leerraum. */
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *lst = list_create(load_test_theme(), cat);
+    REQUIRE(lst != NULL);
+    list_set_items(lst, items, 12);
+    lst->frame = rect_make(0, 0, 120, 4 * g_theme.menu_item_h);
+
+    /* Ohne vorher zu zeichnen kräftig nach unten drehen. */
+    CHECK(widget_event(lst, &(event){ .kind = EV_WHEEL, .x = 10, .y = 10, .wheel = -20 }));
+    CHECK_EQ(list_top(lst), 8);      /* 12 Einträge, vier sichtbar */
+
+    widget_destroy(lst);
+    i18n_free(cat);
+}
+
+TEST(an_event_leaves_the_shared_model_consistent)
+{
+    /* Der Balken liest das Modell roh - er kommt nicht über einen Zugriff der
+     * Liste, der es nebenbei nachziehen würde. Was ein Ereignis im Modell
+     * hinterlässt, muss deshalb schon stimmen, nicht erst beim nächsten
+     * Zugriff geradegerückt werden. */
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *lst = list_create(load_test_theme(), cat);
+    REQUIRE(lst != NULL);
+    list_set_items(lst, items, 12);
+    lst->frame = rect_make(0, 0, 120, 4 * g_theme.menu_item_h);
+
+    widget *bar = scrollbar_create(load_test_theme(), cat, SCROLLBAR_VERTICAL,
+                                   list_scroll(lst));
+    REQUIRE(bar != NULL);
+
+    /* Jetzt wird das Fenster höher gezogen - sechs Zeilen statt vier - und
+     * ohne dazwischenliegendes Zeichnen gescrollt. */
+    lst->frame = rect_make(0, 0, 120, 6 * g_theme.menu_item_h);
+    CHECK(widget_event(lst, &(event){ .kind = EV_WHEEL, .x = 10, .y = 10, .wheel = -20 }));
+
+    CHECK_EQ(scrollbar_model(bar)->value, 6);   /* 12 Einträge, sechs sichtbar */
+
+    widget_destroy(bar);
+    widget_destroy(lst);
+    i18n_free(cat);
+}
+
+TEST(refilling_the_list_goes_back_to_the_top)
+{
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *lst = list_create(load_test_theme(), cat);
+    REQUIRE(lst != NULL);
+    lst->frame = rect_make(0, 0, 120, 4 * g_theme.menu_item_h);
+
+    list_set_items(lst, items, 12);
+    CHECK(widget_event(lst, &(event){ .kind = EV_WHEEL, .x = 10, .y = 10, .wheel = -5 }));
+    CHECK(list_top(lst) > 0);
+
+    list_set_items(lst, items, 12);
+    CHECK_EQ(list_top(lst), 0);
+
+    widget_destroy(lst);
+    i18n_free(cat);
+}
+
+TEST(a_single_line_field_has_no_scroll_model)
+{
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *field = text_field_create(load_test_theme(), cat);
+    REQUIRE(field != NULL);
+
+    /* Es scrollt waagerecht und folgt dabei der Schreibmarke - da gibt es
+     * nichts, was ein Balken anzeigen könnte. */
+    CHECK(text_widget_scroll(field) == NULL);
+
+    widget_destroy(field);
+    i18n_free(cat);
+}
+
+TEST(the_wheel_scrolls_a_text_area)
+{
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *area = text_area_create(load_test_theme(), cat);
+    REQUIRE(area != NULL);
+    area->frame = rect_make(0, 0, 200, 4 * system12.size);
+    text_widget_set_value(area, "eins\nzwei\ndrei\nvier\nfuenf\nsechs");
+
+    scrollmodel *m = text_widget_scroll(area);
+    REQUIRE(m != NULL);
+    CHECK_EQ(m->total, 6);
+
+    /* Nach dem Setzen steht die Schreibmarke am Ende, und die Ansicht folgt
+     * ihr - das Feld steht also unten. Von dort mit dem Rad nach oben. */
+    REQUIRE(scroll_max(m) >= 2);
+    int before = m->value;
+
+    CHECK(widget_event(area, &(event){ .kind = EV_WHEEL, .x = 10, .y = 10, .wheel = 2 }));
+    CHECK_EQ(text_widget_top_line(area), before - 2);
+
+    widget_destroy(area);
+    i18n_free(cat);
+}
+
+TEST(a_text_area_notices_a_new_height_alone)
+{
+    /* Wird ein Feld nur niedriger gezogen, bleibt der Zeilenumbruch gültig -
+     * er hängt an der Breite. Die Seitengröße hängt aber an der Höhe, und ein
+     * Balken daneben zeigt sonst einen Schieber falscher Länge. */
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *area = text_area_create(load_test_theme(), cat);
+    REQUIRE(area != NULL);
+    area->frame = rect_make(0, 0, 200, 6 * system12.size);
+    text_widget_set_value(area, "eins\nzwei\ndrei\nvier\nfuenf\nsechs");
+
+    widget *bar = scrollbar_create(load_test_theme(), cat, SCROLLBAR_VERTICAL,
+                                   text_widget_scroll(area));
+    REQUIRE(bar != NULL);
+    int before = scrollbar_model(bar)->page;
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 220, 220));
+    gc g;
+    gc_init(&g, &bm);
+
+    /* Nur die Höhe ändern, die Breite bleibt. */
+    area->frame = rect_make(0, 0, 200, 2 * system12.size);
+    widget_draw(area, &g);
+
+    int raw = scrollbar_model(bar)->page;
+    CHECK(raw != before);                             /* sonst prüft der Test nichts */
+    CHECK_EQ(raw, text_widget_scroll(area)->page);    /* und zwar dasselbe */
+
+    bitmap_free(&bm);
+    widget_destroy(bar);
+    widget_destroy(area);
+    i18n_free(cat);
+}
+
+TEST(the_wheel_leaves_a_single_line_field_alone)
+{
+    /* Das einzeilige Feld scrollt waagerecht und folgt dabei der
+     * Schreibmarke. Ein Rad-Ereignis gehört ihm nicht - es muss zu dem
+     * durchfallen, was darunter liegt. */
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *field = text_field_create(load_test_theme(), cat);
+    REQUIRE(field != NULL);
+    field->frame = rect_make(0, 0, 200, 2 * system12.size);
+
+    CHECK(!widget_event(field, &(event){ .kind = EV_WHEEL, .x = 10, .y = 10, .wheel = 2 }));
+
+    widget_destroy(field);
+    i18n_free(cat);
+}
+
+TEST(the_wheel_outside_a_text_area_is_left_alone)
+{
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    widget *area = text_area_create(load_test_theme(), cat);
+    REQUIRE(area != NULL);
+    area->frame = rect_make(0, 0, 200, 4 * system12.size);
+    text_widget_set_value(area, "eins\nzwei\ndrei\nvier\nfuenf\nsechs");
+
+    int before = text_widget_top_line(area);
+    CHECK(!widget_event(area, &(event){ .kind = EV_WHEEL, .x = 500, .y = 500, .wheel = 2 }));
+    CHECK_EQ(text_widget_top_line(area), before);
+
+    widget_destroy(area);
+    i18n_free(cat);
+}
+
 /* --- Aussehen -------------------------------------------------------------------- */
 
 TEST(a_scrollbar_looks_like_a_scrollbar)
@@ -393,6 +677,45 @@ TEST(a_scrollbar_looks_like_a_scrollbar)
     for (int i = 0; i < 4; i++) widget_destroy(bars[i]);
 }
 
+TEST(a_list_with_a_bar_beside_it)
+{
+    /* So sieht das Ergebnis aus, wenn beide zusammenarbeiten: die Liste zeigt
+     * vier von zwölf Einträgen, der Schieber ist entsprechend ein Drittel der
+     * Rinne lang und steht dort, wo die Liste steht. */
+    catalog *cat = load_test_catalog();
+    REQUIRE(cat != NULL);
+
+    int h = 6 * g_theme.menu_item_h;
+
+    widget *lst = list_create(load_test_theme(), cat);
+    REQUIRE(lst != NULL);
+    list_set_items(lst, items, 12);
+    lst->frame = rect_make(8, 8, 140, h);
+    list_select(lst, 7);
+
+    widget *bar = scrollbar_create(load_test_theme(), cat, SCROLLBAR_VERTICAL,
+                                   list_scroll(lst));
+    REQUIRE(bar != NULL);
+    bar->frame = rect_make(8 + 140 - 1, 8, g_theme.scrollbar_w, h);
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 180, h + 16));
+    gc g;
+    gc_init(&g, &bm);
+    g.pat = PAT_WHITE;
+    gfx_fill_rect(&g, rect_make(0, 0, 180, h + 16));
+
+    widget_draw(lst, &g);
+    widget_draw(bar, &g);
+
+    CHECK(golden_check("list_with_scrollbar", &bm));
+
+    bitmap_free(&bm);
+    widget_destroy(bar);
+    widget_destroy(lst);
+    i18n_free(cat);
+}
+
 int main(void)
 {
     RUN(a_bar_without_a_model_is_refused);
@@ -415,7 +738,19 @@ int main(void)
     RUN(a_bar_with_nothing_to_scroll_swallows_the_click);
     RUN(a_bar_too_short_for_a_trough_is_safe);
 
+    RUN(a_list_and_its_bar_share_one_position);
+    RUN(drawing_the_list_brings_its_model_up_to_date);
+    RUN(the_list_brings_its_model_up_to_date_before_an_event);
+    RUN(an_event_leaves_the_shared_model_consistent);
+    RUN(refilling_the_list_goes_back_to_the_top);
+    RUN(a_single_line_field_has_no_scroll_model);
+    RUN(the_wheel_scrolls_a_text_area);
+    RUN(a_text_area_notices_a_new_height_alone);
+    RUN(the_wheel_leaves_a_single_line_field_alone);
+    RUN(the_wheel_outside_a_text_area_is_left_alone);
+
     RUN(a_scrollbar_looks_like_a_scrollbar);
+    RUN(a_list_with_a_bar_beside_it);
 
     return test_summary();
 }

@@ -22,6 +22,7 @@
 #include "gfx/pattern.h"
 #include "gfx/text.h"
 #include "plat/plat.h"
+#include "ui/scroll.h"
 #include "ui/theme.h"
 
 extern const font system12;
@@ -31,7 +32,7 @@ typedef struct {
     const char *const *keys;      /* gehört dem Aufrufer, wird nicht kopiert */
     int                count;
     int                selected;  /* -1, wenn nichts ausgewählt ist */
-    int                top;       /* erster sichtbarer Eintrag */
+    scrollmodel        sc;        /* value ist der erste sichtbare Eintrag */
     bool               opened;    /* Merkerbit, list_was_opened liest und löscht */
 } list_widget;
 
@@ -48,32 +49,32 @@ static int visible_rows(const widget *w)
     return w->frame.h / w->th->menu_item_h;
 }
 
+/* Bringt das Bildlaufmodell auf den Stand von Inhalt und Rahmen.
+ *
+ * Die Höhe setzt das Layout, nicht die Liste; sie erfährt sie erst, wenn sie
+ * gezeichnet wird oder ein Ereignis bekommt. Deshalb wird hier nachgezogen
+ * statt an einer einzigen Stelle gesetzt - scroll_set() ist genau dafür
+ * gebaut: es klemmt nach und lässt die Position sonst, wo sie ist.
+ *
+ * Das const wegzucasten ist derselbe Handgriff wie in text_area_ensure_wrap():
+ * für den Aufrufer ändert sich nichts Sichtbares, es wird nur nachgerechnet,
+ * was ohnehin aus Rahmen und Inhalt folgt. */
+static void list_sync(const list_widget *lw_const)
+{
+    list_widget *lw = (list_widget *)lw_const;
+    scroll_set(&lw->sc, lw->count, visible_rows(&lw->base));
+}
+
 /* --- Auswahl und Sichtbarkeit ------------------------------------------------
  *
- * Sorgt dafür, dass lw->selected zwischen lw->top und der letzten sichtbaren
- * Zeile liegt. Liegt die Auswahl darüber, rückt top auf sie; liegt sie
- * darunter, rückt top so weit nach, dass sie die letzte sichtbare Zeile ist.
+ * Sorgt dafür, dass die Auswahl im Sichtfenster liegt. Die Rechnung dazu steht
+ * in scroll.h und nicht hier - dieselbe gilt für das mehrzeilige Textfeld.
  */
 static void list_ensure_visible(list_widget *lw)
 {
     if (lw->selected < 0) return;
-    if (lw->selected < lw->top) lw->top = lw->selected;
-
-    int rows = visible_rows(&lw->base);
-    if (rows > 0 && lw->selected >= lw->top + rows)
-        lw->top = lw->selected - rows + 1;
-}
-
-/* Hält top in vernünftigen Grenzen, wenn sich nur die Ansicht verschiebt
- * (Mausrad) und die Auswahl unangetastet bleibt. */
-static void list_clamp_top(list_widget *lw)
-{
-    int rows    = visible_rows(&lw->base);
-    int max_top = lw->count - rows;
-    if (max_top < 0) max_top = 0;
-
-    if (lw->top < 0) lw->top = 0;
-    if (lw->top > max_top) lw->top = max_top;
+    list_sync(lw);
+    scroll_reveal(&lw->sc, lw->selected);
 }
 
 /* Springt zu index, an die Enden geklemmt statt umgebrochen - so bewegen sich
@@ -117,7 +118,7 @@ static bool list_hit(const list_widget *lw, int y, int *out)
     int row  = (y - lw->base.frame.y) / lw->base.th->menu_item_h;
     if (row < 0 || row >= rows) return false;
 
-    int idx = lw->top + row;
+    int idx = lw->sc.value + row;
     if (idx >= lw->count) return false;
 
     *out = idx;
@@ -154,6 +155,10 @@ static void list_draw(const widget *w, gc *g)
     const list_widget *lw = (const list_widget *)w;
     rect                r = w->frame;
 
+    /* Vor dem Zeichnen nachziehen: erst jetzt steht die Höhe fest, und ein
+     * Rollbalken daneben liest gleich darauf dasselbe Modell. */
+    list_sync(lw);
+
     g->pat  = PAT_WHITE;
     g->mode = GFX_COPY;
     gfx_fill_rect(g, r);
@@ -164,7 +169,7 @@ static void list_draw(const widget *w, gc *g)
     int baseline_offset = (w->th->menu_item_h - system12.size) / 2 + system12.ascent;
 
     for (int i = 0; i < rows; i++) {
-        int idx = lw->top + i;
+        int idx = lw->sc.value + i;
         if (idx >= lw->count) break;
 
         rect row = rect_make(r.x, r.y + i * w->th->menu_item_h, r.w, w->th->menu_item_h);
@@ -196,6 +201,8 @@ static bool list_event(widget *w, const event *e)
 {
     list_widget *lw = (list_widget *)w;
 
+    list_sync(lw);
+
     switch (e->kind) {
     case EV_MOUSE_DOWN: {
         if (!rect_contains(w->frame, e->x, e->y)) return false;
@@ -210,8 +217,9 @@ static bool list_event(widget *w, const event *e)
 
     case EV_WHEEL:
         if (!rect_contains(w->frame, e->x, e->y)) return false;
-        lw->top -= e->wheel;
-        list_clamp_top(lw);
+        /* Das Rad rührt die Auswahl nicht an - es verschiebt nur die Sicht.
+         * Deshalb hier scroll_by und nicht list_goto. */
+        scroll_by(&lw->sc, -e->wheel);
         return true;
 
     case EV_KEY_DOWN:
@@ -266,8 +274,12 @@ void list_set_items(widget *w, const char *const *keys, int count)
 
     lw->keys     = keys;
     lw->count    = count;
-    lw->top      = 0;
     lw->selected = count > 0 ? 0 : -1;
+
+    /* Zurück an den Anfang stellt list_ensure_visible: die Auswahl steht auf
+     * dem ersten Eintrag, und sichtbar zu machen heißt hier, ganz nach oben zu
+     * gehen. Es hier noch einmal zu setzen wäre eine zweite Stelle für
+     * dieselbe Entscheidung. */
     list_ensure_visible(lw);
 }
 
@@ -296,5 +308,14 @@ bool list_was_opened(widget *w)
 
 int list_top(const widget *w)
 {
-    return ((const list_widget *)w)->top;
+    const list_widget *lw = (const list_widget *)w;
+    list_sync(lw);
+    return lw->sc.value;
+}
+
+scrollmodel *list_scroll(widget *w)
+{
+    list_widget *lw = (list_widget *)w;
+    list_sync(lw);
+    return &lw->sc;
 }

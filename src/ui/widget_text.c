@@ -56,7 +56,7 @@ typedef struct {
     display_line *lines;
     int            line_count;
     int            line_cap;
-    int            top_line;    /* erste sichtbare Anzeigezeile */
+    scrollmodel    sc;          /* value ist die erste sichtbare Anzeigezeile */
     bool           wrap_valid;
     int            wrap_w;      /* Breite, für die zuletzt umgebrochen wurde */
 } text_widget;
@@ -243,6 +243,14 @@ static void text_area_rebuild_lines(text_widget *tw, int wrap_w)
     if (tw->line_count == 0) push_display_line(tw, 0, 0);
 }
 
+/* Bringt das Bildlaufmodell auf den Stand von Umbruch und Rahmen. Wie
+ * list_sync() in widget_list.c, und aus demselben Grund: die Höhe setzt das
+ * Layout, und die Zahl der Anzeigezeilen folgt aus dem Umbruch. */
+static void text_area_sync_scroll(text_widget *tw)
+{
+    scroll_set(&tw->sc, tw->line_count, text_area_visible_rows(&tw->base));
+}
+
 /* Zieht den Umbruch nach, wenn Text oder Breite sich seit dem letzten Mal
  * geändert haben. tw_const ist bewusst const - siehe Dateikopf. */
 static void text_area_ensure_wrap(const text_widget *tw_const)
@@ -253,15 +261,20 @@ static void text_area_ensure_wrap(const text_widget *tw_const)
     int  w       = content.w;
     if (w < 1) w = 1;
 
-    if (tw->wrap_valid && tw->wrap_w == w) return;
+    /* Auch wenn der Umbruch noch stimmt, wird das Bildlaufmodell nachgezogen:
+     * die Höhe kann sich geändert haben, ohne dass die Breite es tat, und dann
+     * stimmt die Seitengröße nicht mehr. Damit ist diese Funktion die eine
+     * Stelle, die das Modell aktuell hält - jede Aufrufstelle darf sich darauf
+     * verlassen, statt es sicherheitshalber noch einmal zu tun. */
+    if (!tw->wrap_valid || tw->wrap_w != w) {
+        text_area_rebuild_lines(tw, w);
+        tw->wrap_valid = true;
+        tw->wrap_w     = w;
+    }
 
-    text_area_rebuild_lines(tw, w);
-    tw->wrap_valid = true;
-    tw->wrap_w     = w;
-
-    if (tw->top_line >= tw->line_count) tw->top_line = tw->line_count - 1;
-    if (tw->top_line < 0) tw->top_line = 0;
+    text_area_sync_scroll(tw);
 }
+
 
 /* Anzeigezeile, die pos enthält. Setzt einen frischen Umbruch voraus - jede
  * Aufrufstelle ruft vorher text_area_ensure_wrap(). */
@@ -290,13 +303,7 @@ static void text_field_scroll_to_cursor(text_widget *tw)
 static void text_area_scroll_to_cursor(text_widget *tw)
 {
     text_area_ensure_wrap(tw);
-
-    int rows = text_area_visible_rows(&tw->base);
-    int line = text_area_line_at(tw, textbuf_cursor(tw->buf));
-
-    if (line < tw->top_line) tw->top_line = line;
-    if (rows > 0 && line >= tw->top_line + rows) tw->top_line = line - rows + 1;
-    if (tw->top_line < 0) tw->top_line = 0;
+    scroll_reveal(&tw->sc, text_area_line_at(tw, textbuf_cursor(tw->buf)));
 }
 
 /* Nach jeder Bewegung der Schreibmarke gerufen, ob durch Tastatur, Maus oder
@@ -335,7 +342,7 @@ static size_t text_area_pos_at(const text_widget *tw, int x, int y)
     rect content = text_content_rect(&tw->base);
     int  line_h  = system12.size;
     int  row     = line_h > 0 ? (y - content.y) / line_h : 0;
-    int  line    = tw->top_line + row;
+    int  line    = tw->sc.value + row;
     if (line < 0) line = 0;
     if (line >= tw->line_count) line = tw->line_count - 1;
 
@@ -410,7 +417,7 @@ static void text_area_draw_content(const text_widget *tw, gc *g, rect content)
     g->mode = GFX_COPY;
 
     for (int i = 0; i < rows; i++) {
-        int line = tw->top_line + i;
+        int line = tw->sc.value + i;
         if (line >= tw->line_count) break;
 
         const display_line *dl    = &tw->lines[line];
@@ -432,7 +439,7 @@ static void text_area_draw_content(const text_widget *tw, gc *g, rect content)
 
     if (!has_sel && tw->base.focused) {
         int cursor_line = text_area_line_at(tw, textbuf_cursor(tw->buf));
-        int row          = cursor_line - tw->top_line;
+        int row          = cursor_line - tw->sc.value;
         if (row >= 0 && row < rows) {
             const display_line *dl = &tw->lines[cursor_line];
             int cx = content.x + width_of_range(&system12, text, dl->start, textbuf_cursor(tw->buf));
@@ -571,6 +578,17 @@ static bool text_event(widget *w, const event *e)
         tw->dragging = false;
         return was;
     }
+
+    case EV_WHEEL:
+        /* Nur das mehrzeilige Feld. Das einzeilige scrollt waagerecht und
+         * folgt dabei der Schreibmarke - dort hätte das Rad nichts zu
+         * verschieben. */
+        if (!tw->multiline) return false;
+        if (!rect_contains(w->frame, e->x, e->y)) return false;
+
+        text_area_ensure_wrap(tw);
+        scroll_by(&tw->sc, -e->wheel);
+        return true;
 
     case EV_TEXT:
         if (!w->focused) return false;
@@ -725,8 +743,17 @@ textbuf *text_widget_buf(widget *w)
     return ((text_widget *)w)->buf;
 }
 
+scrollmodel *text_widget_scroll(widget *w)
+{
+    text_widget *tw = (text_widget *)w;
+    if (!tw->multiline) return NULL;
+
+    text_area_ensure_wrap(tw);
+    return &tw->sc;
+}
+
 int text_widget_top_line(const widget *w)
 {
     const text_widget *tw = (const text_widget *)w;
-    return tw->multiline ? tw->top_line : 0;
+    return tw->multiline ? tw->sc.value : 0;
 }

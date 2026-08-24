@@ -46,10 +46,11 @@ Danach M11 (generischer Browser), M12 (Kalender), M13 (Lua).
   `0b5b716` einen Entwurf aus einem Guss statt eines Erlebnisberichts; die 14
   vorhandenen Kapitel sind noch im alten Ton geschrieben und werden dabei
   spürbar kürzer.
-- **Rollbalken hängen noch an nichts.** Modell (`ui/scroll.h`) und Widget sind
-  gebaut und geprüft; Liste und mehrzeiliges Textfeld führen aber weiter ihr
-  eigenes `top` statt eines `scrollmodel` und zeigen deshalb keinen Balken.
-  Das ist der nächste Schritt.
+- **Rollbalken stehen**, aber noch kein Fenster stellt einen auf. Modell
+  (`ui/scroll.h`), Widget und die Anbindung von Liste und mehrzeiligem
+  Textfeld sind fertig; wer einen Balken will, hängt ihn an `list_scroll()`
+  beziehungsweise `text_widget_scroll()`. Ein Balken am Fensterrand, wie ihn
+  System 1 hatte, gehört zum Fenster und nicht zum Panel - der kommt mit M11.
 - `radio`, `popup_menu`, `date_field` kommen, wenn eine Anwendung sie braucht.
 
 ## Arbeitsweise, die sich bewährt hat

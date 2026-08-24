@@ -531,6 +531,12 @@ Wenig und ausreichend. Gebaut sind `label`, `button`, `checkbox`, `list`,
 `text_field`, `text_area` und `scrollbar`; `radio`, `popup_menu` und
 `date_field` kommen, wenn eine Anwendung sie braucht.
 
+Liste und mehrzeiliges Textfeld führen ihre Bildlaufposition selbst als
+`scrollmodel`; `list_scroll()` und `text_widget_scroll()` geben es heraus, und
+daran hängt sich ein Balken. Das Textfeld zählt dabei in Anzeigezeilen, also
+nach dem Umbruch - ein Feld schmaler zu ziehen macht mehr Zeilen daraus, und
+der Balken folgt.
+
 Der Rollbalken ist der einzige, der auf fremde Daten zeigt statt sie zu
 kopieren: er hält einen Zeiger auf ein `scrollmodel` (`ui/scroll.h`), das dem
 gehört, was gescrollt wird. Anders ginge es nicht - was der Balken anzeigt und
