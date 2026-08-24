@@ -110,6 +110,13 @@ else()
     message(STATUS "SQLite nicht gefunden - der Index wird nicht gebaut, die Suche läuft ohne ihn")
 endif()
 
+# --- Netz --------------------------------------------------------------------
+# Das Protokoll ist reine Rechnung auf Bytes und braucht nichts als den Kern.
+# Wer die Bytes überträgt, wird übergeben (spartan.h).
+
+add_library(pda_net src/net/spartan.c)
+target_link_libraries(pda_net PUBLIC pda_core)
+
 # --- Oberfläche --------------------------------------------------------------
 
 add_library(pda_ui
@@ -202,7 +209,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query schema fieldkind browser date monthview)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query schema fieldkind browser date monthview spartan)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
@@ -263,6 +270,7 @@ target_link_libraries(test_schema      PRIVATE pda_app)
 target_compile_definitions(test_schema
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
+target_link_libraries(test_spartan     PRIVATE pda_net)
 target_link_libraries(test_query       PRIVATE pda_store)
 target_compile_definitions(test_query
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
