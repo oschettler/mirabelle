@@ -21,6 +21,7 @@
 #include "core/keymap.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
+#include "ui/theme.h"
 #include "app/shell.h"
 #include <lua.h>
 #include <lauxlib.h>
@@ -943,14 +944,25 @@ TEST(the_outliner_reads_the_structure_out_of_gemtext)
  * einem erfundenen Transport.
  */
 
+/* Ein Zustand mit allem, was eine Anwendung sieht. Das Thema muss dabei sein,
+ * bevor Bedienelemente eingerichtet werden - sie halten einen Zeiger darauf. */
 static lua_State *with_net(catalog *cat)
 {
     char       err[512] = "";
     lua_State *L = pdalua_open(cat, err, sizeof err);
     if (!L) return NULL;
 
+    theme th;
+    theme_defaults(&th);
+
+    char path[512];
+    snprintf(path, sizeof path, "%s/themes/desktop.theme", PDA_DATA_DIR);
+    theme_load(&th, path, err, sizeof err);
+
     pdalua_open_apps(L);
     pdalua_open_net(L);
+    pdalua_set_theme(L, &th);
+    pdalua_open_widgets(L);
     return L;
 }
 
@@ -1261,26 +1273,36 @@ TEST(a_long_page_gets_a_working_scrollbar)
 
     /* Erst jetzt steht fest, wie viele Zeilen hineinpassen. */
     CHECK(truth(L, "browser.visible > 3 and browser.visible < 60"));
-    CHECK(truth(L, "browser.bar ~= nil"));
+
+    /* Der Balken ist das echte Widget, kein Nachbau - er zeigt dieselbe
+     * Position wie die Anzeige. */
+    CHECK(truth(L, "browser.scrollbar:value() == browser.top - 1"));
+    CHECK(truth(L, "browser.scrollbar:max() > 0"));
+    CHECK(truth(L, "browser.scrollbar:width() == theme.scrollbar_w"));
 
     CHECK(golden_check("lua_spartan_lang", &bm));
 
-    /* Das untere Pfeilfeld rollt eine Zeile weiter. */
-    CHECK(run(L,
-        "klick = { kind = 'mouse_down',\n"
-        "          x = browser.bar.x + 8,\n"
-        "          y = browser.bar.y + browser.bar.h - 4 }"));
-
-    event down = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1 };
+    /* Das untere Pfeilfeld rollt eine Zeile weiter. Wo es liegt, fragt der
+     * Test den Balken - er rechnet es nicht nach. */
     CHECK(truth(L, "browser.top == 1"));
 
-    /* Der Klickpunkt kommt aus Lua - der Test rechnet die Lage des Balkens
-     * nicht nach, sondern fragt ihn. */
+    event down = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1 };
+    CHECK(run(L,
+        "local x, y, w, h = browser.scrollbar:frame()\n"
+        "klick = { x = x + w // 2, y = y + h - 4 }"));
+
     lua_getglobal(L, "klick");
     lua_getfield(L, -1, "x"); down.x = (int)lua_tointeger(L, -1); lua_pop(L, 1);
     lua_getfield(L, -1, "y"); down.y = (int)lua_tointeger(L, -1); lua_pop(L, 2);
 
     CHECK(sc.event(sc.user, 0, &down));
+    CHECK(truth(L, "browser.top == 2"));
+
+    /* Ein Klick daneben gehört nicht dem Balken: er meldet ihn nicht als
+     * benutzt, sonst käme im Fenster nichts mehr an. */
+    event beside = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1,
+                     .x = 10, .y = down.y };
+    CHECK(!sc.event(sc.user, 0, &beside));
     CHECK(truth(L, "browser.top == 2"));
 
     /* Und das Mausrad ebenso, in Leserichtung. */

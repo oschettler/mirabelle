@@ -7,18 +7,25 @@ LUA_CFLAGS = subprocess.run(["pkg-config","--cflags","--libs","lua5.4"],
 
 DEPS = ["src/app/schema.c", "src/app/fieldkind.c",
         "src/core/i18n.c", "src/core/utf8.c", "src/core/keymap.c",
-        "src/core/collate.c", "src/core/date.c",
+        "src/core/collate.c", "src/core/date.c", "src/core/lines.c",
         "src/store/record.c", "src/store/frontmatter.c", "src/store/gemtext.c",
         "src/store/query.c", "src/store/vault.c",
         "src/plat/plat_headless.c", "src/plat/plat_files_posix.c", "src/plat/expand.c",
+        "src/plat/plat_net_posix.c",
         "src/ui/theme.c", "src/ui/widget.c", "src/ui/widget_list.c",
         "src/ui/widget_text.c", "src/ui/widget_scroll.c", "src/ui/scroll.c",
-        "src/ui/textbuf.c",
+        "src/ui/textbuf.c", "src/ui/window.c", "src/ui/wm.c",
+        "src/ui/menu.c", "src/ui/dialog.c", "src/ui/panel.c",
+        "src/app/shell.c", "src/app/browser.c", "src/app/gemview.c",
+        "src/app/monthview.c",
+        "src/net/spartan.c", "src/net/plat_transport.c",
         "src/gfx/bitmap.c", "src/gfx/pbm.c", "src/gfx/draw.c", "src/gfx/pattern.c",
         "src/gfx/font.c", "src/gfx/text.c", "build/font_system12.c",
         "tests/support/golden.c", "tests/unit/test_lua.c"]
 
-SOURCES = ["src/lua/pdalua.c", "src/lua/pdalua_store.c", "src/lua/pdalua_schema.c"]
+SOURCES = ["src/lua/pdalua.c", "src/lua/pdalua_store.c", "src/lua/pdalua_schema.c",
+           "src/lua/pdalua_apps.c", "src/lua/pdalua_net.c",
+           "src/lua/pdalua_widgets.c"]
 
 MUTS = [
  ("pdalua.c", "gefaehrliche Bibliotheken offen",
@@ -92,6 +99,24 @@ MUTS = [
   '    lua_settop(L, base);\n\n    if (!ok) {', '    if (!ok) {'),
  ("pdalua_schema.c", "Ansicht wird nicht gelesen",
   '    } else if (strcmp(view, "month") == 0) {', '    } else if (false) {'),
+ ("pdalua_widgets.c", "Balken zeichnet nicht",
+  '    if (g) widget_draw(b->w, g);', '    (void)g;'),
+ ("pdalua_widgets.c", "Balken meldet jedes Ereignis als benutzt",
+  '    lua_pushboolean(L, widget_event(b->w, &e));',
+  '    widget_event(b->w, &e);\n    lua_pushboolean(L, 1);'),
+ ("pdalua_widgets.c", "Balken bekommt keine Ereignisse",
+  '    lua_pushboolean(L, widget_event(b->w, &e));', '    lua_pushboolean(L, 0);'),
+ ("pdalua_widgets.c", "Rollposition kommt nicht an",
+  '    scroll_by(&b->model, (int)luaL_checkinteger(L, 2));', '    (void)b;'),
+ ("pdalua_widgets.c", "Umfang wird nicht gesetzt",
+  '    scroll_set(&b->model, (int)luaL_checkinteger(L, 2),\n                          (int)luaL_checkinteger(L, 3));',
+  '    (void)b;'),
+ ("pdalua_widgets.c", "Lage wird nicht gesetzt",
+  '    b->w->frame = rect_make((int)luaL_checkinteger(L, 2),', '    (void)rect_make((int)luaL_checkinteger(L, 2),'),
+ ("pdalua_widgets.c", "Masse des Themas fehlen",
+  '    lua_setglobal(L, "theme");', '    lua_pop(L, 1);'),
+ ("pdalua_widgets.c", "Breite kommt nicht vom Widget",
+  '    widget_measure(b->w, &w, &h);', '    w = 1;'),
 ]
 
 def run(overrides):

@@ -172,6 +172,7 @@ if(TARGET PkgConfig::LUA)
         src/lua/pdalua_schema.c
         src/lua/pdalua_apps.c
         src/lua/pdalua_net.c
+        src/lua/pdalua_widgets.c
     )
     target_link_libraries(pda_lua PUBLIC pda_app pda_gfx pda_net PRIVATE PkgConfig::LUA)
 else()

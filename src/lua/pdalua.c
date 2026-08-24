@@ -46,6 +46,11 @@ static gc *current_gc(lua_State *L)
     return get_ptr(L, KEY_GC);
 }
 
+gc *pdalua_current_gc(lua_State *L)
+{
+    return current_gc(L);
+}
+
 static const catalog *current_catalog(lua_State *L)
 {
     return get_ptr(L, KEY_CAT);

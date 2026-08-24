@@ -17,10 +17,8 @@
 
 local START = "spartan://mozz.us/"
 
--- Breite des Rollbalkens. Im Thema steht dieselbe Zahl (scrollbar_w); Lua
--- kommt an das Thema nicht heran, also steht sie hier noch einmal. Das ist
--- eine bekannte Naht: wer das Thema ändert, ändert sie hier mit.
-local BAR = 16
+-- Die Breite des Rollbalkens kommt aus dem Thema, nicht aus dieser Datei.
+local BAR = theme.scrollbar_w
 
 browser = {
   address  = START,
@@ -33,113 +31,27 @@ browser = {
   history  = {},
 
   visible  = 1,      -- wie viele Zeilen zuletzt ins Fenster passten
-  bar      = nil,    -- Lage des Rollbalkens, beim Zeichnen gesetzt
-  drag     = nil,    -- Abstand des Zeigers zur Schiebervorderkante
 }
 
--- Klemmt den Anfang der Anzeige auf einen gültigen Bereich.
-local function clamp_top()
-  local last = math.max(1, #browser.lines - browser.visible + 1)
-  if browser.top > last then browser.top = last end
-  if browser.top < 1 then browser.top = 1 end
-end
-
--- Lage und Länge des Schiebers in der Rinne.
+-- Der Rollbalken ist das echte Widget aus dem Programm, kein Nachbau.
 --
--- Dieselbe Rechnung wie in ui/scroll.c: die Länge zeigt an, welcher Anteil des
--- Ganzen zu sehen ist, und eine Untergrenze hält ihn greifbar.
-local function thumb(track)
-  local total = #browser.lines
-  if total <= browser.visible then return 0, track end
+-- Ein nachgebautes Bedienelement sieht dem echten nur so lange ähnlich, wie
+-- niemand hinsieht: dem ersten Nachbau hier fehlte der untere Pfeil, und
+-- niemandem fiel es auf, bis jemand ein Bild davon ansah.
+local bar = scrollbar()
 
-  local len = math.max(BAR, math.floor(track * browser.visible / total + 0.5))
-  local span = track - len
-  local maxtop = total - browser.visible
+-- Nach außen sichtbar, damit ein Test dorthin klicken kann, wo ein Nutzer
+-- klickt - und damit man von der Konsole aus sehen kann, wo der Balken steht.
+browser.scrollbar = bar
 
-  local pos = (span > 0) and math.floor((browser.top - 1) * span / maxtop + 0.5) or 0
-  return pos, len
-end
-
--- Zeichnet den Balken und merkt sich seine Lage für die Bedienung.
-local function draw_bar(x, y, h)
-  browser.bar = { x = x, y = y, h = h, track = h - 2 * BAR + 2 }
-
-  if #browser.lines <= browser.visible then
-    -- Nichts zu rollen: nur der Umriss, wie in System 1.
-    pattern("white") rectfill(x, y, BAR, h)
-    pattern("black") rect(x, y, BAR, h)
-    return
-  end
-
-  pattern("gray")  rectfill(x, y, BAR, h)
-  pattern("black") rect(x, y, BAR, h)
-
-  -- Die beiden Pfeilfelder.
-  for i, dir in ipairs({ -1, 1 }) do
-    local by = (i == 1) and y or (y + h - BAR)
-    pattern("white") rectfill(by == y and x or x, by, BAR, BAR)
-    pattern("black") rect(x, by, BAR, BAR)
-
-    local cx, cy = x + BAR // 2, by + BAR // 2
-    for k = 0, 3 do
-      local w = 2 * k + 1
-      local ly = (dir < 0) and (cy - 2 + k) or (cy + 2 - k)
-      line(cx - k, ly, cx + k, ly)
-    end
-  end
-
-  local pos, len = thumb(browser.bar.track)
-  local ty = y + BAR - 1 + pos
-
-  pattern("white") rectfill(x, ty, BAR, len)
-  pattern("black") rect(x, ty, BAR, len)
-end
-
--- Bedient den Balken. Liefert true, wenn der Klick ihm galt.
-local function bar_click(mx, my)
-  local b = browser.bar
-  if not b or mx < b.x or mx >= b.x + BAR then return false end
-  if my < b.y or my >= b.y + b.h then return false end
-
-  if #browser.lines <= browser.visible then return true end
-
-  if my < b.y + BAR then
-    browser.top = browser.top - 1
-  elseif my >= b.y + b.h - BAR then
-    browser.top = browser.top + 1
-  else
-    local pos, len = thumb(b.track)
-    local ty = b.y + BAR - 1 + pos
-
-    if my < ty then
-      browser.top = browser.top - browser.visible
-    elseif my >= ty + len then
-      browser.top = browser.top + browser.visible
-    else
-      browser.drag = my - ty
-    end
-  end
-
-  clamp_top()
-  return true
-end
-
--- Zieht am Schieber.
-local function bar_drag(my)
-  local b = browser.bar
-  if not b or not browser.drag then return false end
-
-  local total = #browser.lines
-  local _, len = thumb(b.track)
-  local span = b.track - len
-  if span <= 0 then return true end
-
-  local pos = my - browser.drag - (b.y + BAR - 1)
-  pos = math.max(0, math.min(span, pos))
-
-  browser.top = 1 + math.floor(pos * (total - browser.visible) / span + 0.5)
-  clamp_top()
-  return true
+-- Klemmt den Anfang der Anzeige auf einen gültigen Bereich.
+--
+-- Die Wahrheit über die Position steht im Balken; `browser.top` ist nur die
+-- Fassung, die von eins an zählt, wie Lua es tut.
+local function clamp_top()
+  bar:set(#browser.lines, browser.visible)
+  bar:scroll_to(browser.top - 1)
+  browser.top = bar:value() + 1
 end
 
 -- Bricht einen Text auf eine Breite in Zeichen um.
@@ -290,9 +202,10 @@ app{
 
     local visible = math.max(1, math.floor((h - y) / lh))
     browser.visible = visible
-    clamp_top()
 
-    draw_bar(w - BAR, y, h - y)
+    bar:place(w - BAR, y, BAR, h - y)
+    clamp_top()
+    bar:draw()
 
     for i = browser.top, math.min(#browser.lines, browser.top + visible - 1) do
       local l = browser.lines[i]
@@ -319,17 +232,24 @@ app{
   end,
 
   event = function(e)
-    if e.kind == "mouse_down" then
-      return bar_click(e.x, e.y)
-    elseif e.kind == "mouse_move" then
-      return bar_drag(e.y)
-    elseif e.kind == "mouse_up" then
-      browser.drag = nil
-      return false
-    elseif e.kind == "wheel" then
-      browser.top = browser.top - e.wheel
-      clamp_top()
+    -- Das Rad rollt den Text, wo auch immer der Zeiger steht: das Fenster
+    -- zeigt nur eine Sache. Der Balken selbst nimmt das Rad nur über sich an,
+    -- weil er sonst neben anderen Widgets sitzt.
+    if e.kind == "wheel" then
+      bar:scroll_by(-e.wheel)
+      browser.top = bar:value() + 1
       return true
+    end
+
+    -- Klicken und Ziehen macht der Balken selbst, mit derselben Bedienung
+    -- wie überall im Programm.
+    if e.kind == "mouse_down" or e.kind == "mouse_move"
+       or e.kind == "mouse_up" then
+      if bar:event(e) then
+        browser.top = bar:value() + 1
+        return true
+      end
+      return false
     end
 
     if e.kind == "text" then

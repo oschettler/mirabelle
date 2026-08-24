@@ -36,6 +36,7 @@
 #include "core/collate.h"
 #include "core/i18n.h"
 #include "gfx/draw.h"
+#include "plat/plat.h"
 #include "store/vault.h"
 
 typedef struct lua_State lua_State;
@@ -81,6 +82,26 @@ void pdalua_set_vault(lua_State *L, vault *v,
  * also auch hier beim Laden auf. */
 bool pdalua_schema(lua_State *L, const char *path, schema *out,
                    char *err, size_t err_size);
+
+/* Hinterlegt das Thema. Muss vor pdalua_open_widgets() gerufen werden.
+ *
+ * Der Zustand legt eine Kopie an - Widgets halten einen Zeiger auf ihr Thema
+ * und müssen es überleben (widget.h). Dieselbe Kopie füllt die globale Tabelle
+ * `theme`, damit ein Skript Maße nicht raten muss. */
+void pdalua_set_theme(lua_State *L, const theme *th);
+
+/* Richtet die Bedienelemente ein, die ein Skript benutzen darf - zurzeit den
+ * Rollbalken. Es ist dasselbe Widget wie im Programm, nicht ein
+ * nachgebautes. */
+void pdalua_open_widgets(lua_State *L);
+
+/* Der Zeichenzustand, in den gerade gezeichnet wird, oder NULL. Für
+ * Bedienelemente, die sich selbst zeichnen. */
+gc *pdalua_current_gc(lua_State *L);
+
+/* Baut aus einer Lua-Ereignistabelle ein C-Ereignis. false, wenn die Tabelle
+ * keines beschreibt. */
+bool pdalua_event_from_table(lua_State *L, int idx, event *out);
 
 /* Richtet `net` und `gemtext` ein - Seiten abrufen und zerlegen.
  *

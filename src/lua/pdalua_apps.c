@@ -257,6 +257,54 @@ static void push_event(lua_State *L, const event *e)
     lua_pushstring(L, e->text);      lua_setfield(L, -2, "text");
 }
 
+/* Der Rückweg: aus einer Lua-Tabelle wieder ein Ereignis.
+ *
+ * Gebraucht, sobald ein Skript ein Ereignis an ein Bedienelement weiterreicht
+ * (pdalua_widgets.c). Die Namen sind dieselben wie in push_event - sie stehen
+ * absichtlich nebeneinander, damit auffällt, wenn einer fehlt. */
+bool pdalua_event_from_table(lua_State *L, int idx, event *out)
+{
+    if (!lua_istable(L, idx)) return false;
+
+    memset(out, 0, sizeof *out);
+
+    lua_getfield(L, idx, "kind");
+    const char *kind = lua_tostring(L, -1);
+    lua_pop(L, 1);
+    if (!kind) return false;
+
+    static const char *KINDS[] = {
+        "none", "mouse_down", "mouse_up", "mouse_move",
+        "wheel", "key_down", "key_up", "text", "quit"
+    };
+
+    out->kind = EV_NONE;
+    for (size_t i = 0; i < sizeof KINDS / sizeof KINDS[0]; i++)
+        if (strcmp(KINDS[i], kind) == 0) { out->kind = (event_kind)i; break; }
+
+    struct { const char *name; int *slot; } ints[] = {
+        { "x", &out->x }, { "y", &out->y }, { "key", &out->key },
+        { "clicks", &out->clicks }, { "wheel", &out->wheel },
+    };
+
+    for (size_t i = 0; i < sizeof ints / sizeof ints[0]; i++) {
+        lua_getfield(L, idx, ints[i].name);
+        *ints[i].slot = (int)lua_tointeger(L, -1);
+        lua_pop(L, 1);
+    }
+
+    lua_getfield(L, idx, "mods");
+    out->mods = (uint8_t)lua_tointeger(L, -1);
+    lua_pop(L, 1);
+
+    lua_getfield(L, idx, "text");
+    const char *text = lua_tostring(L, -1);
+    if (text) snprintf(out->text, sizeof out->text, "%s", text);
+    lua_pop(L, 1);
+
+    return true;
+}
+
 static bool sc_event(void *user, int index, const event *e)
 {
     lua_State *L = user;
