@@ -121,16 +121,33 @@ widget *list_create(const theme *th, const catalog *cat);
 void list_set_items(widget *w, const char *const *keys, int count);
 
 /* Wie list_set_items, aber die Liste legt eine eigene Kopie an und gibt sie
- * beim Zerstören frei. Für Einträge, die den Aufrufer nicht überleben - etwa
- * die Werte einer Auswahl, die aus einem Schema stammen.
+ * beim Zerstören frei - und sie zeigt die Einträge, wie sie sind, statt sie
+ * durch den Katalog zu schicken.
+ *
+ * Das ist der Unterschied zwischen den beiden Funktionen und der Grund, warum
+ * es zwei gibt: ein Menü zeigt übersetzte Namen und bekommt Schlüssel, eine
+ * Trefferliste zeigt Daten und bekommt Text. Daten durch T() zu schicken hieße,
+ * dass ein Datensatz, der zufällig „button.ok" heißt, plötzlich „OK" anzeigt.
  *
  * false, wenn kein Speicher da ist; die Liste bleibt dann unverändert, statt
  * halb gefüllt dazustehen. */
 bool list_set_items_copy(widget *w, const char *const *keys, int count);
 
+/* Der Text, der in Zeile index steht - schon durch den Katalog geschickt oder
+ * eben nicht, je nachdem, womit die Liste gefüllt wurde. NULL außerhalb.
+ *
+ * Der Unterschied zwischen den beiden Füllfunktionen ist von außen sonst nicht
+ * zu sehen, und genau er ist es, der zählt. */
+const char *list_item_text(const widget *w, int index);
+
 int  list_count(const widget *w);
 int  list_selected(const widget *w);        /* -1, wenn nichts ausgewählt ist */
 void list_select(widget *w, int index);     /* außerhalb: bleibt, wie es war */
+
+/* Hebt die Auswahl auf. Nach dem Befüllen steht sie auf dem ersten Eintrag -
+ * für ein Menü ist das richtig, für ein Auswahlfeld nicht: dort hieße es, dass
+ * eine Wahl getroffen wurde, die niemand getroffen hat. */
+void list_select_none(widget *w);
 
 /* true, WENN seit dem letzten Aufruf ein Eintrag geöffnet wurde - per
  * Doppelklick oder Return - und setzt den Merker dabei zurück. Genau einmal

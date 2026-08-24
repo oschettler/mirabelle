@@ -59,7 +59,10 @@
  * Zeichencode. */
 typedef enum {
     FIELD_TEXT,     /* eine Zeile Text */
-    FIELD_GEMTEXT,  /* mehrere Zeilen; im Datensatz der Körper, nicht ein Feld */
+    /* Mehrere Zeilen. Ein solches Feld ist NICHT ein Eintrag im Front Matter,
+     * sondern der Gemtext-Körper des Datensatzes selbst - deshalb kann es je
+     * Schema höchstens eines geben, und schema_load besteht darauf. */
+    FIELD_GEMTEXT,
     FIELD_DATE,     /* JJJJ-MM-TT; sortiert und vergleicht sich als Text */
     FIELD_BOOL,     /* ja/nein */
     FIELD_CHOICE    /* einer aus values */

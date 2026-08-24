@@ -224,6 +224,16 @@ static bool check_whole(const schema *s, char *err, size_t err_size, const char 
                         "Feld „%s“ hat values, ist aber kein choice", f->name);
     }
 
+    /* Ein Gemtext-Feld ist nicht ein Feld im Front Matter, sondern der Körper
+     * des Datensatzes (browser.h). Zwei davon gäbe es nicht zu verteilen. */
+    int gemtext = 0;
+    for (int i = 0; i < s->field_count; i++)
+        if (s->fields[i].kind == FIELD_GEMTEXT) gemtext++;
+    if (gemtext > 1)
+        return fail(err, err_size, path, 0,
+                    "%d Felder vom Typ gemtext; ein Datensatz hat nur einen Körper",
+                    gemtext);
+
     /* Jeder Name in columns, sort und form muss ein Feld sein, das es gibt.
      * Ein Tippfehler soll beim Laden auffallen und nicht als leere Spalte. */
     for (int i = 0; i < s->column_count; i++)

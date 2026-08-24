@@ -380,7 +380,22 @@ TEST(a_choice_goes_through_a_list)
     REQUIRE(w != NULL);
     CHECK_EQ(list_count(w), 3);
 
+    /* Frisch gebaut ist nichts gewählt. Der erste Wert wäre eine erfundene
+     * Voreinstellung und stünde nach dem Speichern im Datensatz. */
+    CHECK_EQ(list_selected(w), -1);
+
     char out[64];
+    CHECK(fieldkind_of(&f)->read(&f, cat, w, out, sizeof out));
+    CHECK_STR(out, "");
+
+    /* Und ein Wert, den es nicht gibt, hebt die Auswahl auf, statt die alte
+     * stehen zu lassen - sonst zeigte das Formular den Wert des zuvor
+     * geöffneten Datensatzes. */
+    fieldkind_of(&f)->write(&f, cat, w, "privat");
+    CHECK_EQ(list_selected(w), 0);
+    fieldkind_of(&f)->write(&f, cat, w, "gibtesnicht");
+    CHECK_EQ(list_selected(w), -1);
+
     fieldkind_of(&f)->write(&f, cat, w, "arbeit");
     CHECK_EQ(list_selected(w), 1);
     CHECK(fieldkind_of(&f)->read(&f, cat, w, out, sizeof out));

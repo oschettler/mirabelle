@@ -37,6 +37,11 @@ typedef struct {
      * diesem Fall auf owned. */
     char             **owned;
     int                owned_count;
+
+    /* true: keys sind Katalogschlüssel und gehen durch T(). false: sie sind
+     * schon der Text, der dastehen soll. Beides kommt vor - ein Menü zeigt
+     * übersetzte Namen, eine Trefferliste zeigt Daten. */
+    bool               translate;
     int                count;
     int                selected;  /* -1, wenn nichts ausgewählt ist */
     scrollmodel        sc;        /* value ist der erste sichtbare Eintrag */
@@ -140,7 +145,8 @@ static void list_measure(widget *w, int *pw, int *ph)
 
     int max_tw = 0;
     for (int i = 0; i < lw->count; i++) {
-        int tw = text_width(&system12, T(w->cat, lw->keys[i]));
+        const char *text = lw->translate ? T(w->cat, lw->keys[i]) : lw->keys[i];
+        int tw = text_width(&system12, text);
         if (tw > max_tw) max_tw = tw;
     }
 
@@ -183,7 +189,8 @@ static void list_draw(const widget *w, gc *g)
         int  ty  = row.y + baseline_offset;
 
         g->pat = PAT_BLACK;
-        gfx_text(g, &system12, row.x + w->th->menu_pad, ty, T(w->cat, lw->keys[idx]));
+        const char *text = lw->translate ? T(w->cat, lw->keys[idx]) : lw->keys[idx];
+        gfx_text(g, &system12, row.x + w->th->menu_pad, ty, text);
 
         if (idx == lw->selected)
             gfx_invert_rect(g, row);
@@ -300,6 +307,7 @@ void list_set_items(widget *w, const char *const *keys, int count)
     list_widget *lw = (list_widget *)w;
 
     list_free_owned(lw);
+    lw->translate = true;
     lw->keys     = keys;
     lw->count    = count;
     lw->selected = count > 0 ? 0 : -1;
@@ -336,6 +344,7 @@ bool list_set_items_copy(widget *w, const char *const *keys, int count)
      * noch da, wie sie war. */
     list_free_owned(lw);
 
+    lw->translate   = false;
     lw->owned       = copy;
     lw->owned_count = count;
     lw->keys        = (const char *const *)copy;
@@ -343,6 +352,14 @@ bool list_set_items_copy(widget *w, const char *const *keys, int count)
     lw->selected    = count > 0 ? 0 : -1;
     list_ensure_visible(lw);
     return true;
+}
+
+const char *list_item_text(const widget *w, int index)
+{
+    const list_widget *lw = (const list_widget *)w;
+    if (index < 0 || index >= lw->count) return NULL;
+
+    return lw->translate ? T(w->cat, lw->keys[index]) : lw->keys[index];
 }
 
 int list_count(const widget *w)
@@ -358,6 +375,11 @@ int list_selected(const widget *w)
 void list_select(widget *w, int index)
 {
     list_select_valid((list_widget *)w, index);
+}
+
+void list_select_none(widget *w)
+{
+    ((list_widget *)w)->selected = -1;
 }
 
 bool list_was_opened(widget *w)

@@ -296,13 +296,26 @@ static widget *choice_widget(const schema_field *f, const theme *th, const catal
     /* Kopieren lassen: die Werte liegen im Schema als Zeichenfeld, nicht als
      * Zeigerfeld, und ein gemeinsamer Umschreibpuffer wäre geteilt - zwei
      * Auswahlfelder in einem Formular würden einander überschreiben. */
+    /* Die Anzeigeform in die Liste, nicht die Speicherform: dort soll
+     * „Privat" stehen und nicht „privat". Zurückgelesen wird über den Index,
+     * also bleibt die Speicherform davon unberührt. */
+    char        shown[SCHEMA_VALUES_MAX][128];
     const char *keys[SCHEMA_VALUES_MAX];
-    for (int i = 0; i < f->value_count; i++) keys[i] = f->values[i];
+
+    for (int i = 0; i < f->value_count; i++) {
+        choice_format(f, cat, f->values[i], shown[i], sizeof shown[i]);
+        keys[i] = shown[i];
+    }
 
     if (!list_set_items_copy(w, keys, f->value_count)) {
         widget_destroy(w);
         return NULL;
     }
+
+    /* Nichts vorgewählt. Ein Schema kennt keine Voreinstellung, also wäre der
+     * erste Wert eine erfundene - und sie stünde nach dem Speichern im
+     * Datensatz, ohne dass jemand sie gewählt hätte. */
+    list_select_none(w);
     return w;
 }
 
@@ -324,6 +337,11 @@ static void choice_write(const schema_field *f, const catalog *cat, widget *w,
     (void)cat;
     for (int i = 0; i < f->value_count; i++)
         if (stored && strcmp(stored, f->values[i]) == 0) { list_select(w, i); return; }
+
+    /* Nichts Passendes - dann auch nichts ausgewählt. Die alte Auswahl stehen
+     * zu lassen hieße, dass ein Formular den Wert des zuvor geöffneten
+     * Datensatzes zeigt. */
+    list_select_none(w);
 }
 
 /* --- Die Registratur ----------------------------------------------------------------
