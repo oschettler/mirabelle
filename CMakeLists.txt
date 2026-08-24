@@ -93,6 +93,22 @@ add_library(pda_store
 # pda_core; wer pda_store linkt, linkt auch eine plat-Umsetzung dazu.
 target_link_libraries(pda_store PUBLIC pda_core)
 
+# --- Der Index ---------------------------------------------------------------
+# Eigene Bibliothek, damit pda_store ohne SQLite auskommt. Fehlt SQLite - auf
+# dem Gerät wird das der Normalfall sein -, wird der Index nicht gebaut, und
+# die Suche läuft über query_matches() direkt über die Dateien (D-3).
+
+if(PkgConfig_FOUND)
+    pkg_check_modules(SQLITE3 IMPORTED_TARGET sqlite3)
+endif()
+
+if(TARGET PkgConfig::SQLITE3)
+    add_library(pda_index src/store/index_sqlite.c)
+    target_link_libraries(pda_index PUBLIC pda_store PRIVATE PkgConfig::SQLITE3)
+else()
+    message(STATUS "SQLite nicht gefunden - der Index wird nicht gebaut, die Suche läuft ohne ihn")
+endif()
+
 # --- Oberfläche --------------------------------------------------------------
 
 add_library(pda_ui
@@ -161,6 +177,11 @@ add_test(NAME no_hardcoded_text
                  ${CMAKE_CURRENT_SOURCE_DIR})
 set_tests_properties(no_hardcoded_text PROPERTIES TIMEOUT 30)
 
+# Der Indextest läuft nur, wenn es SQLite gibt.
+if(TARGET pda_index)
+    list(APPEND PDA_TESTS index)
+endif()
+
 foreach(name IN LISTS PDA_TESTS)
     add_executable(test_${name} tests/unit/test_${name}.c)
     target_link_libraries(test_${name} PRIVATE pda_testsupport)
@@ -177,6 +198,12 @@ target_link_libraries(test_fontc PRIVATE pda_fontc)
 target_link_libraries(test_text_widget PRIVATE pda_ui pda_fonts)
 target_compile_definitions(test_text_widget
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
+if(TARGET pda_index)
+    target_link_libraries(test_index PRIVATE pda_index pda_plat_headless)
+    target_compile_definitions(test_index
+        PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+endif()
 
 target_link_libraries(test_query       PRIVATE pda_store)
 target_compile_definitions(test_query

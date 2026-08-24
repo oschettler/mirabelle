@@ -19,26 +19,19 @@ Fahrplan in [ROADMAP.md](ROADMAP.md).
 | M7 | Textkatalog, Menüs, modale Dialoge |
 | M8 | Widgets, Layout, Fokus, Textmodell, Textfelder |
 | M9 | Gemtext, Front Matter, Datensätze, Vault |
+| M10 | Sortierung, Abfragen, SQLite-Index mit FTS5 |
 
 Dazu: Handbuch (14 Kapitel, baut zu PDF/EPUB/HTML), Maße nach
 `docs/ui-style-guide.md`.
 
 ## Was als Nächstes dran ist
 
-**M10 — Index, Volltextsuche, Sortierung.** Geplant in drei Teilen, die
-einzeln testbar und committebar sind:
+**M11 - Der generische Browser.** Schema lesen, Liste und Formular daraus
+bauen, Feldtyp-Registratur. Aufgaben, Kontakte und Notizen sollen aus je einer
+Schemadatei entstehen, ohne eine Zeile Programmcode.
 
-1. **Deutsche Sortierung und Diakritika-Faltung** — reine Textarbeit in
-   `src/core/collate.c`, ohne SQLite. Sortieren nach DIN 5007 Variante 1
-   (ä wie a, ß wie ss); Suchen mit beidseitiger Faltung, damit „Muller" auch
-   „Müller" findet. Das sind zwei verschiedene Probleme und bekommen zwei
-   verschiedene Funktionen.
-2. **Abfragen als Datenstruktur** — `src/store/query.c`. Anwendungen bauen
-   nie SQL-Zeichenketten; SQL entsteht an genau einer Stelle.
-3. **SQLite mit FTS5** — `src/store/index_sqlite.c`. Der Index ist ableitbar:
-   ihn zu löschen darf kein Byte Nutzdaten kosten, und ein Test erzwingt das.
-
-Danach M11 (generischer Browser), M12 (Kalender), M13 (Lua).
+Danach M12 (Kalender als eigene Ansicht in derselben Registratur) und M13
+(Lua 5.4 einbetten und die API aus DESIGN.md Abschnitt 11 exportieren).
 
 ## Offene Punkte
 
