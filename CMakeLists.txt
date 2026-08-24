@@ -59,8 +59,20 @@ add_library(pda_plat_headless
 target_link_libraries(pda_plat_headless PUBLIC pda_gfx)
 
 find_package(PkgConfig QUIET)
+
+# SDL3: zuerst per pkg-config suchen (System-Installation), sonst das Submodul
+# unter extern/sdl3 verwenden.
 if(PkgConfig_FOUND)
     pkg_check_modules(SDL3 IMPORTED_TARGET sdl3)
+endif()
+
+if(NOT TARGET PkgConfig::SDL3 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl3/CMakeLists.txt")
+    message(STATUS "SDL3 nicht als Systempaket gefunden - Submodul extern/sdl3 wird verwendet")
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC ON  CACHE BOOL "" FORCE)
+    set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+    add_subdirectory(extern/sdl3 EXCLUDE_FROM_ALL)
+    add_library(PkgConfig::SDL3 ALIAS SDL3-static)
 endif()
 
 if(TARGET PkgConfig::SDL3)
@@ -71,7 +83,6 @@ if(TARGET PkgConfig::SDL3)
         src/plat/plat_net_posix.c
     )
     target_link_libraries(pda_plat_sdl3 PUBLIC pda_gfx PRIVATE PkgConfig::SDL3)
-
 else()
     message(STATUS "SDL3 nicht gefunden - das Programm wird nicht gebaut, Tests laufen trotzdem")
 endif()
@@ -129,7 +140,7 @@ add_library(pda_ui
     src/ui/textbuf.c
     src/ui/widget_text.c
 )
-target_link_libraries(pda_ui PUBLIC pda_gfx pda_core)
+target_link_libraries(pda_ui PUBLIC pda_gfx pda_core pda_fonts)
 
 # --- Anwendungen -------------------------------------------------------------
 # Der generische Browser und die Schemata, aus denen er die Anwendungen baut.
@@ -183,7 +194,7 @@ if(TARGET pda_plat_sdl3)
     add_executable(pda src/main.c)
     target_compile_definitions(pda
         PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
-    target_link_libraries(pda PRIVATE pda_plat_sdl3 pda_fonts)
+    target_link_libraries(pda PRIVATE pda_fonts)
 
     # pda_lua bringt pda_app schon mit; beides zu nennen ergäbe eine Warnung
     # des Binders über doppelte Bibliotheken.
@@ -192,6 +203,13 @@ if(TARGET pda_plat_sdl3)
         target_link_libraries(pda PRIVATE pda_lua)
     else()
         target_link_libraries(pda PRIVATE pda_app)
+    endif()
+
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(pda PRIVATE
+            "$<LINK_GROUP:RESCAN,pda_plat_sdl3,pda_store>")
+    else()
+        target_link_libraries(pda PRIVATE pda_plat_sdl3)
     endif()
 endif()
 
@@ -382,3 +400,19 @@ target_link_libraries(test_plat   PRIVATE pda_plat_headless)
 target_link_libraries(test_text PRIVATE pda_fonts)
 target_compile_definitions(test_text
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
+# Auf Linux löst der statische Binder Symbole streng von links nach rechts auf.
+# Bibliotheken, die Plattformsymbole (plat_open, plat_list, …) bereitstellen,
+# müssen deshalb nach den Bibliotheken stehen, die sie brauchen. Auf macOS
+# erledigt der Binder das automatisch.
+# RESCAN weist CMake an, die Gruppe mit --start-group/--end-group zu klammern,
+# damit GNU ld sie so oft durchsucht, bis alle Symbole aufgelöst sind.
+if(UNIX AND NOT APPLE)
+    foreach(t IN ITEMS test_browser test_shell test_record test_vault
+                       test_index test_lua)
+        if(TARGET ${t})
+            target_link_libraries(${t} PRIVATE
+                "$<LINK_GROUP:RESCAN,pda_plat_headless,pda_store>")
+        endif()
+    endforeach()
+endif()

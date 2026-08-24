@@ -1,3 +1,6 @@
 [submodule "extern/draftling"]
 	path = extern/draftling
 	url = https://github.com/clackups/draftling
+[submodule "extern/sdl3"]
+	path = extern/sdl3
+	url = https://github.com/libsdl-org/SDL.git

@@ -8,6 +8,7 @@
  * deshalb steht eines drin, und zwar für beide Richtungen. Ein Server, der
  * nicht antwortet, soll die Oberfläche nicht einfrieren.
  */
+#define _DEFAULT_SOURCE
 #include "plat/plat.h"
 
 #include <errno.h>

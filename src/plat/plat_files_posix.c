@@ -4,7 +4,7 @@
  * Der ESP32 bekommt eine eigene Umsetzung; deshalb liegen diese acht
  * Funktionen getrennt und nicht in einem der beiden Backends.
  */
-
+#define _DEFAULT_SOURCE
 #include "plat.h"
 
 #include <dirent.h>
