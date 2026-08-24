@@ -4,8 +4,8 @@ Ein PIM-Paket — Aufgaben, Kalender, Adressbuch, Notizen — ist im Kern eine
 Frage, die nichts mit Bildschirmen zu tun hat: Wo genau liegt „Milch kaufen",
 und was passiert damit, wenn das Programm nicht läuft, der Rechner kaputtgeht
 oder du in zehn Jahren doch noch einmal nachsehen willst, was am
-22. August 2026 anstand? Dieses Kapitel beantwortet das, bevor Kapitel 9 und
-10 zeigen, wie Anwendungen aus diesen Daten entstehen.
+22. August 2026 anstand? Dieses Kapitel beantwortet das, bevor das
+nächste zeigt, wie daraus Anwendungen werden.
 
 === Die Dateien sind die Wahrheit
 

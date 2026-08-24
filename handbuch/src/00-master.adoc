@@ -58,14 +58,36 @@ wirklich wie Umlaute aussehen. Einen Textsatz, der UTF-8 versteht. Zwei
 Dateiparser. Eine Volltextsuche, die „Müller" findet, wenn du „Muller" tippst.
 Und eine Anwendung, die aus einer Datendatei entsteht statt aus Programmcode.
 
+Einen Browser für ein kleines Netzprotokoll, geschrieben in einer Skriptsprache,
+die im selben Programm steckt.
+
 Vor allem aber: eine Vorstellung davon, wie man so etwas *aufteilt*. Das ist
 die Fähigkeit, die bleibt, wenn die Sprache längst eine andere ist.
 
 === Wie du dieses Buch liest
 
 Die Kapitel bauen aufeinander auf, aber du musst nicht alles in der Reihenfolge
-lesen. Willst du das Programm nur benutzen, reichen die ersten drei Kapitel.
-Interessiert dich, wie ein Fenstersystem funktioniert, spring zu Kapitel 6.
+lesen.
+
+[cols="1,3", options="header"]
+|===
+|Wenn du … |lies
+
+|das Programm nur benutzen willst
+|Kapitel 1 bis 3
+
+|wissen willst, wie ein Fenstersystem funktioniert
+|Kapitel 5 bis 7
+
+|eine eigene Anwendung schreiben willst
+|Kapitel 9, dann 10 und 11, dann 13
+
+|verstehen willst, wie geprüft wird
+|Kapitel 14 — es lohnt sich früher, als man denkt
+
+|es auf ein Gerät bringen willst
+|Kapitel 15, und vorher `DESIGN.md` Abschnitt 12
+|===
 
 [IMPORTANT]
 .Was es schon gibt und was nicht
@@ -100,17 +122,21 @@ include::07-fenster.adoc[leveloffset=+1]
 
 include::08-daten.adoc[leveloffset=+1]
 
-include::09-lua.adoc[leveloffset=+1]
+include::09-anwendungen.adoc[leveloffset=+1]
 
-include::10-api.adoc[leveloffset=+1]
+include::10-lua.adoc[leveloffset=+1]
 
-include::11-erweitern.adoc[leveloffset=+1]
+include::11-api.adoc[leveloffset=+1]
 
-include::12-testen.adoc[leveloffset=+1]
+include::12-netz.adoc[leveloffset=+1]
 
-include::13-geraet.adoc[leveloffset=+1]
+include::13-erweitern.adoc[leveloffset=+1]
 
-include::14-glossar.adoc[leveloffset=+1]
+include::14-testen.adoc[leveloffset=+1]
+
+include::15-geraet.adoc[leveloffset=+1]
+
+include::16-glossar.adoc[leveloffset=+1]
 
 [colophon]
 == Impressum

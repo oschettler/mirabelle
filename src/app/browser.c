@@ -1,10 +1,13 @@
 /* Siehe browser.h für den Vertrag.
  *
  * Die Datei ist länger als die anderen, aber sie enthält keine einzige
- * Entscheidung über Aufgaben, Kontakte oder Notizen. Überall, wo man eine
- * erwarten würde, steht stattdessen ein Blick ins Schema oder in die
- * Feldtyp-Registratur. Das ist der Punkt von D-7, und man sieht ihn daran,
- * dass die Wörter „Aufgabe“ und „Kontakt“ hier nicht vorkommen.
+ * Entscheidung über eine bestimmte Sammlung. Überall, wo man eine erwarten
+ * würde, steht stattdessen ein Blick ins Schema oder in die
+ * Feldtyp-Registratur.
+ *
+ * Das ist der Punkt von D-7, und er ist nachprüfbar: es gibt in dieser Datei
+ * kein Zeichenkettenliteral, das eine Sammlung, ein Feld oder eine Anwendung
+ * benennt. Jeder Name kommt aus dem Schema.
  */
 #include "app/browser.h"
 

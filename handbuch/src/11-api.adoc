@@ -279,7 +279,7 @@ bool pbm_read(const char *path, bitmap *out);            /* erkennt beides */
 ----
 
 P1 ist Text, im Versionsverlauf lesbar, aber groß. P4 ist binär und entspricht
-genau unserem Speicherformat. Die Größenregel steht in Kapitel 12.
+genau unserem Speicherformat. Die Größenregel steht im Kapitel über das Prüfen.
 
 // -------------------------------------------------------------------------
 === ui/theme.h — Maße aus einer Datei

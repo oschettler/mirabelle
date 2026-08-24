@@ -154,7 +154,7 @@ Erstens gibt es kein Hover — keinen Zustand „der Zeiger befindet sich gerade
 beruht — ein Knopf, der beim Überfahren hell wird, eine Kurzinfo, die beim
 Verweilen erscheint — funktioniert auf dem Gerät nicht, denn ein Finger
 berührt oder berührt nicht, ein Dazwischen kennt er nicht. Zweitens trifft
-ein Finger nicht punktgenau. Kapitel 11 hat gezeigt, wie `hit_slop` dieses
+ein Finger nicht punktgenau. Das Kapitel über das Dazubauen hat gezeigt, wie `hit_slop` dieses
 Problem löst: die gezeichnete Fläche eines Bedienelements bleibt klein, die
 Trefferfläche wächst darüber hinaus, ohne dass ein zusätzliches Pixel
 gezeichnet wird.
@@ -185,7 +185,7 @@ fährt sogar überwiegend so.
   sondern ein cremiges Beige ist. Vergleiche das mit der Situation bei
   reinem Schwarz auf Weiß.
 
-. Lies `data/themes/desktop.theme` aus Kapitel 11 noch einmal und überlege,
+. Lies `data/themes/desktop.theme` noch einmal und überlege,
   welche Werte — `titlebar_h`, `close_box`, `hit_slop` — für ein Thema
   geändert werden müssten, das für einen Finger statt für einen Mauszeiger
   entworfen ist. Die Faustregel aus diesem Kapitel: ein Finger ist rund 9 mm

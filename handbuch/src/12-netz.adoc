@@ -1,0 +1,185 @@
+== Ein Browser für ein kleines Netz
+
+Bis hierher hat das Programm nur mit dem eigenen Rechner geredet. Dieses
+Kapitel öffnet es nach außen — mit einem Protokoll, das auf eine Seite passt,
+und einem Browser, der ein Lua-Skript ist.
+
+Das ist kein Schmuckstück am Rand. Es ist die Probe aufs Exempel: taugt die
+Anwendungsschnittstelle für etwas, das beim Entwurf nicht auf dem Tisch lag?
+Wenn ja, muss sich ein Browser schreiben lassen, ohne eine Zeile C anzufassen.
+
+=== SPARTAN in zehn Zeilen
+
+Das Protokoll heißt https://spartan.mozz.us/[SPARTAN] und ist absichtlich
+winzig. Eine Anfrage ist eine Zeile:
+
+----
+mozz.us /gemtext.gmi 0\r\n
+----
+
+Rechnername, Pfad, Länge des Rumpfes, den der Client anschließend sendet —
+meistens null. Die Antwort ist ebenfalls eine Zeile, dann der Inhalt:
+
+----
+2 text/gemini\r\n
+# Die Hauptseite
+Ein Absatz.
+=> /woanders Ein Verweis
+----
+
+Die Ziffer sagt, was los ist: `2` hier ist es, `3` anderswo, `4` dein Fehler,
+`5` mein Fehler. Danach kommt eine Angabe — bei `2` der Inhaltstyp, bei `3`
+die neue Adresse, sonst eine Meldung für den Menschen. Und dann schließt der
+Server die Verbindung. Das ist das Ende der Antwort; es gibt keine
+Längenangabe und deshalb auch keinen Zustand, in dem man auf etwas wartet, das
+nicht mehr kommt.
+
+Kein Zustand, keine Aushandlung, keine Kopfzeilen, keine Verschlüsselung. Man
+kann es an einem Nachmittag lesen *und* umsetzen — und genau deshalb ist es
+ein gutes erstes Netzprotokoll.
+
+Der Inhalt ist Gemtext. Denselben Text, den eine Notiz im Vault hat. Deshalb
+zeigt dasselbe Widget beides — das war schon der Grund für Entscheidung D-12,
+lange bevor es einen Browser gab.
+
+=== Ein Protokoll, das kein Netz kennt
+
+`src/net/spartan.c` ist reine Rechnung auf Bytes: Adresse zerlegen, Anfrage
+bauen, Antwort lesen, Verweise auflösen. Kein einziger Aufruf geht nach
+draußen. Wer die Bytes überträgt, wird übergeben:
+
+[source,c]
+----
+typedef struct {
+    void *user;
+    bool  (*open)(void *user, const char *host, int port, char *err, size_t n);
+    bool  (*send_all)(void *user, const char *data, size_t len);
+    long  (*recv_some)(void *user, char *buf, size_t cap);
+    void  (*close)(void *user);
+} spartan_transport;
+----
+
+Für das Programm ist das `plat_connect` und Verwandte (`src/net/plat_transport.c`).
+Für die Tests ist es ein Stück Speicher, das seine Antwort absichtlich in
+Sieben-Byte-Häppchen ausgibt.
+
+.Warum das nicht Umständlichkeit ist
+[IMPORTANT]
+====
+Ein Test, der einen Server bräuchte, prüfte an guten Tagen das Protokoll und
+an schlechten die Leitung. Er wäre langsam, im Zug rot, und wenn er
+fehlschlägt, wüsstest du nicht, woran es lag.
+
+Mit dem übergebenen Transport prüfen zweiundzwanzig Tests das Protokoll — ohne
+Netz, in Millisekunden, jedes Mal gleich. Und der erfundene Transport kann
+Dinge, die ein echter Server nicht auf Kommando tut: abbrechen, schweigen,
+stückweise antworten, Unsinn schicken.
+====
+
+=== Zwei Fehler, die der erfundene Transport gefunden hat
+
+Beide sind lehrreich, weil sie ohne ihn erst beim Nutzer aufgefallen wären.
+
+**Ein „://" im Pfad ist kein Schema.** Die Prüfung, ob jemand eine
+`https://`-Adresse eingetippt hat, suchte im ganzen Text statt nur vor dem
+ersten Schrägstrich. Damit war `x.org/artikel/http://warum-nicht` als fremdes
+Schema abgelehnt — obwohl es ein völlig gültiger Pfad ist.
+
+**Man erbittet nie null Bytes.** Ist der Puffer voll, wird abgebrochen. Ohne
+diese Zeile käme `recv_some` mit einer Kapazität von null dran; manche
+Umsetzungen liefern dann null und alles geht gut, andere warten auf etwas, das
+nie kommt. Der erfundene Transport meldet es jetzt, und ein Test hält fest,
+dass es nicht passiert.
+
+=== Umleitungen werden gemeldet, nicht verfolgt
+
+Ein Server darf mit `3` antworten und eine andere Adresse nennen. Es wäre
+bequem, ihr einfach zu folgen. Wir tun es nicht, und das ist eine Entscheidung
+mit zwei Gründen.
+
+Der eine ist Ehrlichkeit: wer einer Umleitung stillschweigend folgt,
+verschweigt dem Nutzer, wo er gelandet ist. Der andere ist handfester — zwei
+Server, die aufeinander zeigen, ergeben ein Aufhängen statt einer Meldung.
+
+Der Aufrufer sieht `3`, sieht die neue Adresse und entscheidet.
+
+=== Vier Funktionen für das Netz
+
+In der Plattformschicht sind es genau vier: verbinden, senden, empfangen,
+trennen. Keine weiß etwas über ein Protokoll — sie schicken Bytes und holen
+Bytes, genau wie die Dateifunktionen Bytes schreiben und lesen.
+
+Eine Sache ist dort eingebaut, die man leicht vergisst: ein Zeitlimit, in
+beide Richtungen. Ein Server, der nicht antwortet, darf die Oberfläche nicht
+einfrieren.
+
+=== Der Browser ist ein Skript
+
+`data/apps/spartan.lua` ist gut vierhundert Zeilen Lua, die Hälfte davon
+Kommentar. Es benutzt aus C
+genau drei Dinge:
+
+[source,lua]
+----
+net.fetch(adresse)           -- holt eine Seite
+net.resolve(basis, verweis)  -- löst einen Verweis auf
+gemtext.parse(text)          -- zerlegt eine Seite in Zeilen
+----
+
+Alles andere macht es selbst: den Umbruch, die Nummerierung der Verweise, die
+Auswahl, den Verlauf, die Tastatur — und seinen Rollbalken, den es Pixel für
+Pixel zeichnet, weil ein Widget für ein Skript nicht erreichbar ist.
+
+Verweise werden nummeriert und als `[3] Name` gezeigt. Das ist die Darstellung
+textbasierter Gemini-Browser, und sie hat hier einen handfesten Grund: bei
+einem Bit je Pixel gibt es keine Farbe, an der ein Verweis zu erkennen wäre,
+und Unterstreichen macht Text schlechter lesbar. Die Nummer sagt außerdem, was
+man tippen kann.
+
+=== Warum das Abrufen die Oberfläche anhält
+
+`net.fetch` wartet, bis die Antwort da ist oder das Zeitlimit zuschlägt.
+Solange steht alles.
+
+Das ist eine Entscheidung und keine Schlamperei. Nebenläufigkeit in ein
+Skriptsystem einzuziehen hieße Rückrufe, einen Zustandsautomaten je Anwendung
+und die Frage, was passiert, wenn zwei Abrufe gleichzeitig laufen. Für einen
+Taschencomputer, der eine Seite holt und sie anzeigt, ist das mehr Maschinerie
+als Nutzen.
+
+Die Naht dafür ist da, falls es je stört: der Ereignisbus. Ein Abruf, der
+fertig ist, könnte `send("page.loaded", ...)` rufen, und die Anwendung würde
+darauf hören statt zu warten. Das ist genau der Umbau, den man sich offenhält,
+indem man von Anfang an einen Bus hat.
+
+=== Was Lua nicht bekommt
+
+Ohne `pdalua_open_net()` gibt es weder `net` noch `gemtext`. Ein Zustand, der
+nur ein Schema lesen soll, hat keinen Zugang nach draußen.
+
+Das gehört zu derselben Linie wie die Auswahl der Standardbibliotheken: `base`,
+`table`, `string`, `math` — und sonst keine. Kein `io`, kein `os`, kein
+`package`. Eine Schemadatei ist eine Konfigurationsdatei, und die soll keine
+Dateien löschen können, auch nicht versehentlich.
+
+=== Zum Ausprobieren
+
+. Starte das Programm, öffne SPARTAN im Menü und drücke kbd:[Return], ohne
+  etwas zu tippen. Was passiert, und warum steht in der Statuszeile etwas
+  anderes als vorher?
+
+. Tippe eine Adresse ohne Schema, etwa `mozz.us`. Sieh in
+  `src/net/spartan.c` nach, warum das funktioniert — und warum
+  `https://mozz.us` nicht.
+
+. Lies in `tests/unit/test_spartan.c` die Struktur `fake` und die vier
+  Funktionen darum. Baue einen Fall dazu, in dem der Server mitten in der
+  Statuszeile schließt. Was soll passieren, und was passiert?
+
+. Öffne `data/apps/spartan.lua` und ändere die Darstellung der Verweise von
+  `[3]` auf `(3)`. Starte neu — ohne zu übersetzen. Wie lange hat das
+  gedauert?
+
+. Suche in `data/apps/spartan.lua` die Zeile `local BAR = 16` und den
+  Kommentar darunter. Warum steht diese Zahl zweimal im System, und was wäre
+  nötig, damit sie nur einmal dasteht?

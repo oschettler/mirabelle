@@ -67,8 +67,8 @@ gewöhnliches Fenster mit genau diesem Merkmal, kein eigener Fenstertyp.
 
 Mutationstest:: Ein absichtlich in den Code eingebauter Fehler, mit dem
 geprüft wird, ob wenigstens ein Test darauf anspricht. Bleibt die Testsuite
-grün, hat sie den betroffenen Code nicht wirklich geprüft. Kapitel 12
-beschreibt mehrere Mutationstests, die genau das im Projekt aufgedeckt haben.
+grün, hat sie den betroffenen Code nicht wirklich geprüft. Das Kapitel über
+das Prüfen beschreibt mehrere Mutationstests, die genau das im Projekt aufgedeckt haben.
 
 Muster:: Eine 8 × 8-Bit-Kachel, die sich über eine Fläche wiederholt und ohne
 Farbe Flächen unterscheidbar macht — etwa den grauen Schreibtisch oder einen

@@ -334,7 +334,7 @@ wenn jemand hinsieht.
 Nicht jeder Test prüft Bilder oder Zustände. `tests/no_hardcoded_text.sh` ist
 ein anderer Fall: ein Skript, das den Quelltext selbst durchsucht und dafür
 sorgt, dass kein sichtbarer Text fest im Code steht, sondern über den
-Textkatalog kommt (Kapitel 13 erklärt den Katalog selbst). Geprüft wird eng:
+Textkatalog kommt (das Kapitel über das Dazubauen erklärt den Katalog selbst). Geprüft wird eng:
 an `gfx_text` darf kein Zeichenkettenliteral als Text gehen, an `wm_open`
 keines als Titel.
 

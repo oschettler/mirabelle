@@ -1,0 +1,211 @@
+== Aus Dateien werden Anwendungen
+
+Das vorige Kapitel hat gezeigt, wo die Daten liegen und wie eine Schemadatei
+eine Sammlung beschreibt. Dieses zeigt, was daraus wird: ein Fenster mit einer
+Liste, ein Formular, ein Eintrag im Menü, ein Tastenkürzel. Und es zeigt die
+Stelle, an der beides zusammenkommt — `src/app/shell.c`, die *Schale*.
+
+Der Anspruch daran ist nachprüfbar, und du kannst es selbst tun:
+
+[source,bash]
+----
+grep -n '"Aufgaben"\|"Kontakte"\|"Notizen"\|"Termine"' \
+     src/app/shell.c src/app/browser.c
+----
+
+Kein Treffer. In den zwei Dateien, die alle vier Anwendungen zeichnen und
+bedienen, steht keine davon als Zeichenkette. Jeder Name — der Titel, der
+Ordner im Vault, die Feldnamen, die Spalten — kommt aus dem Schema.
+
+Auch nicht als Zahl: es gibt keine Stelle, an der „die dritte Anwendung" etwas
+Besonderes wäre.
+
+=== Die Schale zählt Dateien, nicht Anwendungen
+
+Beim Start liest die Schale das Verzeichnis `data/schema` und macht aus jeder
+`.schema`-Datei eine Anwendung:
+
+[source,c]
+----
+for (int i = 0; i < n && s->app_count < APPS_MAX; i++) {
+    if (entries[i].is_dir) continue;
+    if (!ends_with(entries[i].name, ".schema")) continue;
+
+    /* ... schema_load ... */
+}
+----
+
+Das ist die ganze Entdeckung. Eine fünfte Schemadatei ist eine fünfte
+Anwendung, und in dieser Schleife ändert sich dafür nichts.
+
+Eine Datei, die sich nicht laden lässt, nimmt die anderen nicht mit — sie
+fehlt eben, und der Nutzer erfährt in der Statuszeile, warum. Nur wenn *gar
+keine* gefunden wird, bricht der Start ab: dann gäbe es nichts zu tun, und ein
+Programm ohne Anwendungen wäre ein leeres Fenster ohne Erklärung.
+
+.Warum nur `.schema` und nicht auch `.lua`
+[NOTE]
+====
+In `data/schema/` liegt auch `task.lua` — dieselbe Anwendung noch einmal, als
+Lua-Tabelle. Sie wird beim Start *nicht* gelesen. Würde sie es, gäbe es die
+Aufgaben zweimal.
+
+Wozu dann beide? Weil der Vertrag nicht die Datei ist, sondern die Struktur
+`schema` in `src/app/schema.h`. Es gibt zwei Lader dafür, und ein Test lädt
+beide Fassungen und vergleicht sie Byte für Byte. Das ist Entscheidung D-15,
+und sie hat einen handfesten Grund: auf dem Zielgerät kann Lua fehlen, und
+dann laufen die vier Anwendungen trotzdem.
+====
+
+=== Der Name ist zugleich die Aktion
+
+Jedes Schema nennt einen Katalogschlüssel für seinen Namen:
+
+[source]
+----
+label    app.notes
+----
+
+Dieser Schlüssel ist *zugleich* der Name der Aktion, die die Anwendung öffnet.
+Deshalb genügt in `data/keys/default.keys` eine Zeile:
+
+----
+app.notes             Cmd+4          global
+----
+
+und kbd:[Cmd+4] öffnet die Notizen. Nirgends steht eine Tabelle, die eine Zahl
+mit einer Anwendung verbindet. Ein Kürzel für eine neue Anwendung ist eine
+Zeile in der Tastenbelegung, kein Code.
+
+Der Menüeintrag entsteht aus demselben Schlüssel:
+
+[source,c]
+----
+for (int i = 0; i < s->app_count; i++) {
+    s->app_items[i].key    = s->apps[i].label;
+    s->app_items[i].action = s->apps[i].label;
+}
+----
+
+=== Welche Taste wem gehört
+
+Die Tastenbelegung kennt Bereiche: `global` gilt überall, `app` in einer
+Anwendung, `list` in einer Liste, `form` in einem Formular. Die Schale schlägt
+in dieser Reihenfolge nach — erst der Bereich dessen, was den Fokus hat, dann
+`app`, und `keymap_lookup` fällt selbst auf `global` zurück.
+
+Damit bedeutet kbd:[Return] in einer Liste etwas anderes als in einem
+Formular, ohne dass irgendwo ein `if` darüber entscheidet:
+
+----
+list.open             Return         list
+form.accept           Return         form
+----
+
+Die zweite Frage ist schwieriger und leicht zu übersehen: *wem gehört eine
+Taste?* `list.next` bewegt die Auswahl und gehört der Liste; `list.open`
+öffnet einen Datensatz und gehört der Anwendung. Beide stehen nebeneinander in
+derselben Datei.
+
+Die Schale unterscheidet sie an einer kurzen Liste dessen, was sie selbst
+kann. Was nicht darin steht, reicht sie an das Bedienelement weiter — es kennt
+seine Tasten selbst, und die Schale hat dazu nichts zu sagen.
+
+.Die Regel, die man beim ersten Mal falsch macht
+[WARNING]
+====
+Eine Aktion, die einen Datensatz anfasst, darf nur verbraucht werden, wenn es
+einen Datensatz gibt. In einer Skriptanwendung gibt es keinen Browser — und
+wenn die Schale kbd:[Return] trotzdem als `list.open` annimmt und dann
+feststellt, dass sie damit nichts anfangen kann, ist die Taste weg, bevor das
+Skript sie sieht.
+
+Von außen sieht das besonders verwirrend aus, weil kbd:[Shift+Return] dann
+funktioniert: mit Umschalttaste passt das Kürzel nicht mehr, und die Taste
+fällt durch. Wer so etwas beobachtet — eine Tastenkombination wirkt, die
+einfache Taste nicht —, sucht nicht im Skript, sondern in der Schicht darüber.
+====
+
+=== Was ein Fenster bekommt
+
+Öffnet die Schale eine Anwendung, legt sie ein Fenster an und darin einen
+Browser (`src/app/browser.h`) und einen Rollbalken daneben. Die Fenster
+stehen versetzt, wie auf einem Schreibtisch:
+
+[source,c]
+----
+int top    = menubar_height(s->mb) + 12;
+int offset = index * 24;
+
+int w = s->cfg.screen_w / 2;
+int h = s->cfg.screen_h - top - offset - 24;
+----
+
+Der Versatz geht von der *Größe* ab, nicht nur von der Lage. Sonst hinge das
+sechste Fenster unten aus dem Bildschirm heraus, und seine untere Kante samt
+Größenfeld wäre nicht mehr zu greifen.
+
+Beim Kalender gibt es keinen Rollbalken. Er blättert monatsweise, nicht
+zeilenweise — und ein Balken, der nichts zu rollen hat, wäre eine Bedienung,
+die keine ist.
+
+=== Löschen fragt nach
+
+Es ist die einzige Handlung im Programm, die sich nicht rückgängig machen
+lässt. Genau dafür sind modale Dialoge da, und für nichts sonst: wer bei jeder
+Kleinigkeit fragt, bekommt Nutzer, die wegklicken, ohne zu lesen.
+
+Zwei Dinge sind daran heikler, als sie aussehen.
+
+**Wer fragt, muss sich merken, für wen.** Ein modaler Dialog ist selbst ein
+Fenster und wird beim Öffnen zum aktiven. Wer *danach* fragt, welche Anwendung
+aktiv ist, bekommt den Dialog — und der hat keine Datensätze. Die Anwendung
+wird deshalb notiert, bevor der Dialog aufgeht.
+
+**Wer zumacht, muss aufräumen, wohin der Blick geht.** Ein geschlossener
+Dialog lässt sonst gar kein Fenster aktiv zurück, und die nächste Aktion
+findet keine Anwendung mehr — man müsste erst irgendwohin klicken, damit das
+Programm wieder reagiert.
+
+=== Die Statuszeile
+
+Ganz unten erscheint eine Zeile, wenn es etwas zu sagen gibt, und sonst nicht.
+Eine Zeile, die immer da ist und meistens leer, nimmt Platz und wird
+übersehen; eine, die nur bei einer Meldung auftaucht, sieht man.
+
+Ohne sie waren Fehler unsichtbar. „Titel darf nicht leer sein" wurde gesetzt
+und nirgends gezeigt — für den Nutzer passierte beim Sichern einfach nichts,
+und das ist die schlechteste aller Rückmeldungen.
+
+.Eine Meldung, die stehenbleibt, ist schlimmer als keine
+[NOTE]
+====
+Deshalb schreibt auch der *Erfolg* in dieses Feld — einen leeren Text. Eine
+alte Meldung, die neben einer gelungenen Handlung stehenbleibt, gehört zu
+etwas, das längst vorbei ist, und der Nutzer sucht den Fehler dort, wo keiner
+ist.
+====
+
+=== Zum Ausprobieren
+
+. Lege eine Kopie von `data/schema/note.schema` unter einem anderen Namen an,
+  ändere darin `type`, `folder` und `label` und starte neu. Erscheint deine
+  Anwendung im Menü? Prüfe zuerst mit `./build/pda --apps`.
+
+. Trage in deiner neuen Schemadatei bei `columns` einen Feldnamen ein, den es
+  nicht gibt. Starte neu und lies die Statuszeile — steht der Tippfehler
+  darin? Überlege, warum diese Prüfung beim *Laden* passiert und nicht beim
+  Zeichnen.
+
+. Gib deiner Anwendung ein Kürzel: eine Zeile in `data/keys/default.keys` mit
+  ihrem Katalogschlüssel als Aktionsnamen und `global` als Bereich. Erscheint
+  es im Menü?
+
+. Öffne mehrere Anwendungen und schließe die vorderste mit kbd:[Cmd+W].
+  Welches Fenster ist danach aktiv? Sieh dir `on_window_closed` in
+  `src/app/shell.c` an und überlege, was passieren würde, wenn es diese
+  Rückmeldung nicht gäbe.
+
+. Lösche einen Datensatz und brich im Dialog mit kbd:[Esc] ab. Drücke danach
+  sofort eine Pfeiltaste — bewegt sich die Auswahl? Warum ist das eine Frage
+  über den Dialog und nicht über die Liste?

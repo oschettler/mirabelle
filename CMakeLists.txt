@@ -187,10 +187,9 @@ if(TARGET pda_plat_sdl3)
     add_executable(pda src/main.c)
     target_compile_definitions(pda
         PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
-    target_link_libraries(pda PRIVATE pda_fonts)
-
-    # pda_lua bringt pda_app schon mit; beides zu nennen ergäbe eine Warnung
-    # des Binders über doppelte Bibliotheken.
+    # Jede Bibliothek genau einmal nennen. pda_ui bringt pda_fonts mit,
+    # pda_lua bringt pda_app mit, und die Plattformschicht steht weiter unten -
+    # etwas doppelt zu nennen ergibt eine Warnung des Binders.
     if(TARGET pda_lua)
         target_compile_definitions(pda PRIVATE PDA_WITH_LUA)
         target_link_libraries(pda PRIVATE pda_lua)
