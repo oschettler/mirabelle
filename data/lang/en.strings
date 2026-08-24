@@ -67,3 +67,27 @@ form.status              = Status
 form.name                = Name
 form.done                = Done
 form.notes               = Note
+
+# --- Wahrheitswerte ---------------------------------------------------------
+bool.yes                 = Yes
+bool.no                  = No
+
+# --- Die Anwendungen aus data/schema/ ---------------------------------------
+app.tasks                = Tasks
+app.contacts             = Contacts
+app.notes                = Notes
+
+field.title              = Title
+field.due                = Due
+field.priority           = Priority
+field.category           = Category
+field.done               = Done
+field.notes              = Note
+field.name               = Name
+field.city               = City
+field.phone              = Phone
+field.email              = E-mail
+
+value.privat             = Personal
+value.arbeit             = Work
+value.einkauf            = Shopping

@@ -120,6 +120,14 @@ widget *list_create(const theme *th, const catalog *cat);
  * ersten Eintrag, oder auf -1 bei leerer Liste. */
 void list_set_items(widget *w, const char *const *keys, int count);
 
+/* Wie list_set_items, aber die Liste legt eine eigene Kopie an und gibt sie
+ * beim Zerstören frei. Für Einträge, die den Aufrufer nicht überleben - etwa
+ * die Werte einer Auswahl, die aus einem Schema stammen.
+ *
+ * false, wenn kein Speicher da ist; die Liste bleibt dann unverändert, statt
+ * halb gefüllt dazustehen. */
+bool list_set_items_copy(widget *w, const char *const *keys, int count);
+
 int  list_count(const widget *w);
 int  list_selected(const widget *w);        /* -1, wenn nichts ausgewählt ist */
 void list_select(widget *w, int index);     /* außerhalb: bleibt, wie es war */

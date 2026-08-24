@@ -67,3 +67,29 @@ form.status              = Status
 form.name                = Name
 form.done                = Erledigt
 form.notes               = Notiz
+
+# --- Wahrheitswerte ---------------------------------------------------------
+bool.yes                 = Ja
+bool.no                  = Nein
+
+# --- Die Anwendungen aus data/schema/ ---------------------------------------
+app.tasks                = Aufgaben
+app.contacts             = Kontakte
+app.notes                = Notizen
+
+field.title              = Titel
+field.due                = Fällig
+field.priority           = Priorität
+field.category           = Kategorie
+field.done               = Erledigt
+field.notes              = Notiz
+field.name               = Name
+field.city               = Ort
+field.phone              = Telefon
+field.email              = E-Mail
+
+# Auswahlwerte. Der Schlüssel ist "value." plus der Wert, wie er im Schema und
+# im Datensatz steht - so bleibt die Datei lesbar und die Anzeige übersetzbar.
+value.privat             = Privat
+value.arbeit             = Arbeit
+value.einkauf            = Einkauf

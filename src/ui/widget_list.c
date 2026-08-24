@@ -15,6 +15,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "core/i18n.h"
 #include "gfx/draw.h"
@@ -30,6 +31,12 @@ extern const font system12;
 typedef struct {
     widget             base;
     const char *const *keys;      /* gehört dem Aufrufer, wird nicht kopiert */
+
+    /* ... es sei denn, list_set_items_copy() wurde benutzt. Dann liegen die
+     * Einträge hier, und die Liste gibt sie beim Zerstören frei. keys zeigt in
+     * diesem Fall auf owned. */
+    char             **owned;
+    int                owned_count;
     int                count;
     int                selected;  /* -1, wenn nichts ausgewählt ist */
     scrollmodel        sc;        /* value ist der erste sichtbare Eintrag */
@@ -244,11 +251,31 @@ static bool list_event(widget *w, const event *e)
     }
 }
 
+/* Gibt nur frei, was die Klasse selbst belegt hat - das Widget selbst gibt
+ * widget_destroy frei (siehe widget.h). */
+static void list_free_owned(list_widget *lw)
+{
+    if (!lw->owned) return;
+    for (int i = 0; i < lw->owned_count; i++) free(lw->owned[i]);
+    free(lw->owned);
+
+    lw->owned       = NULL;
+    lw->owned_count = 0;
+    lw->keys        = NULL;
+    lw->count       = 0;
+}
+
+static void list_destroy(widget *w)
+{
+    list_free_owned((list_widget *)w);
+}
+
 static const widget_class list_class = {
     .name    = "list",
     .measure = list_measure,
     .draw    = list_draw,
     .event   = list_event,
+    .destroy = list_destroy,
 };
 
 /* --- Verwaltung -------------------------------------------------------------- */
@@ -272,6 +299,7 @@ void list_set_items(widget *w, const char *const *keys, int count)
 {
     list_widget *lw = (list_widget *)w;
 
+    list_free_owned(lw);
     lw->keys     = keys;
     lw->count    = count;
     lw->selected = count > 0 ? 0 : -1;
@@ -281,6 +309,40 @@ void list_set_items(widget *w, const char *const *keys, int count)
      * gehen. Es hier noch einmal zu setzen wäre eine zweite Stelle für
      * dieselbe Entscheidung. */
     list_ensure_visible(lw);
+}
+
+bool list_set_items_copy(widget *w, const char *const *keys, int count)
+{
+    list_widget *lw = (list_widget *)w;
+    if (count < 0) count = 0;
+
+    char **copy = count > 0 ? calloc((size_t)count, sizeof *copy) : NULL;
+    if (count > 0 && !copy) return false;
+
+    for (int i = 0; i < count; i++) {
+        const char *src = keys[i] ? keys[i] : "";
+        size_t      n   = strlen(src) + 1;
+
+        copy[i] = malloc(n);
+        if (!copy[i]) {
+            for (int j = 0; j < i; j++) free(copy[j]);
+            free(copy);
+            return false;
+        }
+        memcpy(copy[i], src, n);
+    }
+
+    /* Erst jetzt das Alte wegwerfen: schlägt das Belegen fehl, steht die Liste
+     * noch da, wie sie war. */
+    list_free_owned(lw);
+
+    lw->owned       = copy;
+    lw->owned_count = count;
+    lw->keys        = (const char *const *)copy;
+    lw->count       = count;
+    lw->selected    = count > 0 ? 0 : -1;
+    list_ensure_visible(lw);
+    return true;
 }
 
 int list_count(const widget *w)
