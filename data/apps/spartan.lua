@@ -4,9 +4,14 @@
 -- beim Entwurf nicht auf dem Tisch lag: eine Adresszeile, ein Abruf über das
 -- Netz, eine Seite aus Gemtext, Verweise zum Anklicken, ein Verlauf.
 --
--- Was er aus C benutzt: net.fetch, net.resolve, gemtext.parse und die
--- Zeichenfunktionen. Was er selbst macht: alles andere - den Umbruch, die
--- Auswahl, die Tastatur, den Verlauf.
+-- Was er aus C benutzt: net.fetch, net.resolve, die Gemtext-Anzeige, den
+-- Rollbalken und die Zeichenfunktionen. Was er selbst macht: die Adresszeile,
+-- den Verlauf und die Frage, was Return gerade bedeutet.
+--
+-- Das ist Absicht. Umbrechen, Verweise durchzählen, sie mit Ziffern
+-- auswählen, blättern - das kann kein Skript besser als das Programm, es kann
+-- es nur anders. Anders heißt hier: eine zweite Wahrheit, die auseinandergeht,
+-- sobald sich eine der beiden ändert.
 --
 -- Bedienung:
 --   Return         die gezeigte Adresse abrufen, oder den gewählten Verweis
@@ -20,98 +25,26 @@ local START = "spartan://mozz.us/"
 -- Die Breite des Rollbalkens kommt aus dem Thema, nicht aus dieser Datei.
 local BAR = theme.scrollbar_w
 
+-- Anzeige und Rollbalken sind die echten Widgets aus dem Programm.
+--
+-- Der Balken wird AN die Anzeige gehängt: beide teilen sich dann ein
+-- Bildlaufmodell. Es gibt also keine zweite Zahl, die jemand abgleichen
+-- müsste, und keine Stelle, an der die Anzeige woanders steht als der Balken
+-- es zeigt.
+local view = gemview()
+local bar  = scrollbar(view)
+
 browser = {
-  address  = START,
-  editing  = false,   -- steht die Schreibmarke in der Adresszeile?
-  lines    = {},      -- gefaltete Anzeigezeilen
-  links    = {},      -- Adressen, nach Nummer
-  selected = 0,
-  top      = 1,
-  status   = "",
-  history  = {},
+  address = START,
+  editing = false,   -- steht die Schreibmarke in der Adresszeile?
+  status  = "",
+  history = {},
 
-  visible  = 1,      -- wie viele Zeilen zuletzt ins Fenster passten
+  -- Nach außen sichtbar, damit ein Test dorthin klicken kann, wo ein Nutzer
+  -- klickt, und von der Konsole aus sehen kann, was angezeigt wird.
+  view      = view,
+  scrollbar = bar,
 }
-
--- Der Rollbalken ist das echte Widget aus dem Programm, kein Nachbau.
---
--- Ein nachgebautes Bedienelement sieht dem echten nur so lange ähnlich, wie
--- niemand hinsieht: dem ersten Nachbau hier fehlte der untere Pfeil, und
--- niemandem fiel es auf, bis jemand ein Bild davon ansah.
-local bar = scrollbar()
-
--- Nach außen sichtbar, damit ein Test dorthin klicken kann, wo ein Nutzer
--- klickt - und damit man von der Konsole aus sehen kann, wo der Balken steht.
-browser.scrollbar = bar
-
--- Klemmt den Anfang der Anzeige auf einen gültigen Bereich.
---
--- Die Wahrheit über die Position steht im Balken; `browser.top` ist nur die
--- Fassung, die von eins an zählt, wie Lua es tut.
-local function clamp_top()
-  bar:set(#browser.lines, browser.visible)
-  bar:scroll_to(browser.top - 1)
-  browser.top = bar:value() + 1
-end
-
--- Bricht einen Text auf eine Breite in Zeichen um.
---
--- In Zeichen und nicht in Pixeln: die Schrift ist eine Festbreitenschrift,
--- also ist beides dasselbe, und das Rechnen bleibt einfach. Wer je eine
--- Proportionalschrift einbaut, misst hier mit textwidth nach.
-local function wrap(text, cols)
-  local out = {}
-  if text == "" then return { "" } end
-
-  while #text > cols do
-    local cut = cols
-    -- Rückwärts bis zum letzten Leerzeichen; findet sich keins, wird hart
-    -- getrennt - sonst liefe eine lange Adresse aus dem Fenster.
-    while cut > 1 and text:sub(cut, cut) ~= " " do cut = cut - 1 end
-    if cut <= 1 then cut = cols end
-
-    out[#out + 1] = text:sub(1, cut)
-    text = text:gsub("^%s+", "", 1)
-    text = text:sub(cut + 1):gsub("^%s+", "", 1)
-  end
-  out[#out + 1] = text
-  return out
-end
-
--- Baut aus dem Gemtext die Anzeigezeilen und die Verweisliste.
-function browser.render(body, cols)
-  browser.lines = {}
-  browser.links = {}
-
-  for _, line in ipairs(gemtext.parse(body)) do
-    local prefix = ""
-    local text   = line.text
-
-    if line.kind == "link" then
-      browser.links[#browser.links + 1] = line.url
-      prefix = "[" .. #browser.links .. "] "
-      if text == "" then text = line.url end
-    elseif line.kind == "item" then
-      prefix = T("gemtext.bullet") .. " "
-    elseif line.kind == "quote" then
-      prefix = "| "
-    end
-
-    -- Vorformatiertes bricht nicht um: dort bedeutet die Zeilenlage etwas.
-    local parts = (line.kind == "pre") and { text }
-                                       or wrap(text, math.max(8, cols - #prefix))
-
-    for i, part in ipairs(parts) do
-      browser.lines[#browser.lines + 1] = {
-        text = (i == 1 and prefix or string.rep(" ", #prefix)) .. part,
-        kind = line.kind,
-        link = (line.kind == "link") and #browser.links or nil,
-      }
-    end
-  end
-
-  browser.top = 1
-end
 
 function browser.go(url, remember)
   browser.status = T("spartan.loading")
@@ -127,13 +60,13 @@ function browser.go(url, remember)
     -- verschweigt dem Nutzer, wo er gelandet ist - und zwei Server, die
     -- aufeinander zeigen, ergeben ein Aufhängen statt einer Meldung.
     browser.status = T("spartan.redirect") .. " " .. page.meta
-    browser.render("=> " .. page.meta .. "\n", browser.cols or 60)
+    view:set_text("=> " .. page.meta .. "\n")
     return true
   end
 
   if page.status ~= 2 then
     browser.status = page.status .. " " .. page.meta
-    browser.render(page.body or "", browser.cols or 60)
+    view:set_text(page.body or "")
     return true
   end
 
@@ -141,10 +74,9 @@ function browser.go(url, remember)
     browser.history[#browser.history + 1] = browser.address
   end
 
-  browser.address  = page.url or url
-  browser.status   = page.meta
-  browser.selected = 0
-  browser.render(page.body, browser.cols or 60)
+  browser.address = page.url or url
+  browser.status  = page.meta
+  view:set_text(page.body)
   return true
 end
 
@@ -159,7 +91,7 @@ function browser.back()
 end
 
 function browser.open_link(number)
-  local href = browser.links[number]
+  local href = view:link_url(number)
   if not href then return false end
 
   local target = net.resolve(browser.address, href)
@@ -170,6 +102,13 @@ function browser.open_link(number)
   return browser.go(target)
 end
 
+-- Die Anzeige meldet mit was_opened(), dass ein Verweis geöffnet werden soll -
+-- durch Doppelklick oder Return. Nach jedem Ereignis, das sie bekommen hat,
+-- ist das die Frage, die sich das Skript stellen muss.
+local function follow_if_opened()
+  if view:was_opened() then browser.open_link(view:selected()) end
+end
+
 app{
   name  = "spartan",
   title = "app.spartan",
@@ -177,9 +116,7 @@ app{
   draw = function(w, h)
     cls()
 
-    local lh   = textheight() + 2
-    local text_w = w - BAR
-    local cols = math.max(8, math.floor((text_w - 8) / textwidth("M")))
+    local lh = textheight() + 2
 
     -- Die Adresszeile. Beim Tippen blinkt dahinter eine Schreibmarke - ein
     -- senkrechter Strich im selben Takt wie in jedem Textfeld des Programms,
@@ -197,7 +134,7 @@ app{
     -- Solange nichts geholt wurde, steht hier, was zu tun ist. Ein leeres
     -- Fenster, in dem man raten muss, ist keine Bedienoberfläche.
     local status = browser.status
-    if status == "" and #browser.lines == 0 then status = T("spartan.hint") end
+    if status == "" and view:link_count() == 0 then status = T("spartan.hint") end
 
     local y = lh + 10
     if status ~= "" then
@@ -205,59 +142,36 @@ app{
       y = y + lh
     end
 
-    line(2, y, w - 2, y)
-    y = y + 3
+    -- Anzeige und Balken stehen nebeneinander im selben Rahmen wie die
+    -- Adresszeile darüber. Einen Trennstrich braucht es nicht mehr: die
+    -- Anzeige zeichnet ihren eigenen Rand, und zwei Striche übereinander
+    -- sähen aus wie ein Fehler.
+    --
+    -- Erst die Anzeige, dann der Balken: die Anzeige bricht beim Zeichnen um
+    -- und stellt dabei das gemeinsame Modell auf ihre neue Zeilenzahl ein.
+    view:place(2, y, w - 4 - BAR, h - y - 2)
+    view:draw()
 
-    local visible = math.max(1, math.floor((h - y) / lh))
-    browser.visible = visible
-
-    bar:place(w - BAR, y, BAR, h - y)
-    clamp_top()
+    bar:place(w - 2 - BAR, y, BAR, h - y - 2)
     bar:draw()
-
-    for i = browser.top, math.min(#browser.lines, browser.top + visible - 1) do
-      local l = browser.lines[i]
-      print(l.text, 6, y)
-
-      -- Überschriften bekommen einen Balken darunter. Es gibt nur einen
-      -- Schnitt, also muss die Hervorhebung aus der Geometrie kommen.
-      if l.kind == "heading" then
-        rectfill(6, y + textheight(), textwidth(l.text), 1)
-      end
-
-      if l.link and l.link == browser.selected then
-        mode("xor")
-        rectfill(4, y - 1, text_w - 8, lh - 1)
-        mode("copy")
-      end
-
-      y = y + lh
-    end
-
-    -- Die Breite, mit der umbrochen wurde, merken: ändert sich das Fenster,
-    -- wird beim nächsten Abruf anders gefaltet.
-    browser.cols = cols
   end,
 
   event = function(e)
     -- Das Rad rollt den Text, wo auch immer der Zeiger steht: das Fenster
-    -- zeigt nur eine Sache. Der Balken selbst nimmt das Rad nur über sich an,
-    -- weil er sonst neben anderen Widgets sitzt.
+    -- zeigt nur eine Sache. Anzeige und Balken nehmen es jeweils nur über
+    -- sich an, weil sie sonst neben anderen Widgets sitzen.
     if e.kind == "wheel" then
       bar:scroll_by(-e.wheel)
-      browser.top = bar:value() + 1
       return true
     end
 
-    -- Klicken und Ziehen macht der Balken selbst, mit derselben Bedienung
-    -- wie überall im Programm.
     if e.kind == "mouse_down" or e.kind == "mouse_move"
        or e.kind == "mouse_up" then
-      if bar:event(e) then
-        browser.top = bar:value() + 1
-        return true
-      end
-      return false
+      if bar:event(e) then return true end
+
+      local used = view:event(e)
+      follow_if_opened()
+      return used
     end
 
     if e.kind == "text" then
@@ -266,18 +180,10 @@ app{
         return true
       end
 
-      -- Ziffern wählen einen Verweis. Mehrstellige entstehen durch
-      -- Weitertippen: aus 1 wird 12, solange es einen Verweis 12 gibt.
-      local digit = tonumber(e.text)
-      if digit then
-        local wide = browser.selected * 10 + digit
-        if browser.links[wide] then browser.selected = wide
-        elseif browser.links[digit] then browser.selected = digit
-        else browser.selected = 0 end
-        return true
-      end
+      -- Ziffern wählen einen Verweis; das macht die Anzeige. Was sie nicht
+      -- nimmt, ist der Anfang einer neuen Adresse.
+      if view:event(e) then return true end
 
-      -- Jedes andere Zeichen beginnt eine neue Adresse.
       browser.editing = true
       browser.address = e.text
       return true
@@ -285,9 +191,12 @@ app{
 
     if e.kind ~= "key_down" then return false end
 
+    -- Return, Backspace und Esc gehören der Adresszeile, solange dort etwas
+    -- geschieht. Deshalb entscheidet das Skript über sie, bevor die Anzeige
+    -- sie zu sehen bekommt.
     if e.key == key.enter then
-      if browser.selected > 0 and not browser.editing then
-        browser.open_link(browser.selected)
+      if view:selected() > 0 and not browser.editing then
+        browser.open_link(view:selected())
       else
         -- Auch ohne Tippen: Return holt, was in der Zeile steht. So kommt man
         -- beim ersten Öffnen weiter, ohne die Adresse abzuschreiben.
@@ -307,28 +216,12 @@ app{
     elseif e.key == key.escape then
       browser.editing = false
       return true
-
-    elseif e.key == key.down then
-      browser.top = browser.top + 1
-      clamp_top()
-      return true
-
-    elseif e.key == key.up then
-      browser.top = browser.top - 1
-      clamp_top()
-      return true
-
-    elseif e.key == key.pagedown then
-      browser.top = browser.top + browser.visible
-      clamp_top()
-      return true
-
-    elseif e.key == key.pageup then
-      browser.top = browser.top - browser.visible
-      clamp_top()
-      return true
     end
 
-    return false
+    -- Alles Übrige - Hoch, Runter, Bild auf und ab, Pos1, Ende - ist
+    -- Blättern, und das kann die Anzeige selbst.
+    local used = view:event(e)
+    follow_if_opened()
+    return used
   end,
 }

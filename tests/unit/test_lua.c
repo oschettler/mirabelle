@@ -1069,6 +1069,92 @@ TEST(a_fetch_that_cannot_work_says_so_instead_of_stopping)
 
 /* --- Der Browser ------------------------------------------------------------------ */
 
+/* --- Die Bedienelemente für sich ------------------------------------------------
+ *
+ * Ein Skript bekommt die echten Widgets des Programms, nicht Nachbauten. Was
+ * sie können, steht in test_scrollbar.c und test_gemview.c; hier geht es um
+ * die Naht nach Lua - vor allem um die Lebensdauer. Auf beiden Seiten räumt
+ * jemand auf, und beide zählen anders.
+ */
+
+TEST(widgets_can_be_built_and_driven_from_lua_alone)
+{
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_net(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(run(L,
+        "v = gemview()\n"
+        "v:place(0, 0, 200, 100)\n"
+        "v:set_text('=> /eins Erster\\n=> /zwei Zweiter\\n')"));
+
+    CHECK(truth(L, "v:link_count() == 2"));
+
+    /* Der Merker für „ein Verweis soll geöffnet werden" wird beim Abfragen
+     * zurückgesetzt, wie bei list_was_opened. Ein Skript kann ihn deshalb nach
+     * jedem Ereignis abfragen, ohne selbst mitzuzählen - und ein Verweis wird
+     * einmal geöffnet und nicht bei jedem folgenden Bild wieder. */
+    CHECK(truth(L, "v:was_opened() == false"));
+    CHECK(run(L, "v:select(2)\n"
+                 "v:event{ kind = 'key_down', key = key.enter }"));
+    CHECK(truth(L, "v:selected() == 2"));
+    CHECK(truth(L, "v:was_opened() == true"));
+    CHECK(truth(L, "v:was_opened() == false"));
+
+    /* Ein Balken ohne Anzeige hat sein eigenes Modell und will gesagt
+     * bekommen, wie viel es zu rollen gibt. */
+    CHECK(run(L,
+        "b = scrollbar()\n"
+        "b:place(0, 0, 16, 100)\n"
+        "b:set(100, 10)"));
+    CHECK(truth(L, "b:max() == 90"));
+
+    CHECK(run(L, "b:scroll_to(40)"));
+    CHECK(truth(L, "b:value() == 40"));
+
+    /* Ein Klick weit weg gehört ihm nicht. Meldete er ihn als benutzt, käme
+     * im Fenster nichts mehr an. */
+    CHECK(truth(L, "b:event{ kind = 'mouse_down', x = 400, y = 400 } == false"));
+    CHECK(truth(L, "b:value() == 40"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
+TEST(a_bar_holds_on_to_the_view_it_belongs_to)
+{
+    /* Ein Balken an einer Anzeige zeigt auf DEREN Bildlaufmodell. Sammelt Lua
+     * die Anzeige ein, während es den Balken noch gibt, zeigt er ins Freie -
+     * und zwar irgendwann, nicht sofort: der Fehler wäre nicht zu finden.
+     * Deshalb hält der Balken die Anzeige fest. */
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_net(cat);
+    REQUIRE(L != NULL);
+
+    CHECK(run(L,
+        "local v = gemview()\n"
+        "v:place(0, 0, 200, 40)\n"
+        "v:set_text(('eine Zeile\\n'):rep(50))\n"
+        "b = scrollbar(v)\n"
+        "b:place(200, 0, 16, 40)\n"
+        "v = nil\n"
+        "collectgarbage('collect')\n"
+        "collectgarbage('collect')"));
+
+    /* Der Balken lebt und rechnet weiter - mit dem Modell der Anzeige, die es
+     * ohne ihn nicht mehr gäbe. */
+    CHECK(truth(L, "b:max() > 0"));
+    CHECK(run(L, "b:scroll_by(3)"));
+    CHECK(truth(L, "b:value() == 3"));
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
 static lua_State *with_browser(catalog *cat)
 {
     lua_State *L = with_net(cat);
@@ -1085,8 +1171,11 @@ static lua_State *with_browser(catalog *cat)
     return L;
 }
 
-TEST(the_browser_turns_a_page_into_lines_and_links)
+TEST(the_browser_turns_a_page_into_links)
 {
+    /* Umbrechen und Nummerieren macht die Anzeige aus dem Programm, und was
+     * sie kann, steht in test_gemview.c. Hier geht es um die Naht: kommt eine
+     * Seite dort an, und kommen die Verweise zurück? */
     catalog *cat = load_cat();
     REQUIRE(cat != NULL);
 
@@ -1095,29 +1184,27 @@ TEST(the_browser_turns_a_page_into_lines_and_links)
 
     CHECK(run(L,
         "browser.address = 'spartan://x.org/ordner/seite.gmi'\n"
-        "browser.render('# Kopf\\n=> /eins Erster\\n=> zwei.gmi\\n"
-        "* Punkt\\n', 40)"));
+        "browser.view:set_text('# Kopf\\n=> /eins Erster\\n=> zwei.gmi\\n"
+        "* Punkt\\n')"));
 
-    CHECK(truth(L, "#browser.links == 2"));
-    CHECK(truth(L, "browser.links[1] == '/eins'"));
+    CHECK(truth(L, "browser.view:link_count() == 2"));
+    CHECK(truth(L, "browser.view:link_url(1) == '/eins'"));
+    CHECK(truth(L, "browser.view:link_url(2) == 'zwei.gmi'"));
 
-    /* Verweise werden nummeriert angezeigt - bei einem Bit je Pixel gibt es
-     * keine Farbe, an der man sie erkennen könnte. */
-    CHECK(truth(L, "browser.lines[2].text:sub(1, 4) == '[1] '"));
-    CHECK(truth(L, "browser.lines[2].link == 1"));
-
-    /* Ein Verweis ohne Namen wird durch seine Adresse vertreten. */
-    CHECK(truth(L, "browser.lines[3].text:find('zwei.gmi') ~= nil"));
-
-    /* Und der Aufzählungspunkt kommt aus dem Katalog, nicht aus dem Skript. */
-    CHECK(truth(L, "browser.lines[4].text:sub(1, 1) == T('gemtext.bullet')"));
+    /* Nummern beginnen bei eins, wie angezeigt; daneben gibt es nichts. */
+    CHECK(truth(L, "browser.view:link_url(0) == nil"));
+    CHECK(truth(L, "browser.view:link_url(3) == nil"));
 
     pdalua_close(L);
     i18n_free(cat);
 }
 
-TEST(the_browser_wraps_long_lines_and_never_loses_a_word)
+TEST(a_page_survives_the_garbage_collector)
 {
+    /* Die Anzeige kopiert den Text nicht, sie zeigt hinein (gemview.h). Eine
+     * Lua-Zeichenkette, auf die sonst nichts mehr zeigt, wäre damit ein Zeiger
+     * ins Leere, sobald Lua aufräumt - und zwar erst irgendwann, nicht sofort.
+     * Deshalb hält das Benutzerdatum die Zeichenkette selbst fest. */
     catalog *cat = load_cat();
     REQUIRE(cat != NULL);
 
@@ -1125,49 +1212,19 @@ TEST(the_browser_wraps_long_lines_and_never_loses_a_word)
     REQUIRE(L != NULL);
 
     CHECK(run(L,
-        "local lang = 'wort '\n"
-        "browser.render(lang:rep(30), 20)"));
+        "local seite = '=> /' .. ('ziel'):rep(20) .. ' Name\\n'\n"
+        "browser.view:set_text(seite)\n"
+        "seite = nil\n"
+        "collectgarbage('collect')\n"
+        "collectgarbage('collect')"));
 
-    CHECK(truth(L, "#browser.lines > 5"));
+    CHECK(truth(L, "browser.view:link_count() == 1"));
+    CHECK(truth(L, "browser.view:link_url(1) == '/' .. ('ziel'):rep(20)"));
 
-    /* Keine Zeile ist breiter als erlaubt ... */
-    CHECK(truth(L,
-        "for _, l in ipairs(browser.lines) do\n"
-        "  if #l.text > 22 then return false end\n"
-        "end\n"
-        "return true"));
-
-    /* ... und alle Wörter sind noch da. */
-    CHECK(truth(L,
-        "local n = 0\n"
-        "for _, l in ipairs(browser.lines) do\n"
-        "  for _ in l.text:gmatch('wort') do n = n + 1 end\n"
-        "end\n"
-        "return n == 30"));
-
-    /* Ein Wort, das länger ist als die Zeile, wird hart getrennt - sonst
-     * liefe eine lange Adresse aus dem Fenster. */
-    CHECK(run(L, "browser.render(string.rep('x', 100), 20)"));
-    CHECK(truth(L, "#browser.lines > 3"));
-
-    pdalua_close(L);
-    i18n_free(cat);
-}
-
-TEST(preformatted_text_keeps_its_lines)
-{
-    catalog *cat = load_cat();
-    REQUIRE(cat != NULL);
-
-    lua_State *L = with_browser(cat);
-    REQUIRE(L != NULL);
-
-    CHECK(run(L,
-        "browser.render('```\\n" 
-        "eine sehr lange vorformatierte zeile die eine zeile bleibt\\n"
-        "```\\n', 20)"));
-
-    CHECK(truth(L, "#browser.lines == 1"));
+    /* Und ein zweiter Text löst den ersten ab, statt ihn festzuhalten. */
+    CHECK(run(L, "browser.view:set_text('nur Text\\n')\n"
+                 "collectgarbage('collect')"));
+    CHECK(truth(L, "browser.view:link_count() == 0"));
 
     pdalua_close(L);
     i18n_free(cat);
@@ -1185,8 +1242,8 @@ TEST(typing_a_digit_selects_a_link_and_two_digits_select_a_later_one)
         "local page = ''\n"
         "for i = 1, 12 do page = page .. '=> /' .. i .. ' Ziel ' .. i .. '\\n' end\n"
         "browser.address = 'spartan://x.org/'\n"
-        "browser.render(page, 40)"));
-    CHECK(truth(L, "#browser.links == 12"));
+        "browser.view:set_text(page)"));
+    CHECK(truth(L, "browser.view:link_count() == 12"));
 
     shell_scripting sc = pdalua_scripting(L);
     REQUIRE(sc.count(sc.user) == 1);
@@ -1195,15 +1252,15 @@ TEST(typing_a_digit_selects_a_link_and_two_digits_select_a_later_one)
     event two = { .kind = EV_TEXT, .text = "2" };
 
     CHECK(sc.event(sc.user, 0, &one));
-    CHECK(truth(L, "browser.selected == 1"));
+    CHECK(truth(L, "browser.view:selected() == 1"));
 
     CHECK(sc.event(sc.user, 0, &two));
-    CHECK(truth(L, "browser.selected == 12"));
+    CHECK(truth(L, "browser.view:selected() == 12"));
 
     /* Weiter geht es nicht - 123 gibt es nicht. */
     event three = { .kind = EV_TEXT, .text = "3" };
     CHECK(sc.event(sc.user, 0, &three));
-    CHECK(truth(L, "browser.selected == 3"));
+    CHECK(truth(L, "browser.view:selected() == 3"));
 
     pdalua_close(L);
     i18n_free(cat);
@@ -1247,9 +1304,6 @@ TEST(a_letter_starts_a_new_address_and_backspace_shortens_it)
 
 TEST(a_long_page_gets_a_working_scrollbar)
 {
-    /* Der Balken ist in Lua gezeichnet - es gibt kein Widget dafür, das ein
-     * Skript benutzen könnte. Er soll trotzdem aussehen und sich anfühlen wie
-     * die anderen: Pfeilfelder, Rinne im Schachbrett, weißer Schieber. */
     catalog *cat = load_cat();
     REQUIRE(cat != NULL);
 
@@ -1261,8 +1315,7 @@ TEST(a_long_page_gets_a_working_scrollbar)
         "for i = 1, 60 do page = page .. 'Zeile ' .. i .. '\\n' end\n"
         "browser.address = 'spartan://x.org/lang'\n"
         "browser.status  = 'text/gemini'\n"
-        "browser.render(page, 30)"));
-    CHECK(truth(L, "#browser.lines == 60"));
+        "browser.view:set_text(page)"));
 
     bitmap bm;
     REQUIRE(bitmap_init(&bm, 240, 160));
@@ -1272,21 +1325,17 @@ TEST(a_long_page_gets_a_working_scrollbar)
     shell_scripting sc = pdalua_scripting(L);
     sc.draw(sc.user, 0, &g, 240, 160);
 
-    /* Erst jetzt steht fest, wie viele Zeilen hineinpassen. */
-    CHECK(truth(L, "browser.visible > 3 and browser.visible < 60"));
-
-    /* Der Balken ist das echte Widget, kein Nachbau - er zeigt dieselbe
-     * Position wie die Anzeige. */
-    CHECK(truth(L, "browser.scrollbar:value() == browser.top - 1"));
+    /* Balken und Anzeige teilen sich ein Modell. Es gibt also keine zweite
+     * Zahl, die auseinanderlaufen könnte - der Balken zeigt, was die Anzeige
+     * anzeigt, ohne dass jemand etwas abgleicht. */
     CHECK(truth(L, "browser.scrollbar:max() > 0"));
+    CHECK(truth(L, "browser.scrollbar:value() == 0"));
     CHECK(truth(L, "browser.scrollbar:width() == theme.scrollbar_w"));
 
     CHECK(golden_check("lua_spartan_lang", &bm));
 
     /* Das untere Pfeilfeld rollt eine Zeile weiter. Wo es liegt, fragt der
      * Test den Balken - er rechnet es nicht nach. */
-    CHECK(truth(L, "browser.top == 1"));
-
     event down = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1 };
     CHECK(run(L,
         "local x, y, w, h = browser.scrollbar:frame()\n"
@@ -1297,24 +1346,30 @@ TEST(a_long_page_gets_a_working_scrollbar)
     lua_getfield(L, -1, "y"); down.y = (int)lua_tointeger(L, -1); lua_pop(L, 2);
 
     CHECK(sc.event(sc.user, 0, &down));
-    CHECK(truth(L, "browser.top == 2"));
+    CHECK(truth(L, "browser.scrollbar:value() == 1"));
 
-    /* Ein Klick daneben gehört nicht dem Balken: er meldet ihn nicht als
-     * benutzt, sonst käme im Fenster nichts mehr an. */
+    /* Ein Klick daneben gehört nicht dem Balken. Er landet in der Anzeige,
+     * und die nimmt ihn an - aber sie rollt davon nicht. */
     event beside = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1,
                      .x = 10, .y = down.y };
-    CHECK(!sc.event(sc.user, 0, &beside));
-    CHECK(truth(L, "browser.top == 2"));
+    CHECK(sc.event(sc.user, 0, &beside));
+    CHECK(truth(L, "browser.scrollbar:value() == 1"));
 
     /* Und das Mausrad ebenso, in Leserichtung. */
     event wheel = { .kind = EV_WHEEL, .x = 20, .y = 60, .wheel = -3 };
     CHECK(sc.event(sc.user, 0, &wheel));
-    CHECK(truth(L, "browser.top == 5"));
+    CHECK(truth(L, "browser.scrollbar:value() == 4"));
 
     /* Über das Ende hinaus geht es nicht. */
     event far = { .kind = EV_WHEEL, .x = 20, .y = 60, .wheel = -500 };
     CHECK(sc.event(sc.user, 0, &far));
-    CHECK(truth(L, "browser.top + browser.visible - 1 <= #browser.lines"));
+    CHECK(truth(L, "browser.scrollbar:value() == browser.scrollbar:max()"));
+
+    /* Die Pfeiltasten blättern in derselben Anzeige, ohne dass das Skript
+     * dafür eine Zeile hätte. */
+    event home = { .kind = EV_KEY_DOWN, .key = KEY_HOME };
+    CHECK(sc.event(sc.user, 0, &home));
+    CHECK(truth(L, "browser.scrollbar:value() == 0"));
 
     bitmap_free(&bm);
     pdalua_close(L);
@@ -1332,10 +1387,10 @@ TEST(the_browser_draws_a_page)
     CHECK(run(L,
         "browser.address = 'spartan://mozz.us/'\n"
         "browser.status  = 'text/gemini'\n"
-        "browser.render('# Die Hauptseite\\nEin Absatz.\\n"
+        "browser.view:set_text('# Die Hauptseite\\nEin Absatz.\\n"
         "=> /eins Erster Verweis\\n=> /zwei Zweiter Verweis\\n"
-        "* Ein Punkt\\n', 34)\n"
-        "browser.selected = 2"));
+        "* Ein Punkt\\n')\n"
+        "browser.view:select(2)"));
 
     bitmap bm;
     REQUIRE(bitmap_init(&bm, 250, 150));
@@ -1518,9 +1573,10 @@ int main(void)
     RUN(links_resolve_in_lua_the_same_way);
     RUN(a_fetch_that_cannot_work_says_so_instead_of_stopping);
 
-    RUN(the_browser_turns_a_page_into_lines_and_links);
-    RUN(the_browser_wraps_long_lines_and_never_loses_a_word);
-    RUN(preformatted_text_keeps_its_lines);
+    RUN(widgets_can_be_built_and_driven_from_lua_alone);
+    RUN(a_bar_holds_on_to_the_view_it_belongs_to);
+    RUN(the_browser_turns_a_page_into_links);
+    RUN(a_page_survives_the_garbage_collector);
     RUN(typing_a_digit_selects_a_link_and_two_digits_select_a_later_one);
     RUN(a_letter_starts_a_new_address_and_backspace_shortens_it);
     RUN(a_long_page_gets_a_working_scrollbar);

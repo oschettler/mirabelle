@@ -90,14 +90,18 @@ bool pdalua_schema(lua_State *L, const char *path, schema *out,
  * `theme`, damit ein Skript Maße nicht raten muss. */
 void pdalua_set_theme(lua_State *L, const theme *th);
 
-/* Richtet die Bedienelemente ein, die ein Skript benutzen darf - zurzeit den
- * Rollbalken. Es ist dasselbe Widget wie im Programm, nicht ein
- * nachgebautes. */
+/* Richtet die Bedienelemente ein, die ein Skript benutzen darf: den
+ * Rollbalken und die Gemtext-Anzeige. Es sind dieselben Widgets wie im
+ * Programm, keine nachgebauten. */
 void pdalua_open_widgets(lua_State *L);
 
 /* Der Zeichenzustand, in den gerade gezeichnet wird, oder NULL. Für
  * Bedienelemente, die sich selbst zeichnen. */
 gc *pdalua_current_gc(lua_State *L);
+
+/* Der Textkatalog dieses Zustands, oder NULL. Bedienelemente holen daraus
+ * ihre Beschriftungen - das Aufzählungszeichen etwa. */
+const catalog *pdalua_current_catalog(lua_State *L);
 
 /* Baut aus einer Lua-Ereignistabelle ein C-Ereignis. false, wenn die Tabelle
  * keines beschreibt. */

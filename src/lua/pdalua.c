@@ -57,6 +57,11 @@ static const catalog *current_catalog(lua_State *L)
     return get_ptr(L, KEY_CAT);
 }
 
+const catalog *pdalua_current_catalog(lua_State *L)
+{
+    return current_catalog(L);
+}
+
 /* --- Zeichnen ------------------------------------------------------------------
  *
  * Ohne Zeichenzustand tun diese Funktionen nichts. Sie werfen keinen Fehler:
