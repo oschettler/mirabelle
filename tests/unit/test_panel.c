@@ -666,6 +666,238 @@ TEST(an_event_sink_widget_consumes_every_forwarded_event)
     panel_destroy(p);
 }
 
+/* --- Verschachtelte Panels ------------------------------------------------------
+ *
+ * Ein Panel wird selbst zu einem Widget und wandert in ein anderes. Der
+ * schwierige Teil ist nicht das Zeichnen, sondern die Tabulatortaste: von
+ * außen soll es aussehen wie eine einzige Reihenfolge.
+ */
+
+TEST(a_panel_can_be_a_widget_in_another_panel)
+{
+    theme  th    = make_theme();
+    panel *outer = panel_create(&th, NULL);
+    panel *inner = panel_create(&th, NULL);
+    REQUIRE(outer && inner);
+
+    panel_set_layout(outer, LAYOUT_VSTACK, 2, 2);
+    panel_set_layout(inner, LAYOUT_HSTACK, 2, 0);
+
+    widget *a = button_create(&th, NULL, "test.btn", "a");
+    widget *b = button_create(&th, NULL, "test.btn", "b");
+    REQUIRE(a && b);
+    REQUIRE(panel_add(inner, a));
+    REQUIRE(panel_add(inner, b));
+
+    widget *nested = panel_as_widget(inner);
+    REQUIRE(nested != NULL);
+    CHECK(panel_of_widget(nested) == inner);
+    CHECK(nested->wants_focus);
+
+    widget *top = checkbox_create(&th, NULL, "test.cb", false);
+    REQUIRE(top && panel_add(outer, top));
+    REQUIRE(panel_add(outer, nested));
+
+    /* Die Wunschgröße des äußeren Panels rechnet die des inneren mit - sonst
+     * bekäme das verschachtelte Panel eine Zeile, in die es nicht passt. */
+    int ow = 0, oh = 0, iw = 0, ih = 0;
+    panel_measure(outer, &ow, &oh);
+    panel_measure(inner, &iw, &ih);
+    CHECK(ow >= iw);
+    CHECK(oh > ih);
+
+    /* Zeichnen legt das innere Panel aus - vorher steht seine Größe nicht
+     * fest, denn sie kommt vom äußeren. */
+    panel_layout(outer, rect_make(0, 0, 200, 100));
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 200, 100));
+    gc g;
+    gc_init(&g, &bm);
+    panel_draw(outer, &g);
+
+    CHECK(a->frame.w > 0);
+    CHECK(b->frame.x > a->frame.x);
+    CHECK_EQ(a->frame.y, b->frame.y);
+
+    bitmap_free(&bm);
+    panel_destroy(outer);       /* gibt das innere Panel mit frei */
+}
+
+TEST(tab_runs_through_the_nesting_as_one_order)
+{
+    theme  th    = make_theme();
+    panel *outer = panel_create(&th, NULL);
+    panel *inner = panel_create(&th, NULL);
+    REQUIRE(outer && inner);
+
+    panel_set_layout(outer, LAYOUT_VSTACK, 2, 2);
+    panel_set_layout(inner, LAYOUT_HSTACK, 2, 0);
+
+    widget *a = button_create(&th, NULL, "test.btn", "a");
+    widget *b = button_create(&th, NULL, "test.btn", "b");
+    REQUIRE(panel_add(inner, a));
+    REQUIRE(panel_add(inner, b));
+
+    widget *first  = checkbox_create(&th, NULL, "test.cb", false);
+    widget *nested = panel_as_widget(inner);
+    widget *last   = checkbox_create(&th, NULL, "test.cb", false);
+    REQUIRE(first && nested && last);
+
+    REQUIRE(panel_add(outer, first));
+    REQUIRE(panel_add(outer, nested));
+    REQUIRE(panel_add(outer, last));
+
+    event tab = { .kind = EV_KEY_DOWN, .key = KEY_TAB };
+
+    /* Vier Stationen, obwohl das äußere Panel nur drei Elemente hat. */
+    CHECK(panel_event(outer, &tab, NULL));
+    CHECK(panel_focus(outer) == first);
+
+    CHECK(panel_event(outer, &tab, NULL));
+    CHECK(panel_focus(outer) == nested);
+    CHECK(panel_focus(inner) == a);
+
+    CHECK(panel_event(outer, &tab, NULL));
+    CHECK(panel_focus(outer) == nested);   /* immer noch drinnen */
+    CHECK(panel_focus(inner) == b);
+
+    /* Und jetzt hinten heraus. */
+    CHECK(panel_event(outer, &tab, NULL));
+    CHECK(panel_focus(outer) == last);
+    CHECK(panel_focus(inner) == NULL);     /* drinnen ist nichts mehr aktiv */
+
+    /* Rückwärts genauso, in umgekehrter Reihenfolge. */
+    event shift_tab = { .kind = EV_KEY_DOWN, .key = KEY_TAB, .mods = MOD_SHIFT };
+
+    CHECK(panel_event(outer, &shift_tab, NULL));
+    CHECK(panel_focus(outer) == nested);
+    CHECK(panel_focus(inner) == b);        /* von hinten hinein */
+
+    CHECK(panel_event(outer, &shift_tab, NULL));
+    CHECK(panel_focus(inner) == a);
+
+    CHECK(panel_event(outer, &shift_tab, NULL));
+    CHECK(panel_focus(outer) == first);
+
+    panel_destroy(outer);
+}
+
+TEST(only_one_widget_is_focused_across_the_nesting)
+{
+    /* Der Fokus ist eine Stelle, nicht eine je Panel. Bliebe im inneren Panel
+     * etwas aktiv, nachdem der Fokus hinausgelaufen ist, sähe der Nutzer zwei
+     * Umrandungen und wüsste nicht, wohin er tippt. */
+    theme  th    = make_theme();
+    panel *outer = panel_create(&th, NULL);
+    panel *inner = panel_create(&th, NULL);
+    REQUIRE(outer && inner);
+
+    widget *a = button_create(&th, NULL, "test.btn", "a");
+    REQUIRE(panel_add(inner, a));
+
+    widget *nested = panel_as_widget(inner);
+    widget *other  = checkbox_create(&th, NULL, "test.cb", false);
+    REQUIRE(nested && other);
+    REQUIRE(panel_add(outer, nested));
+    REQUIRE(panel_add(outer, other));
+
+    event tab = { .kind = EV_KEY_DOWN, .key = KEY_TAB };
+    panel_event(outer, &tab, NULL);      /* auf das verschachtelte Panel */
+    CHECK(a->focused);
+
+    panel_event(outer, &tab, NULL);      /* weiter zum Kästchen */
+    CHECK(other->focused);
+    CHECK(!a->focused);
+
+    panel_destroy(outer);
+}
+
+TEST(a_click_reaches_a_widget_inside_a_nested_panel)
+{
+    theme  th    = make_theme();
+    panel *outer = panel_create(&th, NULL);
+    panel *inner = panel_create(&th, NULL);
+    REQUIRE(outer && inner);
+
+    panel_set_layout(outer, LAYOUT_VSTACK, 2, 2);
+    panel_set_layout(inner, LAYOUT_HSTACK, 2, 0);
+
+    widget *a = button_create(&th, NULL, "test.btn", "innen");
+    REQUIRE(panel_add(inner, a));
+
+    widget *nested = panel_as_widget(inner);
+    REQUIRE(nested && panel_add(outer, nested));
+
+    panel_layout(outer, rect_make(0, 0, 200, 100));
+
+    /* Erst zeichnen: das innere Panel wird ausgelegt, wenn es an der Reihe
+     * ist, und vorher hat der Knopf darin noch keinen Rahmen. Dasselbe gilt
+     * im Programm - deshalb zeichnet die Schale, bevor sie klicken lässt. */
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, 200, 100));
+    gc g;
+    gc_init(&g, &bm);
+    panel_draw(outer, &g);
+    bitmap_free(&bm);
+
+    REQUIRE(a->frame.w > 0);
+
+    event click = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1,
+                    .x = a->frame.x + a->frame.w / 2,
+                    .y = a->frame.y + a->frame.h / 2 };
+
+    /* Der Knopf im inneren Panel wird gedrückt, und sein Aktionsname kommt
+     * ganz außen heraus. Anders wäre er verloren: das innere Panel fragt nach
+     * jedem Ereignis seine Knöpfe ab und löscht dabei den Merker. Wer eine
+     * Anwendung schreibt, soll nicht wissen müssen, wie tief ein Knopf
+     * steckt. */
+    const char *action = NULL;
+    CHECK(panel_event(outer, &click, &action));
+    CHECK_STR(action, "innen");
+
+    panel_destroy(outer);
+}
+
+TEST(an_empty_nested_panel_does_not_take_the_focus)
+{
+    theme  th    = make_theme();
+    panel *outer = panel_create(&th, NULL);
+    panel *inner = panel_create(&th, NULL);
+    REQUIRE(outer && inner);
+
+    /* Nur eine Beschriftung drinnen - die nimmt keinen Fokus an. */
+    REQUIRE(panel_add(inner, label_create(&th, NULL, "test.label")));
+
+    widget *nested = panel_as_widget(inner);
+    REQUIRE(nested != NULL);
+    CHECK(!nested->wants_focus);
+
+    widget *cb = checkbox_create(&th, NULL, "test.cb", false);
+    REQUIRE(panel_add(outer, nested));
+    REQUIRE(panel_add(outer, cb));
+
+    /* Die Tabulatortaste bleibt nicht an der leeren Hülle hängen. */
+    event tab = { .kind = EV_KEY_DOWN, .key = KEY_TAB };
+    CHECK(panel_event(outer, &tab, NULL));
+    CHECK(panel_focus(outer) == cb);
+
+    panel_destroy(outer);
+}
+
+TEST(panel_as_widget_refuses_nothing)
+{
+    CHECK(panel_as_widget(NULL) == NULL);
+    CHECK(panel_of_widget(NULL) == NULL);
+
+    /* Und ein gewöhnliches Widget ist kein Panel. */
+    theme   th = make_theme();
+    widget *cb = checkbox_create(&th, NULL, "test.cb", false);
+    REQUIRE(cb != NULL);
+    CHECK(panel_of_widget(cb) == NULL);
+    widget_destroy(cb);
+}
+
 int main(void)
 {
     RUN(panel_add_and_count_and_at);
@@ -691,6 +923,13 @@ int main(void)
     RUN(event_without_trigger_leaves_out_action_null);
 
     RUN(an_event_sink_widget_consumes_every_forwarded_event);
+
+    RUN(a_panel_can_be_a_widget_in_another_panel);
+    RUN(tab_runs_through_the_nesting_as_one_order);
+    RUN(only_one_widget_is_focused_across_the_nesting);
+    RUN(a_click_reaches_a_widget_inside_a_nested_panel);
+    RUN(an_empty_nested_panel_does_not_take_the_focus);
+    RUN(panel_as_widget_refuses_nothing);
 
     return test_summary();
 }

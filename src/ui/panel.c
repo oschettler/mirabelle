@@ -313,20 +313,53 @@ static bool focusable(const widget *w)
 /* Läuft höchstens count Schritte weit, wie move_highlight in menu.c - so
  * bleibt ein Panel ohne fokussierbares Element ohne Endlosschleife
  * unverändert. */
-static void step_focus(panel *p, int dir)
+/* Rückt den Fokus um einen Schritt weiter und meldet, ob er dabei über das
+ * Ende hinausgelaufen ist.
+ *
+ * Diese Meldung braucht das verschachtelte Panel: läuft der Fokus im inneren
+ * hinten heraus, gehört der nächste Schritt dem äußeren. Ohne sie bliebe der
+ * Fokus im inneren Panel gefangen, und die Tabulatortaste käme nie wieder
+ * heraus. */
+static bool step_focus(panel *p, int dir)
 {
-    int idx = p->focus;
+    int  idx     = p->focus;
+    bool wrapped = false;
+
+    /* Ohne Fokus fängt es vorn an - beziehungsweise hinten, wenn rückwärts
+     * gegangen wird. Das ist der Fall, wenn ein äußeres Panel den Fokus
+     * gerade hierher gereicht hat. */
+    if (idx < 0) idx = dir > 0 ? -1 : p->count;
 
     for (int steps = 0; steps < p->count; steps++) {
         idx += dir;
-        if (idx < 0) idx = p->count - 1;
-        else if (idx >= p->count) idx = 0;
+
+        if (idx < 0)             { idx = p->count - 1; wrapped = true; }
+        else if (idx >= p->count) { idx = 0;           wrapped = true; }
 
         if (focusable(p->items[idx])) {
             panel_set_focus(p, p->items[idx]);
-            return;
+            return wrapped;
         }
     }
+    return true;
+}
+
+bool panel_focus_step(panel *p, int dir)
+{
+    return step_focus(p, dir > 0 ? 1 : -1);
+}
+
+/* Hebt den Fokus im ganzen Panel auf, auch in verschachtelten. Gebraucht,
+ * wenn ein äußeres Panel den Fokus woandershin gibt. */
+void panel_clear_focus(panel *p)
+{
+    for (int i = 0; i < p->count; i++) {
+        p->items[i]->focused = false;
+
+        panel *inner = panel_of_widget(p->items[i]);
+        if (inner) panel_clear_focus(inner);
+    }
+    p->focus = -1;
 }
 
 void panel_focus_next(panel *p)
@@ -341,13 +374,147 @@ void panel_focus_prev(panel *p)
 
 /* --- Ereignisse --------------------------------------------------------------- */
 
+/* --- Ein Panel als Widget ----------------------------------------------------
+ *
+ * Verschachteln geht, indem ein Panel selbst als Widget in ein anderes wandert.
+ * Das braucht ein Formular, sobald darin etwas nebeneinander stehen soll:
+ * zwei Knöpfe in einer Zeile, ein Textfeld mit einem Rollbalken daneben.
+ *
+ * Das Widget besitzt das Panel und gibt es beim Zerstören frei. Wer es anlegt,
+ * gibt es damit ab - genau wie bei panel_add.
+ */
+
+typedef struct {
+    widget base;
+    panel *inner;
+
+    /* Der Aktionsname, den ein Knopf im inneren Panel gemeldet hat, bis ihn
+     * das äußere abholt.
+     *
+     * Ohne dieses Feld ginge er verloren: panel_event fragt nach jedem
+     * Ereignis alle Knöpfe ab und löscht dabei ihren Merker (siehe panel.h).
+     * Das innere Panel täte das mit out_action = NULL, und die Meldung wäre
+     * weg, bevor irgendwer sie sehen könnte. */
+    const char *pending;
+} panel_widget;
+
+/* Das Panel hinter einem Widget, oder NULL. Über den Klassenzeiger und nicht
+ * über ein Merkmal im Widget: so kann sich niemand versehentlich als Panel
+ * ausgeben. */
+panel *panel_of_widget(const widget *w);
+
+static void panel_widget_measure(widget *w, int *pw, int *ph)
+{
+    panel_measure(((panel_widget *)w)->inner, pw, ph);
+}
+
+static void panel_widget_draw(const widget *w, gc *g)
+{
+    /* Das Layout läuft beim Zeichnen, nicht beim Aufnehmen: die Größe setzt
+     * das äußere Panel, und sie steht erst fest, wenn es selbst gelegt wurde.
+     * Bei einem vollständigen Neuzeichnen je Bild (D-5) kostet das nichts. */
+    panel_widget *pw = (panel_widget *)w;
+
+    panel_layout(pw->inner, w->frame);
+    panel_draw(pw->inner, g);
+}
+
+static bool panel_widget_event(widget *w, const event *e)
+{
+    panel_widget *pw = (panel_widget *)w;
+
+    panel_layout(pw->inner, w->frame);
+
+    const char *action = NULL;
+    bool        used   = panel_event(pw->inner, e, &action);
+
+    if (action) pw->pending = action;
+    return used;
+}
+
+static const widget_class panel_widget_class;
+
+/* Holt eine gemeldete Aktion aus einem verschachtelten Panel und löscht sie
+ * dabei - genau wie button_was_pressed, und aus demselben Grund. */
+static const char *take_nested_action(widget *w)
+{
+    if (!w || w->cls != &panel_widget_class) return NULL;
+
+    panel_widget *pw = (panel_widget *)w;
+    const char   *a  = pw->pending;
+    pw->pending = NULL;
+    return a;
+}
+
+static void panel_widget_destroy(widget *w)
+{
+    panel_destroy(((panel_widget *)w)->inner);
+}
+
+static const widget_class panel_widget_class = {
+    .name    = "panel",
+    .measure = panel_widget_measure,
+    .draw    = panel_widget_draw,
+    .event   = panel_widget_event,
+    .destroy = panel_widget_destroy,
+};
+
+panel *panel_of_widget(const widget *w)
+{
+    if (!w || w->cls != &panel_widget_class) return NULL;
+    return ((const panel_widget *)w)->inner;
+}
+
+widget *panel_as_widget(panel *p)
+{
+    if (!p) return NULL;
+
+    panel_widget *pw = calloc(1, sizeof *pw);
+    if (!pw) return NULL;
+
+    pw->base.cls     = &panel_widget_class;
+    pw->base.th      = &p->th;
+    pw->base.cat     = p->cat;
+    pw->base.enabled = true;
+
+    /* Fokus nimmt es nur an, wenn drinnen etwas ist, das ihn annehmen kann -
+     * sonst bliebe die Tabulatortaste an einer leeren Hülle hängen. */
+    for (int i = 0; i < p->count; i++)
+        if (p->items[i]->wants_focus) { pw->base.wants_focus = true; break; }
+
+    pw->inner = p;
+    return &pw->base;
+}
+
 bool panel_event(panel *p, const event *e, const char **out_action)
 {
     if (out_action) *out_action = NULL;
 
     if (e->kind == EV_KEY_DOWN && e->key == KEY_TAB) {
-        if (e->mods & MOD_SHIFT) panel_focus_prev(p);
-        else                     panel_focus_next(p);
+        int dir = (e->mods & MOD_SHIFT) ? -1 : 1;
+
+        /* Hat das fokussierte Element ein eigenes Panel, darf es den Schritt
+         * zuerst versuchen. Erst wenn der Fokus dort hinten herausläuft, ist
+         * dieses Panel an der Reihe. */
+        widget *cur   = panel_focus(p);
+        panel  *inner = cur ? panel_of_widget(cur) : NULL;
+
+        if (inner && !panel_focus_step(inner, dir)) return true;
+        if (inner) panel_clear_focus(inner);
+
+        step_focus(p, dir);
+
+        /* Landet der Fokus auf einem verschachtelten Panel, muss dort etwas
+         * ausgewählt werden - sonst hätte es den Fokus, zeigte ihn aber
+         * nirgends. */
+        widget *next = panel_focus(p);
+        panel  *dst  = next ? panel_of_widget(next) : NULL;
+        if (dst) panel_focus_step(dst, dir);
+
+        /* Immer verbraucht. Ein Panel, das Tab durchreicht, gibt die Taste an
+         * seinen eigenen Rahmen weiter - und der weiß mit ihr nichts
+         * anzufangen. Wo der Fokus als Nächstes hingehört, entscheidet ohnehin
+         * das äußere Panel, indem es hier hereinschaut. */
         return true;
     }
 
@@ -376,6 +543,12 @@ bool panel_event(panel *p, const event *e, const char **out_action)
     for (int i = 0; i < p->count; i++) {
         if (button_was_pressed(p->items[i]) && out_action)
             *out_action = button_action(p->items[i]);
+
+        /* Und dasselbe für Knöpfe, die in einem verschachtelten Panel
+         * stecken: ihre Meldung soll bis nach ganz außen durchkommen, sonst
+         * hinge sie von der Verschachtelung ab. */
+        const char *nested = take_nested_action(p->items[i]);
+        if (nested && out_action) *out_action = nested;
     }
 
     return consumed;
