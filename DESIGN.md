@@ -528,8 +528,17 @@ zwar ohne Verzweigung im Zeichencode.
 ## 8. Widgets und Layout
 
 Wenig und ausreichend. Gebaut sind `label`, `button`, `checkbox`, `list`,
-`text_field` und `text_area`; `radio`, `scrollbar`, `popup_menu` und
+`text_field`, `text_area` und `scrollbar`; `radio`, `popup_menu` und
 `date_field` kommen, wenn eine Anwendung sie braucht.
+
+Der Rollbalken ist der einzige, der auf fremde Daten zeigt statt sie zu
+kopieren: er hält einen Zeiger auf ein `scrollmodel` (`ui/scroll.h`), das dem
+gehört, was gescrollt wird. Anders ginge es nicht - was der Balken anzeigt und
+was der Inhalt anzeigt, muss dieselbe Zahl sein, nicht zwei Zahlen, die jemand
+abgleichen muss. Das Modell selbst kennt weder Bildschirm noch Ereignis: drei
+Zahlen und die Rechnungen darauf, einschließlich der Schiebergeometrie. Es ist
+zum Widget genauso getrennt wie `textbuf` zum Textfeld, und aus demselben Grund
+(D-13).
 
 Ein Widget ist eine Klasse mit vier Funktionen und ein Rechteck:
 

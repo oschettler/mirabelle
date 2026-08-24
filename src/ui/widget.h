@@ -19,6 +19,7 @@
 #include "core/i18n.h"
 #include "gfx/draw.h"
 #include "plat/plat.h"
+#include "ui/scroll.h"
 #include "ui/textbuf.h"
 #include "ui/theme.h"
 
@@ -124,6 +125,45 @@ bool list_was_opened(widget *w);
 
 /* Erster sichtbarer Eintrag; für Tests und einen späteren Rollbalken. */
 int list_top(const widget *w);
+
+/* --- Rollbalken -----------------------------------------------------------
+ *
+ * Ein Rollbalken ist eine Sicht auf ein scrollmodel (scroll.h), keine zweite
+ * Wahrheit daneben. Er hält deshalb einen Zeiger darauf und keine Kopie: was
+ * er anzeigt und was der Inhalt anzeigt, muss dieselbe Zahl sein.
+ *
+ * Das ist die eine Stelle im Projekt, an der ein Widget bewusst auf fremde
+ * Daten zeigt, statt sie zu kopieren - anders ließe sich ein Balken nicht mit
+ * dem verbinden, was er rollt. Der Preis: das Modell muss den Balken
+ * überleben. Es gehört dem, der scrollt, und liegt typischerweise in derselben
+ * Struktur wie der Inhalt.
+ *
+ * Der Balken nimmt den Fokus nicht an. Wer mit der Tastatur blättert, spricht
+ * den Inhalt an, nicht den Balken daneben.
+ */
+typedef enum {
+    SCROLLBAR_VERTICAL,     /* Pfeile oben und unten */
+    SCROLLBAR_HORIZONTAL    /* Pfeile links und rechts */
+} scrollbar_dir;
+
+/* m darf nicht NULL sein; dann liefert die Funktion NULL. */
+widget *scrollbar_create(const theme *th, const catalog *cat,
+                         scrollbar_dir dir, scrollmodel *m);
+
+/* Das angezeigte Modell - dasselbe, das beim Anlegen übergeben wurde. */
+scrollmodel *scrollbar_model(widget *w);
+
+/* Das Rechteck des Schiebers, in denselben Koordinaten wie frame.
+ *
+ * Wer den Balken bedienen will, muss wissen, wo der Schieber steht - und diese
+ * Lage soll nirgends ein zweites Mal ausgerechnet werden. Deshalb gibt der
+ * Balken sie heraus, statt dass Tests und Aufrufer seine Geometrie nachbauen.
+ * Bei leerem Modell oder unvermessenem Rahmen kommt ein leeres Rechteck. */
+rect scrollbar_thumb(const widget *w);
+
+/* true, solange am Schieber gezogen wird. Für Tests und für Aufrufer, die
+ * währenddessen nichts umbauen wollen. */
+bool scrollbar_is_dragging(const widget *w);
 
 /* --- Textfelder ----------------------------------------------------------
  *

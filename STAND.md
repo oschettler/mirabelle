@@ -46,7 +46,10 @@ Danach M11 (generischer Browser), M12 (Kalender), M13 (Lua).
   `0b5b716` einen Entwurf aus einem Guss statt eines Erlebnisberichts; die 14
   vorhandenen Kapitel sind noch im alten Ton geschrieben und werden dabei
   spürbar kürzer.
-- **Rollbalken** fehlen noch. `scrollbar_w` steht im Thema, das Widget nicht.
+- **Rollbalken hängen noch an nichts.** Modell (`ui/scroll.h`) und Widget sind
+  gebaut und geprüft; Liste und mehrzeiliges Textfeld führen aber weiter ihr
+  eigenes `top` statt eines `scrollmodel` und zeigen deshalb keinen Balken.
+  Das ist der nächste Schritt.
 - `radio`, `popup_menu`, `date_field` kommen, wenn eine Anwendung sie braucht.
 
 ## Arbeitsweise, die sich bewährt hat
