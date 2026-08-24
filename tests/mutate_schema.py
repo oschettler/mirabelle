@@ -33,7 +33,7 @@ MUTS = [
  ("choice ohne values erlaubt", "        if (f->kind == FIELD_CHOICE && f->value_count == 0)", "        if (false)"),
  ("values ohne choice erlaubt", "        if (f->kind != FIELD_CHOICE && f->value_count > 0)", "        if (false)"),
  ("kein Feld erlaubt",          "    if (s->field_count == 0) return fail(err, err_size, path, 0, \"kein einziges Feld\");", "    (void)0;"),
- ("Halbfertiges wird uebernommen", "    if (!ok) return false;\n    if (!check_whole(&tmp, err, err_size, path)) return false;\n\n    *s = tmp;", "    *s = tmp;\n    if (!ok) return false;\n    if (!check_whole(&tmp, err, err_size, path)) return false;"),
+ ("Halbfertiges wird uebernommen", "    if (!ok) return false;\n    if (!schema_check(&tmp, path, err, err_size)) return false;\n\n    *s = tmp;", "    *s = tmp;\n    if (!ok) return false;\n    if (!schema_check(&tmp, path, err, err_size)) return false;"),
  ("required no wird true",      "        else if (strcmp(word, \"no\") == 0)  f->required = false;", "        else if (strcmp(word, \"no\") == 0)  f->required = true;"),
 ]
 

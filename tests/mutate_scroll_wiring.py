@@ -9,7 +9,7 @@ CASES = [
   ("Rad falsch herum",                        "scroll_by(&lw->sc, -e->wheel);", "scroll_by(&lw->sc, e->wheel);"),
   ("list_scroll zieht nicht nach",            "    list_widget *lw = (list_widget *)w;\n    list_sync(lw);\n    return &lw->sc;", "    list_widget *lw = (list_widget *)w;\n    return &lw->sc;"),
  ]),
- ("src/ui/widget_text.c", "src/ui/caret.c", [
+ ("src/ui/widget_text.c", [
 
   ("Schreibmarke bleibt unsichtbar",    "    scroll_reveal(&tw->sc, text_area_line_at(tw, textbuf_cursor(tw->buf)));", "    (void)0;"),
   ("Rad im einzeiligen Feld",           "        if (!tw->multiline) return false;\n        if (!rect_contains(w->frame, e->x, e->y)) return false;", "        if (!rect_contains(w->frame, e->x, e->y)) return false;"),

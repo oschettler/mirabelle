@@ -8,6 +8,12 @@ SRC  = pathlib.Path("src/core/collate.c")
 DEPS = ["src/core/utf8.c", "src/core/lines.c", "tests/unit/test_collate.c"]
 orig = SRC.read_text(encoding="utf-8")
 
+# Nicht in der Liste, weil gleichwertig: "if (ca < 0)" zu "if (ca <= 0)" aendert
+# nichts. An dieser Stelle sind beide Bytes gleich, und ein Nullbyte kann dort
+# nicht stehen - die Eingabe ist eine C-Zeichenkette und die Ersetzungen sind es
+# auch. Eine gleichwertige Mutation ueberlebt jeden Test und saehe im Ergebnis
+# aus wie eine Luecke.
+
 MUTS = [
  ("binaere Suche findet nichts",     "if (c->entries[mid].cp == cp) return c->entries[mid].repl;", "if (false) return c->entries[mid].repl;"),
  ("binaere Suche laeuft falsch",     "if (c->entries[mid].cp < cp)  lo = mid + 1;", "if (c->entries[mid].cp > cp)  lo = mid + 1;"),
@@ -17,7 +23,6 @@ MUTS = [
  ("Rohbytes werden nicht ausgegeben","        f->raw[n]  = '\\0';\n        f->raw_pos = 0;", "        f->raw[n]  = '\\0';\n        f->raw_pos = -1;"),
  ("Vergleich ohne zweite Stufe",     "    int raw = strcmp(a, b);\n    return raw < 0 ? -1 : (raw > 0 ? 1 : 0);", "    (void)a; (void)b;\n    return 0;"),
  ("Vergleich verkehrt herum",        "if (ca != cb) return ca < cb ? -1 : 1;", "if (ca != cb) return ca < cb ? 1 : -1;"),
- ("Vergleich bricht zu frueh ab",    "if (ca < 0) break;", "if (ca <= 0) break;"),
  ("leere Nadel findet nichts",       "if (cn < 0) return true;", "if (cn < 0) return false;"),
  ("Suche rueckt nicht vor",          "        if (fold_next(&f) < 0) return false;", "        return false;"),
  ("Suche haengt an einer Stelle",    "        if (matches_here(f, c, needle)) return true;\n        if (fold_next(&f) < 0) return false;", "        if (matches_here(f, c, needle)) return true;\n        if (!*f.p) return false;"),
@@ -25,10 +30,11 @@ MUTS = [
  ("Falten prueft die Groesse nicht", "        if (n + 1 >= out_size) return (size_t)-1;", "        if (false) return (size_t)-1;"),
  ("Falten terminiert nicht",         "    out[n] = '\\0';\n    return n;", "    return n;"),
  ("Dopplung wird zugelassen",        "    if (i < c->count && c->entries[i].cp == cp)", "    if (false)"),
- ("Ersatzlaenge nicht geprueft",     "if (strlen(p) > COLLATE_REPL_MAX) {", "if (false) {"),
- ("leerer Ersatz zugelassen",        "        if (!*p) {\n            ok = !fail(err, err_size, path, lineno, \"der Ersatz fehlt\");", "        if (false) {\n            ok = !fail(err, err_size, path, lineno, \"der Ersatz fehlt\");"),
- ("zwei Zeichen links zugelassen",   "        if (*p != ' ' && *p != '\\t') {", "        if (false) {"),
- ("Kommentar wird nicht entfernt",   "        char *hash = strchr(line, '#');\n        if (hash) *hash = '\\0';", "        char *hash = NULL;\n        if (hash) *hash = '\\0';"),
+ ("Ersatzlaenge nicht geprueft",     "if (strlen(r.word[1]) > COLLATE_REPL_MAX) {", "if (false) {"),
+ ("fehlender Ersatz zugelassen",     "if (r.count != 2) {", "if (r.count > 2) {"),
+ ("zu viele Angaben zugelassen",     "if (r.count != 2) {", "if (r.count < 2) {"),
+ ("zwei Zeichen links zugelassen",   "        if (*left) {", "        if (false) {"),
+ ("ungueltiges Zeichen zugelassen",  "if (cp == 0 || cp == UTF8_REPLACEMENT) {", "if (false) {"),
  ("Einsortieren an falscher Stelle", "    while (i < c->count && c->entries[i].cp < cp) i++;", "    i = c->count;"),
 ]
 

@@ -970,13 +970,14 @@ static bool fs_event(void *user, int index, const event *e)
     return f->consume;
 }
 
-static shell *open_shell_with(fake_scripts *f, shell_scripting *sc)
+static shell *open_shell_with_keys(fake_scripts *f, shell_scripting *sc,
+                                   keymap *km)
 {
     *sc = (shell_scripting){ f, fs_count, fs_title, fs_update, fs_draw, fs_event };
 
     shell_config cfg = {
         .data_dir = PDA_DATA_DIR, .vault = g_vault, .theme = &g_theme,
-        .catalog = g_cat, .keymap = g_km, .sort = g_sort, .search = g_search,
+        .catalog = g_cat, .keymap = km, .sort = g_sort, .search = g_search,
         .screen_w = SCREEN_W, .screen_h = SCREEN_H, .scripts = sc,
     };
 
@@ -984,6 +985,11 @@ static shell *open_shell_with(fake_scripts *f, shell_scripting *sc)
     shell *s = shell_create(&cfg, err, sizeof err);
     if (!s) printf("  Schale: %s\n", err);
     return s;
+}
+
+static shell *open_shell_with(fake_scripts *f, shell_scripting *sc)
+{
+    return open_shell_with_keys(f, sc, g_km);
 }
 
 TEST(scripts_become_applications_too)
@@ -1094,6 +1100,90 @@ TEST(record_actions_do_nothing_in_a_script_window)
     CHECK_STR(shell_last_error(s), "");
 
     shell_destroy(s);
+    teardown();
+}
+
+TEST(keys_for_records_reach_a_script_that_has_none)
+{
+    /* Der Fehler, um den es geht: im SPARTAN-Browser ließ sich die Adresse
+     * eintippen, aber Return tat nichts. Return steht in der Tastenbelegung
+     * als `list.open`, die Schale hielt die Taste für ihre eigene und
+     * verbrauchte sie - obwohl es in einer Skriptanwendung keine Liste gibt,
+     * die sich öffnen ließe.
+     *
+     * Regel: Eine Aktion, die einen Datensatz anfasst, gehört der Schale nur
+     * dann, wenn es auch einen gibt. Sonst geht die Taste weiter. */
+    REQUIRE(setup());
+
+    fake_scripts    f  = { .count = 1, .consume = true };
+    shell_scripting sc;
+    shell          *s = open_shell_with(&f, &sc);
+    REQUIRE(s != NULL);
+
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, app_by_label(s, "app.agenda"), err, sizeof err));
+    REQUIRE(shell_app_browser(s, app_by_label(s, "app.agenda")) == NULL);
+
+    event ret = { .kind = EV_KEY_DOWN, .key = KEY_RETURN };
+    shell_event(s, &ret);
+    CHECK_EQ(f.evented, 1);
+
+    /* Dasselbe für die Datensatztasten und für Esc, das im Formular abbricht. */
+    event neu = { .kind = EV_KEY_DOWN, .key = 'n',  .mods = MOD_CMD };
+    event esc = { .kind = EV_KEY_DOWN, .key = KEY_ESCAPE };
+    shell_event(s, &neu);
+    shell_event(s, &esc);
+    CHECK_EQ(f.evented, 3);
+
+    /* Eine Taste, die der Schale selbst gehört, bleibt bei ihr: Cmd+1 wechselt
+     * die Anwendung, auch wenn ein Skript im Vordergrund steht. Sonst könnte
+     * ein Skript das Programm übernehmen. */
+    event eins = { .kind = EV_KEY_DOWN, .key = '1', .mods = MOD_CMD };
+    shell_event(s, &eins);
+    CHECK_EQ(f.evented, 3);
+
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(a_form_key_bound_to_the_app_area_still_reaches_a_script)
+{
+    /* Die Bereiche stehen in einer Datei, nicht im Code. Wer `form.accept`
+     * im Bereich `app` bindet, bekommt die Aktion auch in einem Fenster ohne
+     * Formular - und auch dann darf die Schale sie nicht verbrauchen, sondern
+     * muss sie weiterreichen. Sonst hinge die Regel an der Belegung, die
+     * gerade mitgeliefert wird. */
+    REQUIRE(setup());
+
+    char root[600], path[700];
+    temp_root(root, sizeof root);
+    snprintf(path, sizeof path, "%s/eigene.keys", root);
+
+    FILE *fp = fopen(path, "w");
+    REQUIRE(fp != NULL);
+    fprintf(fp, "form.accept  F5  app\n");
+    fclose(fp);
+
+    char    err[256] = "";
+    keymap *km = keymap_load(path, err, sizeof err);
+    if (!km) printf("  Belegung: %s\n", err);
+    REQUIRE(km != NULL);
+
+    fake_scripts    f  = { .count = 1, .consume = true };
+    shell_scripting sc;
+    shell          *s = open_shell_with_keys(&f, &sc, km);
+    REQUIRE(s != NULL);
+
+    REQUIRE(shell_open_app(s, app_by_label(s, "app.agenda"), err, sizeof err));
+    REQUIRE(shell_app_browser(s, app_by_label(s, "app.agenda")) == NULL);
+
+    event f5 = { .kind = EV_KEY_DOWN, .key = KEY_F5 };
+    shell_event(s, &f5);
+    CHECK_EQ(f.evented, 1);
+
+    shell_destroy(s);
+    keymap_free(km);
+    remove(path);
     teardown();
 }
 
@@ -1209,6 +1299,8 @@ int main(void)
     RUN(scripts_become_applications_too);
     RUN(a_script_application_gets_a_window_and_draws_itself);
     RUN(record_actions_do_nothing_in_a_script_window);
+    RUN(keys_for_records_reach_a_script_that_has_none);
+    RUN(a_form_key_bound_to_the_app_area_still_reaches_a_script);
 
     RUN(an_error_becomes_visible);
 

@@ -387,6 +387,32 @@ TEST(more_than_one_character_on_the_left_is_refused)
     CHECK(strstr(err, ":1:") != NULL);
 }
 
+TEST(a_third_word_on_the_line_is_refused)
+{
+    /* Ein Ersatz mit einem Leerzeichen darin wäre in einer Sortiertabelle
+     * sinnlos; ein drittes Wort ist also ein Tippfehler. Wer es stillschweigend
+     * übergeht, sortiert monatelang nach etwas anderem, als in der Datei steht. */
+    char        err[256] = "";
+    const char *path     = write_temp("drei_woerter", "ä ae extra\n");
+    REQUIRE(path != NULL);
+
+    CHECK(collate_load(path, err, sizeof err) == NULL);
+    CHECK(strstr(err, ":1:") != NULL);
+}
+
+TEST(a_broken_character_on_the_left_is_refused)
+{
+    /* Ein einzelnes Folgebyte ist kein Zeichen. utf8_next gibt dafür das
+     * Ersatzzeichen zurück - stünde das in der Tabelle, ersetzte sie jedes
+     * kaputte Byte einer Eingabe durch denselben Buchstaben. */
+    char        err[256] = "";
+    const char *path     = write_temp("kaputtes_zeichen", "\xA4 ae\n");
+    REQUIRE(path != NULL);
+
+    CHECK(collate_load(path, err, sizeof err) == NULL);
+    CHECK(strstr(err, ":1:") != NULL);
+}
+
 TEST(a_missing_file_says_so)
 {
     char err[256] = "";
@@ -437,6 +463,8 @@ int main(void)
     RUN(a_line_with_only_whitespace_after_the_character_is_refused);
     RUN(a_replacement_that_is_too_long_is_refused);
     RUN(more_than_one_character_on_the_left_is_refused);
+    RUN(a_third_word_on_the_line_is_refused);
+    RUN(a_broken_character_on_the_left_is_refused);
     RUN(a_missing_file_says_so);
     RUN(an_empty_table_is_allowed_and_only_lowercases);
 
