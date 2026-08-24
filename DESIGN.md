@@ -28,7 +28,7 @@ Rangfolge: bei Zweifeln gewinnt die weiter oben stehende Regel.
    Speicher. SDL3 zeigt diese Bitmap nur an. Deshalb lässt sich praktisch alles
    — Fensterrahmen, Menüs, Umlaute, ganze Bedienabläufe — headless,
    deterministisch und pixelgenau prüfen.
-5. **Portabel.** Zwischen Kern und Außenwelt liegt eine Schicht aus vierzehn
+5. **Portabel.** Zwischen Kern und Außenwelt liegt eine Schicht aus achtzehn
    Funktionen. SDL3 und der ESP32-S3 sind zwei Implementierungen davon, mehr nicht.
 
 ---
@@ -96,28 +96,44 @@ Regel: **Jede Schicht kennt nur die direkt darunter.** `ui/` ruft nie SDL auf,
 
 ```
 src/
-  core/    event.c  str.c  utf8.c  collate.c  time.c  i18n.c
-  gfx/     bitmap.c  draw.c  pattern.c  font.c  text.c
-  ui/      wm.c  window.c  menu.c  dialog.c  widget.c  layout.c  focus.c  osk.c
-  store/   record.c  frontmatter.c  gemtext.c  vault.c  index_sqlite.c  query.c
-  lua/     api_gfx.c  api_input.c  api_window.c  api_store.c  api_sys.c
-  plat/    plat.h  plat_sdl3.c  plat_esp32.c  plat_headless.c
+  core/    utf8.c  i18n.c  keymap.c  collate.c  date.c
+  gfx/     bitmap.c  pbm.c  draw.c  pattern.c  font.c  text.c
+  ui/      wm.c  window.c  menu.c  dialog.c  theme.c
+           widget.c  widget_list.c  widget_text.c  widget_scroll.c
+           panel.c  textbuf.c  scroll.c
+  store/   record.c  frontmatter.c  gemtext.c  vault.c  query.c
+           index_sqlite.c            (nur wenn SQLite da ist)
+  net/     spartan.c  plat_transport.c
+  app/     schema.c  fieldkind.c  browser.c  monthview.c  gemview.c  shell.c
+  lua/     pdalua.c  pdalua_store.c  pdalua_schema.c
+           pdalua_apps.c  pdalua_net.c   (nur wenn Lua da ist)
+  plat/    plat.h  plat_sdl3.c  plat_headless.c
+           plat_files_posix.c  plat_net_posix.c
+           plat_esp32.c                (M16, noch nicht gebaut)
   main.c
 data/
   fonts/    system12.head  system12-*.part  required.set  derived.map
-  lang/     de.strings  en.strings
-  schema/   task.lua  event.lua  contact.lua  note.lua
-  keys/     default.keys  osk_de.lua
-  themes/   desktop.lua  touch.lua
-  patterns/ system.pat
-apps/       browser.lua  calendar.lua
+            system12.metrics
+  lang/     de.strings  en.strings  de.sort
+  collate/  search.fold
+  schema/   task.schema  contact.schema  note.schema  event.schema
+            task.lua                    (dieselbe Anwendung in Lua, D-15)
+  keys/     default.keys
+  themes/   desktop.theme
+  apps/     spartan.lua  outline.lua  agenda.lua
+tools/      fontc.c
 tests/
-  unit/     test_utf8.c  test_draw.c  test_frontmatter.c  test_collate.c
+  unit/     test_*.c
+  support/  golden.c
   golden/   *.pbm
-  scripts/  *.ui
-vendor/     lua-5.4/  sqlite3/
-docs/       diagramme/
+  mutate_*.py
+docs/       diagramme/  fnt-format.md  ui-style-guide.md
+handbuch/   src/*.adoc  build/
 ```
+
+Was hier **nicht** steht, steht auch nicht im Repository: keine Kopien von Lua
+oder SQLite. Beide kommen über `pkg-config`, und fehlt eines, wird der
+betreffende Teil nicht gebaut - die Anwendungen laufen trotzdem.
 
 ---
 
@@ -151,21 +167,34 @@ bool       plat_list(const char *dir, plat_dirent *out, int cap, int *count);
 bool       plat_mkdir(const char *path);   /* true auch, wenn es schon da ist */
 bool       plat_rename(const char *from, const char *to);
 bool       plat_remove(const char *path);
+
+/* Netz */
+plat_socket *plat_connect(const char *host, int port, char *err, size_t n);
+bool         plat_send(plat_socket *s, const char *data, size_t len);
+long         plat_recv(plat_socket *s, char *buf, size_t cap);
+void         plat_disconnect(plat_socket *s);
 ```
 
-Vierzehn Funktionen. `plat_headless` schreibt `plat_present` in eine Bitmap,
+Achtzehn Funktionen. `plat_headless` schreibt `plat_present` in eine Bitmap,
 liest Ereignisse aus einer Warteschlange, die der Test füllt, und lässt die Uhr
 stillstehen, bis jemand sie stellt — deshalb laufen fast alle Tests ohne Fenster
 und ohne Grafikkarte, und jeder Lauf ist gleich.
 
-Beim Entwurf standen hier zwölf Funktionen. `plat_mkdir` kam in M4 dazu, weil
-der Vault Verzeichnisse anlegen muss, `plat_rename` und `plat_remove` in M9 für
-sicheres Speichern: erst vollständig in eine Nebendatei schreiben, dann
-darüberlegen. Bricht das Programm mittendrin ab, steht die alte Fassung noch da
-statt einer halben neuen — bei Nutzerdaten ist das kein Luxus.
+Beim Entwurf standen hier zwölf. `plat_mkdir` kam dazu, weil der Vault
+Verzeichnisse anlegen muss, `plat_rename` und `plat_remove` für sicheres
+Speichern: erst vollständig in eine Nebendatei schreiben, dann darüberlegen.
+Bricht das Programm mittendrin ab, steht die alte Fassung noch da statt einer
+halben neuen — bei Nutzerdaten ist das kein Luxus. Die vier Netzfunktionen
+kamen mit dem SPARTAN-Browser.
 
 Die Zahl ist keine Zusage, wohl aber die Größenordnung: diese Schicht bleibt
 klein genug, dass eine Portierung überschaubar ist.
+
+Die Netzfunktionen sind das Gegenstück zu den Dateifunktionen — eine Verbindung
+ist ein Ding, in das man schreibt und aus dem man liest. Keine davon weiß etwas
+über ein Protokoll; SPARTAN kennt umgekehrt keine davon, sondern bekommt seinen
+Transport übergeben. Deshalb lässt sich das Protokoll ohne Netz prüfen, und die
+Portierung auf lwIP berührt es nicht.
 
 **Touch wächst diese Schicht nicht.** Ein Fingertipp ist ein Mausereignis mit
 `button = 1`; nur ein Merker `is_touch` am Ereignis sagt der Oberfläche, dass es
@@ -907,7 +936,7 @@ zu je 16 Bytes: ein Quellbyte wird acht Pixel, ein `memcpy` pro Byte.
 
 **Entscheidung D-5 bleibt damit unangetastet.** Die Optimierung sitzt vollständig
 in der Plattformschicht; `gfx/` und `ui/` erfahren nichts davon. Genau dafür gibt
-es die vierzehn Funktionen — das ist der erste echte Beleg, dass die Schichtung trägt.
+es die Funktionen der Plattformschicht — das ist der erste echte Beleg, dass die Schichtung trägt.
 
 Gegen Reißen bekommt `esp_lcd_rgb_panel` Bounce-Puffer im internen RAM. Die
 bewährten Werte stehen in Abschnitt 12.6 und sind aus einem laufenden Port auf
@@ -1071,9 +1100,9 @@ Zeichenkette im Quelltext.
 |---|---|
 | Reißen des Bildes | Weitgehend entschärft: PCLK 12 MHz und Bounce-Puffer über sechzehn Zeilen sind auf dieser Platine verifiziert (12.6). Offen bleibt, ob unser Ausklappen nach RGB565 zusätzliche Last erzeugt, die der fremde Port so nicht hatte. Gleich am Anfang von M16 messen. |
 | Schriften | Eigene Entwürfe, kein Apple-Material. Rechtlich sauber, kostet aber Zeichenarbeit für rund 160 Glyphen in drei Schnitten. |
-| Textbearbeitung | Ein mehrzeiliges Feld mit Umbruch, Auswahl und Widerrufen ist mehr Arbeit, als es aussieht. Eigenes Kapitel, eigene Testabdeckung. |
+| Textbearbeitung | Gebaut (M8). Die Schätzung stimmte: das mehrzeilige Feld war der teuerste einzelne Baustein. Tragbar gemacht hat es die Trennung des Textmodells vom Widget (D-13) — die Schreibmarke ist ohne Bildschirm prüfbar. |
 | Touch-Genauigkeit des GT911 | Ob `hit_slop` allein reicht oder das Touch-Thema durchgehend größere Bedienelemente braucht, zeigt erst das Gerät. |
-| SPARTAN:// | Bewusst zurückgestellt. Braucht nur eine Socket-Funktion in der Plattformschicht und eine weitere Anwendung. |
+| SPARTAN:// | Gebaut (M17). Es blieb bei Socket-Funktionen in der Plattformschicht — genauer: bei vier — und einer weiteren Anwendung. Dass diese Anwendung ein Lua-Skript werden konnte, war die eigentliche Probe: `data/apps/spartan.lua` ist der Browser, und kein C-Code weiß von ihm. |
 
 ---
 
@@ -1088,11 +1117,11 @@ Zeichenkette im Quelltext.
 | D-5 | Voll neu zeichnen statt schmutziger Rechtecke | 48 kB pro Bild sind geschenkt; die Sparsamkeit sitzt in `plat_esp32.c` |
 | D-6 | 1 Bit pro Pixel im Kern | Passt zu System 1 und hält den Bildspeicher mit 48 kB im internen SRAM des ESP32 |
 | D-7 | Ein generischer Browser plus Schemadateien | Drei der vier Anwendungen entstehen ohne Code |
-| D-15 | Der Schemavertrag ist die C-Struktur, nicht Lua | Der Browser läuft ohne Lua; Lua wird ein zweiter Lader statt der einzige |
 | D-8 | Eigener Mini-YAML-Parser statt Bibliothek | 150 Zeilen, lehrreich, keine Abhängigkeit |
 | D-9 | 800 × 480 auf beiden Zielen, Vergrößerung nur in der Anzeige | Was du entwickelst, ist pixelgenau was das Gerät zeigt; Sollbilder gelten für beide Seiten. Auf derselben Platine unabhängig bestätigt (12.2) |
 | D-10 | Touch ist ein Zeiger ohne Hover, Trefferflächen kommen aus dem Thema | Die Plattformschicht wächst dadurch nicht |
-| D-14 | Elementmaße nach dem Style Guide, Auflösung und Schrift nicht | Ein Style Guide beschreibt das Aussehen; womit man es erreicht, bleibt Sache des Projekts |
-| D-13 | Textmodell getrennt vom Textwidget | Der schwierigste Teil eines Editors ist die Schreibmarke, nicht das Zeichnen — getrennt ist er ohne Bildschirm prüfbar |
-| D-12 | Textkörper in Gemtext statt Markdown | Ein Parser mit einem Bit Zustand; Notizendarsteller und SPARTAN-Browser werden dieselbe Funktion |
 | D-11 | Bildschirmtastatur ist ein gewöhnliches Fenster | Erzeugt normale Ereignisse; der Rest des Systems merkt nichts. Eine externe Tastatur über USB oder BLE ist damit kein Sonderfall, sondern derselbe Weg (12.5) |
+| D-12 | Textkörper in Gemtext statt Markdown | Ein Parser mit einem Bit Zustand; Notizendarsteller und SPARTAN-Browser werden dieselbe Funktion |
+| D-13 | Textmodell getrennt vom Textwidget | Der schwierigste Teil eines Editors ist die Schreibmarke, nicht das Zeichnen — getrennt ist er ohne Bildschirm prüfbar |
+| D-14 | Elementmaße nach dem Style Guide, Auflösung und Schrift nicht | Ein Style Guide beschreibt das Aussehen; womit man es erreicht, bleibt Sache des Projekts |
+| D-15 | Der Schemavertrag ist die C-Struktur, nicht Lua | Der Browser läuft ohne Lua; Lua wird ein zweiter Lader statt der einzige |

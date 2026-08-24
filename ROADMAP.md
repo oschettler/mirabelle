@@ -6,6 +6,25 @@ Regel: **Eine Stufe ist erst fertig, wenn ihre Tests grün sind.** Nichts wird
 
 Alle Entwurfsentscheidungen stehen in [DESIGN.md](DESIGN.md).
 
+## Stand
+
+Fertig: **M1 bis M13** und **M17**. Offen: M14 (aufgezeichnete Bedienabläufe),
+M15 (Touch und Bildschirmtastatur) und M16 (der Port auf das Gerät).
+
+M17 wurde vorgezogen. Er hängt an nichts aus M14 bis M16, und er beantwortet
+eine Frage, die man besser früh stellt: taugt die Anwendungsschnittstelle für
+etwas, das beim Entwurf nicht auf dem Tisch lag? Die Antwort steht in
+`data/apps/spartan.lua` — der Browser ist ein Skript, und kein C-Code weiß von
+ihm.
+
+Dazwischen ist etwas entstanden, das im Fahrplan nicht steht: **die Schale**
+(`src/app/shell.c`). Sie liest die Schemadateien, macht aus jeder eine
+Anwendung, gibt ihr ein Fenster und baut die Menüleiste daraus. Sie gehört
+sachlich zu M11, wurde aber erst gebraucht, als es mehr als eine Anwendung
+gab.
+
+Wo der Stand im Einzelnen steht und wie man wieder einsteigt: [STAND.md](STAND.md).
+
 ---
 
 ## Teil I — Pixel (M1 bis M3)
@@ -76,7 +95,7 @@ jeder Änderung noch richtig steht.
 
 ## Teil IV — Daten (M9 bis M10)
 
-**M9 · Datensätze, Markdown, Front Matter**
+**M9 · Datensätze, Gemtext, Front Matter**
 Der Mini-YAML-Parser mit Zeilennummern in Fehlermeldungen, IDs, der Vault,
 Rundlauf von lesen nach schreiben.
 *Lehrstoff:* Einen Parser von Hand schreiben, und einen Sprachausschnitt bewusst
@@ -132,7 +151,7 @@ Zeitlage, PCLK, Bounce-Puffer, Flash-Modus und die vertauschte Farbreihenfolge
 sind auf genau dieser Platine verifiziert und stehen dort fertig. Wer das
 übergeht, verbrennt einen Tag an einem Bootloader, der nicht startet, und einen
 zweiten an blauem Text, der rot sein sollte.
-*Lehrstoff:* Hier geht die Rechnung für die vierzehn Funktionen auf — oder eben
+*Lehrstoff:* Hier geht die Rechnung für die Plattformschicht auf — oder eben
 nicht, und dann weißt du warum. Miss die Bildstabilität am Anfang des Kapitels,
 nicht am Ende: unser Ausklappen nach RGB565 erzeugt Last, die der Referenzport
 so nicht hatte.
@@ -154,8 +173,9 @@ Lua nach den Anwendungen, weil du erst weißt, welche API du brauchst, wenn du s
 in C schon zweimal geschrieben hast.
 Der Aufnahmeapparat vor dem Touch-Thema, weil er der einzige Weg ist, die
 Touch-Bedienung ohne Gerät zu prüfen.
-Das Gerät zum Schluss, weil bis dahin alles Portierungsrelevante hinter vierzehn
-Funktionen liegt.
+Das Gerät zum Schluss, weil bis dahin alles Portierungsrelevante hinter den
+Funktionen von `plat.h` liegt — inzwischen achtzehn: vierzehn für Bildschirm,
+Eingabe, Zeit und Dateien, vier für das Netz.
 
 ## Was zuerst schiefgehen wird
 

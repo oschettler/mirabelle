@@ -5,29 +5,36 @@ Fahrplan in [ROADMAP.md](ROADMAP.md).
 
 ## Wo wir stehen
 
-**Fertig: M1 bis M9.** 387 Tests in 25 Suiten, warnungsfrei unter
+**Fertig: M1 bis M13 und M17.** 39 Testsuiten, warnungsfrei unter
 `-Wall -Wextra -Wpedantic`, ebenso unter Address- und UB-Sanitizer.
 
 | Meilenstein | Inhalt |
 |---|---|
 | M1 | Bitmap, PBM, Testläufer |
 | M2 | Zeichenprimitive, Muster, Übertragungsmodi |
-| M3 | Bitmapschrift (127 Glyphen), UTF-8, `fontc` |
-| M4 | Plattformschicht (14 Funktionen), SDL3, headless |
+| M3 | Bitmapschrift, UTF-8, `fontc` |
+| M4 | Plattformschicht, SDL3, headless |
 | M5 | Maus, Tastatur, Tastenbelegung aus Datei |
 | M6 | Überlappende Fenster, Themen |
 | M7 | Textkatalog, Menüs, modale Dialoge |
 | M8 | Widgets, Layout, Fokus, Textmodell, Textfelder |
 | M9 | Gemtext, Front Matter, Datensätze, Vault |
-| M10 | Sortierung, Abfragen, SQLite-Index mit FTS5 |
+| M10 | Sortierung nach DIN 5007, Abfragen, SQLite mit FTS5 |
 | M11 | Schemata, Feldtyp-Registratur, generischer Browser |
 | M12 | Datumsrechnung, Monatsansicht, Ansichtsregistratur |
-| M13 | Lua 5.4 eingebettet, API, Schemalader, eine Lua-Anwendung |
-| M17 | SPARTAN-Protokoll, Netz in plat.h, Gemtext-Anzeige |
-| — | Die Schale: Fenster, Menüs, Rollbalken, Skriptanwendungen |
+| M13 | Lua 5.4, die API, ein zweiter Schemalader, Skriptanwendungen |
+| M17 | SPARTAN-Protokoll, Netz in `plat.h`, Gemtext-Anzeige |
+| — | Die Schale: Fenster, Menüs, Rollbalken, Dialoge, Skriptanwendungen |
 
-Dazu: Handbuch (14 Kapitel, baut zu PDF/EPUB/HTML), Maße nach
-`docs/ui-style-guide.md`.
+Das Programm trägt sieben Anwendungen: **Aufgaben, Kontakte, Notizen, Termine**
+aus je einer Schemadatei und **SPARTAN, Gliederung, Agenda** aus je einer
+Lua-Datei. Keine davon wird im C-Code namentlich genannt.
+
+    ./build/pda              starten, Vault unter ~/PDA
+    ./build/pda --apps       auflisten, was gefunden wurde
+    --vault <verzeichnis>    anderer Ort (oder PDA_VAULT)
+    --lang en                andere Sprache
+    --shot <datei.pbm>       ein Bild schreiben und beenden
 
 ## Was als Nächstes dran ist
 
