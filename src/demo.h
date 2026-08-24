@@ -25,8 +25,16 @@ typedef struct {
     dialog        *dlg;
     const keymap  *km;
     const catalog *cat;
+
+    /* Eine eigene Kopie des Themas. Der Rollbalken am Notizfeld wandert in
+     * kein Panel, also hängt ihn niemand auf eine fremde Kopie um - er hält
+     * den Zeiger, den er beim Anlegen bekam. Zeigte der auf das Thema des
+     * Aufrufers, wäre er baumelnd, sobald dessen Funktion zurückkehrt. */
+    theme          th;
     window       *w_desk;
     panel        *form;
+    widget       *notes;      /* das mehrzeilige Feld im Formular */
+    widget       *notes_bar;  /* sein Rollbalken, am rechten Fensterrand */
     window       *w_keys;
     char          last_action[64];
     int           click_x, click_y, click_count;

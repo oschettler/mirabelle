@@ -46,11 +46,16 @@ Danach M11 (generischer Browser), M12 (Kalender), M13 (Lua).
   `0b5b716` einen Entwurf aus einem Guss statt eines Erlebnisberichts; die 14
   vorhandenen Kapitel sind noch im alten Ton geschrieben und werden dabei
   spürbar kürzer.
-- **Rollbalken stehen**, aber noch kein Fenster stellt einen auf. Modell
-  (`ui/scroll.h`), Widget und die Anbindung von Liste und mehrzeiligem
-  Textfeld sind fertig; wer einen Balken will, hängt ihn an `list_scroll()`
-  beziehungsweise `text_widget_scroll()`. Ein Balken am Fensterrand, wie ihn
-  System 1 hatte, gehört zum Fenster und nicht zum Panel - der kommt mit M11.
+- **Rollbalken sind fertig.** Modell (`ui/scroll.h`), Widget, die Anbindung von
+  Liste und mehrzeiligem Textfeld, und im Schreibtischfenster der Vorführung
+  steht einer neben dem Notizfeld. Wer einen will, hängt ihn an
+  `list_scroll()` beziehungsweise `text_widget_scroll()`.
+- **Panels lassen sich noch nicht verschachteln.** `panel.h` stellt es in
+  Aussicht, gebaut ist es nicht. Deshalb steht der Balken der Vorführung neben
+  dem Formular und nicht darin - die Anwendung zieht ihm den Platz vom Layout
+  ab und reicht ihm Ereignisse selbst. Das ist tragfähig, aber jede weitere
+  Anwendung müsste es abschreiben; spätestens für M11 lohnt sich entweder ein
+  Panel als Widget oder ein Bedienelement, das Inhalt und Balken zusammenfasst.
 - `radio`, `popup_menu`, `date_field` kommen, wenn eine Anwendung sie braucht.
 
 ## Arbeitsweise, die sich bewährt hat
@@ -70,6 +75,13 @@ Danach M11 (generischer Browser), M12 (Kalender), M13 (Lua).
   als hätte sie überlebt. Ein `touch` genügt dagegen nicht - es hilft der
   Objektdatei, nicht dem Binden. Woran man es merkt: **zwei Läufe liefern
   verschiedene Überlebende.** Dann ist der Prüfstand falsch, nicht der Test.
+- **Ein Thema wird kopiert, nie als Zeiger gehalten.** Diese Falle hat vier
+  Mal zugeschlagen: `wm_create`, `menubar_create`, die Panel-Widgets, und
+  zuletzt der Rollbalken der Vorführung, der in kein Panel wandert und den
+  Zeiger deshalb behält. Sichtbar wurde es an einer Balkenbreite von null,
+  nicht an einem Absturz - der Zeiger zeigte auf einen aufgegebenen Stapel,
+  der zufällig noch lesbar war. Wer ein Widget außerhalb eines Panels hält,
+  hält auch eine Kopie des Themas.
 - Eine überlebende Mutation ist noch kein Befund. Erst nachrechnen, ob sie
   überhaupt etwas ändert. Ist sie gleichwertig, weil der geänderte Zweig nie
   erreicht wird, gehört nicht ein Test hinzu, sondern der tote Code weg.

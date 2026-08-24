@@ -15,6 +15,8 @@
 #include "core/i18n.h"
 #include "ui/theme.h"
 #include "ui/panel.h"
+#include "ui/scroll.h"
+#include "ui/window.h"
 #include "ui/widget.h"
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
@@ -238,6 +240,59 @@ TEST(mouse_click_is_recorded_with_count)
     demo_free(&st);
 }
 
+/* Der Rollbalken am Notizfeld gehört nicht zum Panel, sondern liegt daneben
+ * am Fensterrand. Die Anwendung muss ihn also selbst zeichnen und ihm selbst
+ * Ereignisse anbieten, und zwar vor dem Formular - sonst nähme das Formular
+ * den Klick und der Balken bliebe tot.
+ *
+ * Sein Rahmen steht erst nach dem ersten Zeichnen fest, weil er sich nach dem
+ * Notizfeld richtet und dessen Lage das Layout setzt. Deshalb hier erst
+ * zeichnen, dann klicken - genau die Reihenfolge, die auch im Programm gilt. */
+TEST(the_notes_scrollbar_is_wired_up)
+{
+    demo_state st;
+    REQUIRE(start(&st, NULL));
+    REQUIRE(st.notes != NULL);
+    REQUIRE(st.notes_bar != NULL);
+
+    text_widget_set_value(st.notes,
+        "eins\nzwei\ndrei\nvier\nfuenf\nsechs\nsieben\nacht\nneun\nzehn\n"
+        "elf\nzwoelf\ndreizehn\nvierzehn\nfuenfzehn\nsechzehn\nsiebzehn\n"
+        "achtzehn\nneunzehn\nzwanzig");
+
+    bitmap fb;
+    REQUIRE(bitmap_init(&fb, 800, 480));
+    gc g;
+    gc_init(&g, &fb);
+    demo_draw(&st, &g);
+
+    scrollmodel *m = scrollbar_model(st.notes_bar);
+    REQUIRE(scroll_max(m) > 0);
+    scroll_to(m, 0);
+
+    /* Auf das untere Pfeilfeld des Balkens klicken - in Bildschirm-, nicht in
+     * Fensterkoordinaten, so wie ein Klick wirklich hereinkommt. */
+    rect  f = st.notes_bar->frame;
+    rect  cr = window_content_rect(st.w_desk);
+    event click = { .kind = EV_MOUSE_DOWN, .button = 1, .clicks = 1,
+                    .x = cr.x + f.x + f.w / 2,
+                    .y = cr.y + f.y + f.h - 3 };
+    /* Der Balken muss überhaupt eine Breite haben. Ohne diese Zeile ginge ein
+     * Balken der Breite null als "Klick daneben" durch, und der Test wäre
+     * grün, ohne etwas zu prüfen - genau so ist er beim ersten Lauf
+     * durchgefallen. */
+    CHECK_EQ(f.w, st.notes_bar->th->scrollbar_w);
+    CHECK(f.w > 0);
+
+    demo_event(&st, &click);
+
+    CHECK_EQ(text_widget_top_line(st.notes), 1);
+    CHECK_EQ(m->value, 1);
+
+    bitmap_free(&fb);
+    demo_free(&st);
+}
+
 TEST(golden_demo_after_input)
 {
     keymap *km = load_keys();
@@ -321,6 +376,7 @@ int main(void)
     RUN(plain_letter_is_not_a_shortcut);
     RUN(mouse_click_is_recorded_with_count);
     RUN(closing_a_window_by_its_close_box_is_safe);
+    RUN(the_notes_scrollbar_is_wired_up);
     RUN(golden_demo_after_input);
     i18n_free(g_cat);
     return test_summary();

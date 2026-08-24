@@ -53,7 +53,13 @@ struct widget {
      *
      * Ein Thema wird nie als Zeiger festgehalten, sondern immer kopiert, und
      * alles hängt an der Kopie. Diese Regel gibt es, weil das Gegenteil hier
-     * dreimal zu Abstürzen geführt hat. */
+     * mehrfach zu Abstürzen und falschen Maßen geführt hat.
+     *
+     * Achtung bei Widgets, die in KEIN Panel wandern - etwa einem Rollbalken
+     * neben einem Formular. Die hängt niemand um; sie behalten den Zeiger vom
+     * Anlegen. Wer so eines baut, hält selbst eine Kopie des Themas, die das
+     * Widget überlebt. Ein Thema auf dem Stapel einer Funktion, die
+     * zurückkehrt, taugt dafür nicht. */
     const theme        *th;
     const catalog      *cat;
 

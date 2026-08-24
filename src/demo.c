@@ -92,6 +92,7 @@ bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
     memset(st, 0, sizeof *st);
     st->km      = km;
     st->cat     = cat;
+    st->th      = *th;   /* kopieren, nicht zeigen - siehe demo.h */
     st->running = true;
 
     st->m = wm_create(th, screen_w, screen_h);
@@ -132,12 +133,28 @@ bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
     }
     panel_set_layout(st->form, LAYOUT_FORM, 6, 8);
 
+    st->notes = text_area_create(th, cat);
+
     if (!panel_add(st->form, label_create(th, cat, "form.name")) ||
         !panel_add(st->form, text_field_create(th, cat)) ||
         !panel_add(st->form, label_create(th, cat, "form.status")) ||
         !panel_add(st->form, checkbox_create(th, cat, "form.done", false)) ||
         !panel_add(st->form, label_create(th, cat, "form.notes")) ||
-        !panel_add(st->form, text_area_create(th, cat))) {
+        !st->notes || !panel_add(st->form, st->notes)) {
+        demo_free(st);
+        return false;
+    }
+
+    /* Der Rollbalken zum Notizfeld. Er steht nicht im Panel, sondern daneben
+     * am Fensterrand - so hatte es System 1, und so muss das Layout nichts
+     * von ihm wissen. Er zeigt auf das Bildlaufmodell des Felds; abgeglichen
+     * wird nichts, es ist dieselbe Zahl.
+     *
+     * Nach panel_add zeigt st->notes auf dasselbe Widget wie zuvor, aber sein
+     * Thema hängt jetzt am Panel - deshalb erst hier fragen. */
+    st->notes_bar = scrollbar_create(&st->th, cat, SCROLLBAR_VERTICAL,
+                                     text_widget_scroll(st->notes));
+    if (!st->notes_bar) {
         demo_free(st);
         return false;
     }
@@ -148,6 +165,13 @@ bool demo_init(demo_state *st, const keymap *km, const catalog *cat,
 
 void demo_free(demo_state *st)
 {
+    /* Der Balken gehört nicht dem Panel - es kennt ihn gar nicht - also gibt
+     * ihn die Anwendung frei. Und zwar vor dem Panel: er zeigt auf ein Modell,
+     * das im Notizfeld liegt. */
+    if (st->notes_bar) widget_destroy(st->notes_bar);
+    st->notes_bar = NULL;
+    st->notes     = NULL;
+
     if (st->form) panel_destroy(st->form);
     st->form = NULL;
 
@@ -226,6 +250,10 @@ void demo_event(demo_state *st, const event *e)
             local.x -= cr.x;
             local.y -= cr.y;
         }
+
+        /* Der Balken zuerst: er liegt neben dem Formular, und ein Klick auf
+         * ihn ist keiner ins Formular. */
+        if (st->notes_bar && widget_event(st->notes_bar, &local)) return;
 
         const char *act = NULL;
         if (panel_event(st->form, &local, &act)) {
@@ -328,9 +356,23 @@ static void draw_desk_window(const demo_state *st, window *w)
     /* Das Formular bekommt den Rest des Fensters. Das Layout muss vor dem
      * Zeichnen laufen, weil sich die Fenstergröße geändert haben kann. */
     if (st->form) {
-        rect area = rect_make(0, y - system12.ascent, cr.w, cr.h - (y - system12.ascent));
+        /* Der Rollbalken bekommt seinen Platz vom Layout abgezogen, statt sich
+         * über das Formular zu legen: sonst liefe der Text unter ihm weiter
+         * und würde für eine Breite umgebrochen, die gar nicht zu sehen ist.
+         * Ein Pixel Überlappung, damit beide sich die Randlinie teilen. */
+        int  bar_w = st->notes_bar ? st->notes_bar->th->scrollbar_w : 0;
+        int  y0    = y - system12.ascent;
+        rect area  = rect_make(0, y0, cr.w - bar_w + 1, cr.h - y0);
+
         panel_layout(st->form, area);
         panel_draw(st->form, &g);
+
+        if (st->notes_bar && st->notes) {
+            st->notes_bar->frame = rect_make(area.x + area.w - 1,
+                                             st->notes->frame.y,
+                                             bar_w, st->notes->frame.h);
+            widget_draw(st->notes_bar, &g);
+        }
     }
 }
 
