@@ -766,7 +766,15 @@ return {
 }
 ```
 
-Eine generische Anwendung (`apps/browser.lua`) liest das Schema und baut daraus
+**Nachtrag zur Umsetzung (D-15):** Der Vertrag ist nicht Lua, sondern die
+Struktur `schema` in `app/schema.h`. Wer ein Schema hat, hat ein `schema` — ob
+es aus einer Textdatei kam (`data/schema/*.schema`, gelesen seit M11) oder aus
+einer Lua-Tabelle (M13), sieht der Browser nicht. Lua kommt damit als zweiter
+Lader dazu und nicht als Ersatz. Das ist nicht bloß der Reihenfolge der
+Meilensteine geschuldet: auf dem Gerät darf Lua fehlen, und die Anwendungen
+laufen trotzdem.
+
+Eine generische Anwendung liest das Schema und baut daraus
 Liste, Formular, Menüs und Tastenkürzel. **Aufgaben, Kontakte und Notizen
 entstehen damit vollständig aus je einer Schemadatei, ohne eine Zeile
 Programmcode.**
@@ -1063,6 +1071,7 @@ Zeichenkette im Quelltext.
 | D-5 | Voll neu zeichnen statt schmutziger Rechtecke | 48 kB pro Bild sind geschenkt; die Sparsamkeit sitzt in `plat_esp32.c` |
 | D-6 | 1 Bit pro Pixel im Kern | Passt zu System 1 und hält den Bildspeicher mit 48 kB im internen SRAM des ESP32 |
 | D-7 | Ein generischer Browser plus Schemadateien | Drei der vier Anwendungen entstehen ohne Code |
+| D-15 | Der Schemavertrag ist die C-Struktur, nicht Lua | Der Browser läuft ohne Lua; Lua wird ein zweiter Lader statt der einzige |
 | D-8 | Eigener Mini-YAML-Parser statt Bibliothek | 150 Zeilen, lehrreich, keine Abhängigkeit |
 | D-9 | 800 × 480 auf beiden Zielen, Vergrößerung nur in der Anzeige | Was du entwickelst, ist pixelgenau was das Gerät zeigt; Sollbilder gelten für beide Seiten. Auf derselben Platine unabhängig bestätigt (12.2) |
 | D-10 | Touch ist ein Zeiger ohne Hover, Trefferflächen kommen aus dem Thema | Die Plattformschicht wächst dadurch nicht |

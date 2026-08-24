@@ -127,6 +127,14 @@ add_library(pda_ui
 )
 target_link_libraries(pda_ui PUBLIC pda_gfx pda_core)
 
+# --- Anwendungen -------------------------------------------------------------
+# Der generische Browser und die Schemata, aus denen er die Anwendungen baut.
+
+add_library(pda_app
+    src/app/schema.c
+)
+target_link_libraries(pda_app PUBLIC pda_ui pda_store)
+
 # --- Die Vorführung ----------------------------------------------------------
 # Getrennt von main.c, damit sie ohne SDL und ohne Bildschirm geprüft werden kann.
 
@@ -170,7 +178,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query schema)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
@@ -204,6 +212,10 @@ if(TARGET pda_index)
     target_compile_definitions(test_index
         PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 endif()
+
+target_link_libraries(test_schema      PRIVATE pda_app)
+target_compile_definitions(test_schema
+    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 target_link_libraries(test_query       PRIVATE pda_store)
 target_compile_definitions(test_query
