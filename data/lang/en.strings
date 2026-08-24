@@ -99,3 +99,5 @@ field.time               = Time
 # Das Aufzählungszeichen ist eine Darstellungsentscheidung, keine Übersetzung -
 # es steht hier, damit es sich ändern lässt, ohne den Zeichencode anzufassen.
 gemtext.bullet           = *
+menu.apps                = Applications
+menu.file.delete         = Delete

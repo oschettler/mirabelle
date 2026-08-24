@@ -101,3 +101,5 @@ field.time               = Uhrzeit
 # Das Aufzählungszeichen ist eine Darstellungsentscheidung, keine Übersetzung -
 # es steht hier, damit es sich ändern lässt, ohne den Zeichencode anzufassen.
 gemtext.bullet           = *
+menu.apps                = Anwendungen
+menu.file.delete         = Löschen

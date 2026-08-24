@@ -26,7 +26,7 @@ edit.copy             Cmd+C          global
 edit.paste            Cmd+V          global
 menu.enter            F10            global
 app.tasks             Cmd+1          global
-app.calendar          Cmd+2          global
+app.events            Cmd+2          global
 app.contacts          Cmd+3          global
 app.notes             Cmd+4          global
 
