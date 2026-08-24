@@ -177,13 +177,6 @@ else()
     message(STATUS "Lua nicht gefunden - die Skriptanbindung wird nicht gebaut")
 endif()
 
-# --- Die Vorführung ----------------------------------------------------------
-# Getrennt von main.c, damit sie ohne SDL und ohne Bildschirm geprüft werden kann.
-
-add_library(pda_demo src/demo.c)
-target_link_libraries(pda_demo PUBLIC pda_ui pda_gfx pda_core)
-target_include_directories(pda_demo PUBLIC src)
-
 # --- Das Programm ------------------------------------------------------------
 # Ganz zum Schluss, weil es sich zusammensucht, was da ist: die Oberfläche in
 # jedem Fall, Lua und der Index nur, wenn sie gebaut wurden. Stünde es weiter
@@ -269,7 +262,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query schema fieldkind browser date monthview spartan gemview shell)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query schema fieldkind browser date monthview spartan gemview shell)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
@@ -298,12 +291,12 @@ endforeach()
 
 target_link_libraries(test_fontc PRIVATE pda_fontc)
 
-target_link_libraries(test_text_widget PRIVATE pda_ui pda_fonts)
+target_link_libraries(test_text_widget PRIVATE pda_ui)
 target_compile_definitions(test_text_widget
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 if(TARGET pda_lua)
-    target_link_libraries(test_lua PRIVATE pda_lua pda_fonts pda_plat_headless
+    target_link_libraries(test_lua PRIVATE pda_lua pda_plat_headless
                                           PkgConfig::LUA)
     target_compile_definitions(test_lua
         PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
@@ -315,23 +308,23 @@ if(TARGET pda_index)
         PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 endif()
 
-target_link_libraries(test_shell       PRIVATE pda_app pda_fonts pda_plat_headless)
+target_link_libraries(test_shell       PRIVATE pda_app pda_plat_headless)
 target_compile_definitions(test_shell
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_gemview     PRIVATE pda_app pda_fonts)
+target_link_libraries(test_gemview     PRIVATE pda_app)
 target_compile_definitions(test_gemview
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_monthview   PRIVATE pda_app pda_fonts)
+target_link_libraries(test_monthview   PRIVATE pda_app)
 target_compile_definitions(test_monthview
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_browser     PRIVATE pda_app pda_fonts pda_plat_headless)
+target_link_libraries(test_browser     PRIVATE pda_app pda_plat_headless)
 target_compile_definitions(test_browser
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_fieldkind   PRIVATE pda_app pda_fonts)
+target_link_libraries(test_fieldkind   PRIVATE pda_app)
 target_compile_definitions(test_fieldkind
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
@@ -356,37 +349,34 @@ target_link_libraries(test_scroll  PRIVATE pda_ui)
 target_compile_definitions(test_collate
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_scrollbar PRIVATE pda_ui pda_fonts)
+target_link_libraries(test_scrollbar PRIVATE pda_ui)
 target_compile_definitions(test_scrollbar
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_list PRIVATE pda_ui pda_fonts)
+target_link_libraries(test_list PRIVATE pda_ui)
 target_compile_definitions(test_list
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_panel PRIVATE pda_ui pda_fonts)
+target_link_libraries(test_panel PRIVATE pda_ui)
 target_compile_definitions(test_panel
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_widget PRIVATE pda_ui pda_fonts)
+target_link_libraries(test_widget PRIVATE pda_ui)
 target_compile_definitions(test_widget
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_dialog PRIVATE pda_ui pda_fonts)
+target_link_libraries(test_dialog PRIVATE pda_ui)
 target_compile_definitions(test_dialog
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_menu PRIVATE pda_ui pda_fonts)
+target_link_libraries(test_menu PRIVATE pda_ui)
 target_compile_definitions(test_menu
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_wm PRIVATE pda_ui pda_fonts)
+target_link_libraries(test_wm PRIVATE pda_ui)
 target_compile_definitions(test_wm
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_demo PRIVATE pda_demo pda_fonts)
-target_compile_definitions(test_demo
-    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 target_compile_definitions(test_i18n
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")

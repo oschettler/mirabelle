@@ -1097,6 +1097,62 @@ TEST(record_actions_do_nothing_in_a_script_window)
     teardown();
 }
 
+TEST(an_error_becomes_visible)
+{
+    /* Ohne Statuszeile waren Fehler unsichtbar: die Meldung wurde gesetzt und
+     * nirgends gezeigt, und für den Nutzer passierte beim Sichern einfach
+     * nichts. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    int  notes = app_by_label(s, "app.notes");
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, notes, err, sizeof err));
+    CHECK_STR(shell_last_error(s), "");
+
+    /* Ein neuer Datensatz ohne Titel lässt sich nicht sichern - der Titel ist
+     * im Schema als Pflicht eingetragen. */
+    shell_run_action(s, "record.new");
+    shell_run_action(s, "record.save");
+    CHECK(shell_last_error(s)[0] != '\0');
+
+    bitmap bm;
+    REQUIRE(bitmap_init(&bm, SCREEN_W, SCREEN_H));
+    gc g;
+    gc_init(&g, &bm);
+    shell_draw(s, &g);
+
+    /* Die Zeile steht ganz unten und ist weiß; dahinter läge sonst der
+     * Schreibtisch, und der ist ein Schachbrett. Gezählt wird also nicht
+     * „viele Pixel", sondern „auffällig wenige". */
+    int mit = 0;
+    for (int y = SCREEN_H - g_theme.menubar_h + 2; y < SCREEN_H; y++)
+        for (int x = 0; x < SCREEN_W; x++)
+            if (bitmap_get(&bm, x, y)) mit++;
+
+    /* Und sie verschwindet wieder, sobald etwas gelingt. */
+    shell_run_action(s, "app.notes");
+    CHECK_STR(shell_last_error(s), "");
+
+    gc_init(&g, &bm);
+    shell_draw(s, &g);
+
+    int ohne = 0;
+    for (int y = SCREEN_H - g_theme.menubar_h + 2; y < SCREEN_H; y++)
+        for (int x = 0; x < SCREEN_W; x++)
+            if (bitmap_get(&bm, x, y)) ohne++;
+
+    if (mit >= ohne) printf("  mit=%d ohne=%d\n", mit, ohne);
+    CHECK(mit < ohne);
+    CHECK(mit > 0);          /* der Text steht ja darin */
+
+    bitmap_free(&bm);
+    shell_destroy(s);
+    teardown();
+}
+
 /* --- Aussehen -------------------------------------------------------------------------- */
 
 TEST(two_windows_side_by_side)
@@ -1153,6 +1209,8 @@ int main(void)
     RUN(scripts_become_applications_too);
     RUN(a_script_application_gets_a_window_and_draws_itself);
     RUN(record_actions_do_nothing_in_a_script_window);
+
+    RUN(an_error_becomes_visible);
 
     RUN(two_windows_side_by_side);
 

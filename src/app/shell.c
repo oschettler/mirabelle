@@ -11,12 +11,16 @@
 #include <string.h>
 
 #include "app/browser.h"
+#include "gfx/font.h"
+#include "gfx/text.h"
 #include "app/schema.h"
 #include "ui/dialog.h"
 #include "ui/menu.h"
 #include "ui/widget.h"
 #include "ui/window.h"
 #include "ui/wm.h"
+
+extern const font system12;
 
 #define APPS_MAX 16
 
@@ -487,8 +491,12 @@ void shell_run_action(shell *s, const char *action)
         if (strcmp(action, s->apps[i].label) != 0) continue;
 
         char msg[256] = "";
-        if (!shell_open_app(s, i, msg, sizeof msg))
-            snprintf(s->last_error, sizeof s->last_error, "%s", msg);
+        bool ok = shell_open_app(s, i, msg, sizeof msg);
+
+        /* Auch der Erfolg schreibt: eine stehengebliebene alte Meldung wäre
+         * schlimmer als keine, weil sie zu etwas gehört, das längst vorbei
+         * ist. */
+        snprintf(s->last_error, sizeof s->last_error, "%s", ok ? "" : msg);
         return;
     }
 
@@ -596,6 +604,42 @@ static void finish_ask(shell *s)
         snprintf(s->last_error, sizeof s->last_error, "%s", msg);
 }
 
+/* Die Statuszeile am unteren Rand.
+ *
+ * Sie erscheint nur, wenn es etwas zu sagen gibt. Eine Zeile, die immer da ist
+ * und meistens leer, nimmt Platz und wird übersehen; eine, die nur bei einer
+ * Meldung auftaucht, sieht man.
+ *
+ * Ohne sie waren Fehler unsichtbar: „Titel darf nicht leer sein" wurde gesetzt
+ * und nirgends gezeigt, und für den Nutzer passierte beim Sichern einfach
+ * nichts. */
+static void draw_status(const shell *s, gc *g)
+{
+    if (!s->last_error[0]) return;
+
+    int  h = s->th.menubar_h;
+    rect r = rect_make(0, s->cfg.screen_h - h, s->cfg.screen_w, h);
+
+    g->origin = (point){ 0, 0 };
+    gc_clip(g, rect_make(0, 0, s->cfg.screen_w, s->cfg.screen_h));
+
+    g->pat  = PAT_WHITE;
+    g->mode = GFX_COPY;
+    gfx_fill_rect(g, r);
+
+    g->pat = PAT_BLACK;
+    gfx_hline(g, r.x, r.y, r.w);
+
+    char        text[512];
+    const char *args[] = { s->last_error };
+
+    if (!Tf(s->cfg.catalog, "status.error", text, sizeof text, args, 1))
+        snprintf(text, sizeof text, "%s", s->last_error);
+
+    gfx_text(g, &system12, r.x + s->th.menubar_left,
+             r.y + (h - system12.size) / 2 + system12.ascent, text);
+}
+
 void shell_draw(shell *s, gc *g)
 {
     for (int i = 0; i < s->app_count; i++) {
@@ -627,6 +671,7 @@ void shell_draw(shell *s, gc *g)
 
     wm_draw(s->wm, g);
     menubar_draw(s->mb, g, s->cfg.screen_w);
+    draw_status(s, g);
 }
 
 /* --- Ereignisse ------------------------------------------------------------------------- */

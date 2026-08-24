@@ -231,16 +231,20 @@ TEST(tf_substitutes_single_argument)
 
     const char *args[1] = { "Sichern" };
     char        out[64];
-    CHECK(Tf(c, "demo.action", out, sizeof out, args, 1));
-    CHECK_STR(out, "Aktion: Sichern");
+    CHECK(Tf(c, "status.error", out, sizeof out, args, 1));
+    CHECK_STR(out, "Fehler: Sichern");
 
     i18n_free(c);
 }
 
+/* Mit eigener Datei, weil im echten Katalog kein Eintrag drei Platzhalter hat.
+ * Einen dort nur für den Test stehen zu lassen, hieße einen Text auszuliefern,
+ * den niemand sieht. */
 TEST(tf_substitutes_multiple_arguments_in_text_order)
 {
-    char path[512];
-    lang_path(path, sizeof path, "de.strings");
+    char path[256];
+    make_temp_path(path, sizeof path, "pda_test_i18n_drei.strings");
+    CHECK(write_text_file(path, "test.drei = Klick: {0}, {1} ({2}x)\n"));
 
     char err[256];
     catalog *c = i18n_load(path, err, sizeof err);
@@ -248,10 +252,11 @@ TEST(tf_substitutes_multiple_arguments_in_text_order)
 
     const char *args[3] = { "10", "20", "3" };
     char        out[64];
-    CHECK(Tf(c, "demo.click", out, sizeof out, args, 3));
+    CHECK(Tf(c, "test.drei", out, sizeof out, args, 3));
     CHECK_STR(out, "Klick: 10, 20 (3x)");
 
     i18n_free(c);
+    remove(path);
 }
 
 /* {1} steht vor {0} im Text - eine eigene Testdatei, weil kein Eintrag im
@@ -277,20 +282,23 @@ TEST(tf_substitutes_arguments_out_of_order)
 
 TEST(tf_leaves_placeholder_without_argument_unchanged)
 {
-    char path[512];
-    lang_path(path, sizeof path, "de.strings");
+    char path[256];
+    make_temp_path(path, sizeof path, "pda_test_i18n_fehlt.strings");
+    CHECK(write_text_file(path, "test.drei = Klick: {0}, {1} ({2}x)\n"));
 
     char err[256];
     catalog *c = i18n_load(path, err, sizeof err);
     REQUIRE(c != NULL);
 
-    /* nur zwei Argumente für drei Platzhalter - {2} bleibt stehen */
+    /* Nur zwei Argumente für drei Platzhalter. Der übrige bleibt stehen -
+     * sichtbar falsch ist besser als stillschweigend leer. */
     const char *args[2] = { "10", "20" };
     char        out[64];
-    CHECK(Tf(c, "demo.click", out, sizeof out, args, 2));
+    CHECK(Tf(c, "test.drei", out, sizeof out, args, 2));
     CHECK_STR(out, "Klick: 10, 20 ({2}x)");
 
     i18n_free(c);
+    remove(path);
 }
 
 TEST(tf_fails_with_small_buffer)
@@ -582,9 +590,9 @@ TEST(catalog_texts_are_valid_utf8)
 
     CHECK(utf8_valid(T(de, "menu.file.open")));
     CHECK(utf8_valid(T(de, "dialog.discard.body")));
-    CHECK(utf8_valid(T(de, "demo.greeting")));
+    CHECK(utf8_valid(T(de, "app.tasks")));
     CHECK(utf8_valid(T(en, "dialog.discard.body")));
-    CHECK(utf8_valid(T(en, "demo.greeting")));
+    CHECK(utf8_valid(T(en, "app.tasks")));
 
     i18n_free(de);
     i18n_free(en);

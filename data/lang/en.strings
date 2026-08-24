@@ -46,11 +46,6 @@ window.desk              = Desktop
 window.keys              = Shortcuts
 
 # --- Demo -------------------------------------------------------------------
-demo.greeting            = Greetings from Köln, Fräulein Müller!
-demo.hint                = Drag the title bar.
-demo.action              = Action: {0}
-demo.action.none         = (none yet)
-demo.click               = Click: {0}, {1} ({2}x)
 
 # --- Counts -----------------------------------------------------------------
 list.count.one           = {0} entry
@@ -111,3 +106,6 @@ spartan.redirect         = Redirect to
 spartan.badlink          = That link goes nowhere.
 dialog.delete.body       = Really delete “{0}”? This cannot be undone.
 spartan.hint             = Return fetches this address. Type to replace it, Esc cancels.
+
+# --- Statuszeile ------------------------------------------------------------
+status.error             = Error: {0}

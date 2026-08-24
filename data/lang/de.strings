@@ -46,11 +46,6 @@ window.desk              = Schreibtisch
 window.keys              = Kürzel
 
 # --- Vorführung -------------------------------------------------------------
-demo.greeting            = Grüße aus Köln, Fräulein Müller!
-demo.hint                = Ziehen Sie die Titelleiste.
-demo.action              = Aktion: {0}
-demo.action.none         = (noch keine)
-demo.click               = Klick: {0}, {1} ({2}x)
 
 # --- Zählungen --------------------------------------------------------------
 list.count.one           = {0} Eintrag
@@ -113,3 +108,7 @@ spartan.redirect         = Weiterleitung nach
 spartan.badlink          = Der Verweis führt nirgendwohin.
 dialog.delete.body       = „{0}“ wirklich löschen? Das lässt sich nicht rückgängig machen.
 spartan.hint             = Return holt die Adresse. Tippen ersetzt sie, Esc bricht ab.
+
+# --- Statuszeile ------------------------------------------------------------
+# Erscheint nur, wenn es etwas zu sagen gibt.
+status.error             = Fehler: {0}

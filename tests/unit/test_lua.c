@@ -197,7 +197,7 @@ TEST(texts_come_from_the_catalog)
     CHECK(truth(L, "T('gibt.es.nicht') == 'gibt.es.nicht'"));
 
     /* Platzhalter und Plural. */
-    CHECK(truth(L, "T('demo.action', 'Test') == 'Aktion: Test'"));
+    CHECK(truth(L, "T('status.error', 'Test') == 'Fehler: Test'"));
     CHECK(truth(L, "Tn('list.count', 1) == '1 Eintrag'"));
     CHECK(truth(L, "Tn('list.count', 3) == '3 Einträge'"));
 
