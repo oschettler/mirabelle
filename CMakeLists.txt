@@ -29,6 +29,7 @@ add_library(pda_core
     src/core/utf8.c
     src/core/keymap.c
     src/core/i18n.c
+    src/core/lines.c
     src/core/collate.c
     src/core/date.c
 )
@@ -261,7 +262,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query schema fieldkind browser date monthview spartan gemview shell)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll lines collate query schema fieldkind browser date monthview spartan gemview shell)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh

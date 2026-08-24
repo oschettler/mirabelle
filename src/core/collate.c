@@ -13,11 +13,11 @@
  */
 #include "core/collate.h"
 
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "core/lines.h"
 #include "core/utf8.h"
 
 #define COLLATE_REPL_MAX 15   /* längster Ersatz in Byte, ohne Nullbyte */
@@ -33,24 +33,6 @@ struct collate {
     size_t         count;
     size_t         cap;
 };
-
-/* --- Meldungen --------------------------------------------------------------- */
-
-static bool fail(char *err, size_t err_size, const char *path, int line,
-                 const char *fmt, ...)
-{
-    char    msg[256];
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(msg, sizeof msg, fmt, ap);
-    va_end(ap);
-
-    if (err && err_size) {
-        if (line > 0) snprintf(err, err_size, "%s:%d: %s", path, line, msg);
-        else          snprintf(err, err_size, "%s: %s", path, msg);
-    }
-    return true;
-}
 
 /* --- Nachschlagen ------------------------------------------------------------
  *
@@ -143,12 +125,12 @@ static int fold_next(folder *f)
 /* --- Laden ------------------------------------------------------------------- */
 
 static bool add_entry(collate *c, uint32_t cp, const char *repl, int line,
-                      char *err, size_t err_size, const char *path)
+                      char *err, size_t err_size, const linereader *r)
 {
     if (c->count == c->cap) {
         size_t         newcap = c->cap ? c->cap * 2 : 32;
         collate_entry *e      = realloc(c->entries, newcap * sizeof *e);
-        if (!e) return !fail(err, err_size, path, line, "kein Speicher");
+        if (!e) return lines_fail(r, err, err_size, "kein Speicher");
         c->entries = e;
         c->cap     = newcap;
     }
@@ -159,8 +141,8 @@ static bool add_entry(collate *c, uint32_t cp, const char *repl, int line,
     while (i < c->count && c->entries[i].cp < cp) i++;
 
     if (i < c->count && c->entries[i].cp == cp)
-        return !fail(err, err_size, path, line,
-                     "Zeichen schon in Zeile %d belegt", c->entries[i].line);
+        return lines_fail(r, err, err_size,
+                          "Zeichen schon in Zeile %d belegt", c->entries[i].line);
 
     memmove(&c->entries[i + 1], &c->entries[i],
             (c->count - i) * sizeof *c->entries);
@@ -174,69 +156,50 @@ static bool add_entry(collate *c, uint32_t cp, const char *repl, int line,
 
 collate *collate_load(const char *path, char *err, size_t err_size)
 {
-    FILE *fp = fopen(path, "rb");
-    if (!fp) {
-        fail(err, err_size, path, 0, "nicht lesbar");
-        return NULL;
-    }
+    linereader r;
+    if (!lines_open(&r, path, err, err_size)) return NULL;
 
     collate *c = calloc(1, sizeof *c);
     if (!c) {
-        fclose(fp);
-        fail(err, err_size, path, 0, "kein Speicher");
+        lines_close(&r);
+        lines_fail_file(path, err, err_size, "kein Speicher");
         return NULL;
     }
 
-    char line[512];
-    int  lineno = 0;
-    bool ok     = true;
-
-    while (ok && fgets(line, sizeof line, fp)) {
-        lineno++;
-
-        char *hash = strchr(line, '#');
-        if (hash) *hash = '\0';
-
-        char *p = line;
-        while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
-        if (!*p) continue;
-
-        /* Links genau ein Zeichen. */
-        const char *q  = p;
-        uint32_t    cp = utf8_next(&q);
-        size_t      n  = (size_t)(q - p);
-        p += n;
-
-        if (*p != ' ' && *p != '\t') {
-            ok = !fail(err, err_size, path, lineno,
-                       "links muss genau ein Zeichen stehen");
+    bool ok = true;
+    while (ok && lines_next(&r)) {
+        /* Links genau ein Zeichen, rechts sein Ersatz. Mehr Wörter sind ein
+         * Tippfehler und kein Ersatz mit Leerzeichen darin - ein solcher wäre
+         * in einer Sortiertabelle sinnlos. */
+        if (r.count != 2) {
+            ok = lines_fail(&r, err, err_size,
+                            r.count < 2 ? "der Ersatz fehlt"
+                                        : "genau zwei Angaben je Zeile");
             break;
         }
-        while (*p == ' ' || *p == '\t') p++;
 
-        char *end = p + strlen(p);
-        while (end > p && (end[-1] == ' ' || end[-1] == '\t' ||
-                           end[-1] == '\r' || end[-1] == '\n')) end--;
-        *end = '\0';
+        const char *left = r.word[0];
+        uint32_t    cp   = utf8_next(&left);
 
-        if (!*p) {
-            ok = !fail(err, err_size, path, lineno, "der Ersatz fehlt");
-            break;
-        }
-        if (strlen(p) > COLLATE_REPL_MAX) {
-            ok = !fail(err, err_size, path, lineno,
-                       "der Ersatz ist länger als %d Byte", COLLATE_REPL_MAX);
+        if (*left) {
+            ok = lines_fail(&r, err, err_size,
+                            "links muss genau ein Zeichen stehen");
             break;
         }
         if (cp == 0 || cp == UTF8_REPLACEMENT) {
-            ok = !fail(err, err_size, path, lineno, "kein gültiges Zeichen");
+            ok = lines_fail(&r, err, err_size, "kein gültiges Zeichen");
+            break;
+        }
+        if (strlen(r.word[1]) > COLLATE_REPL_MAX) {
+            ok = lines_fail(&r, err, err_size,
+                            "der Ersatz ist länger als %d Byte", COLLATE_REPL_MAX);
             break;
         }
 
-        ok = add_entry(c, cp, p, lineno, err, err_size, path);
+        ok = add_entry(c, cp, r.word[1], r.line, err, err_size, &r);
     }
 
-    fclose(fp);
+    lines_close(&r);
     if (!ok) {
         collate_free(c);
         return NULL;

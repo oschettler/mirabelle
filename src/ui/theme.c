@@ -4,8 +4,8 @@
  */
 #include "ui/theme.h"
 
-#include <errno.h>
-#include <stdarg.h>
+#include "core/lines.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,51 +45,20 @@ void theme_defaults(theme *th)
     snprintf(th->font, sizeof th->font, "%s", "system12");
 }
 
-/* Wie fail() in keymap.c, liefert hier aber gleich false: der Aufrufer kann
- * dann "return fail(...);" schreiben. */
-static bool fail(char *err, size_t err_size, const char *path, int line,
-                  const char *fmt, ...)
-{
-    char msg[256];
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(msg, sizeof msg, fmt, ap);
-    va_end(ap);
-
-    if (err && err_size > 0)
-        snprintf(err, err_size, "%s:%d: %s", path, line, msg);
-
-    return false;
-}
-
-/* Nächstes durch Leerraum getrenntes Feld ab *cursor, wie in keymap.c. */
-static const char *next_token(const char **cursor, size_t *len)
-{
-    const char *s = *cursor + strspn(*cursor, " \t");
-    size_t      l = strcspn(s, " \t\r\n");
-    if (l == 0) { *len = 0; return NULL; }
-
-    *len    = l;
-    *cursor = s + l;
-    return s;
-}
-
 typedef struct {
     const char *name;
-    int        *field;
+    int        *slot;
 } int_field;
 
 bool theme_load(theme *th, const char *path, char *err, size_t err_size)
 {
-    if (err && err_size > 0) err[0] = '\0';
-
-    /* Beginne mit den Voreinstellungen und überschreibe, was in der Datei steht. */
+    /* Mit den Voreinstellungen anfangen und überschreiben, was in der Datei
+     * steht. Ein Thema, das eine Zeile vergisst, ist damit unvollständig, aber
+     * nicht kaputt. */
     theme_defaults(th);
 
-    FILE *f = fopen(path, "rb");
-    if (!f)
-        return fail(err, err_size, path, 0,
-                    "Datei kann nicht geöffnet werden: %s", strerror(errno));
+    linereader r;
+    if (!lines_open(&r, path, err, err_size)) return false;
 
     int_field fields[] = {
         { "titlebar_h", &th->titlebar_h },
@@ -125,80 +94,52 @@ bool theme_load(theme *th, const char *path, char *err, size_t err_size)
     };
     size_t field_count = sizeof fields / sizeof fields[0];
 
-    char line[256];
-    int  line_no = 0;
-
-    while (fgets(line, sizeof line, f)) {
-        line_no++;
-
-        char *hash = strchr(line, '#');
-        if (hash) *hash = '\0';
-
-        const char *cur = line;
-        size_t      nlen, vlen;
-        const char *name_tok = next_token(&cur, &nlen);
-        if (!name_tok) continue;   /* Leerzeile oder reiner Kommentar */
-
-        const char *value_tok = next_token(&cur, &vlen);
-        if (!value_tok) {
-            fclose(f);
-            return fail(err, err_size, path, line_no,
-                        "fehlender Wert für '%.*s'", (int)nlen, name_tok);
+    bool ok = true;
+    while (ok && lines_next(&r)) {
+        if (r.count != 2) {
+            ok = lines_fail(&r, err, err_size,
+                            r.count < 2 ? "der Wert fehlt"
+                                        : "genau ein Name und ein Wert je Zeile");
+            break;
         }
 
-        char name[32];
-        if (nlen >= sizeof name) {
-            fclose(f);
-            return fail(err, err_size, path, line_no,
-                        "unbekannter Name: '%.*s'", (int)nlen, name_tok);
-        }
-        memcpy(name, name_tok, nlen);
-        name[nlen] = '\0';
+        const char *name  = r.word[0];
+        const char *value = r.word[1];
 
+        /* Der Zeichensatz ist der einzige Name unter lauter Zahlen. */
         if (strcmp(name, "font") == 0) {
-            if (vlen >= sizeof th->font) {
-                fclose(f);
-                return fail(err, err_size, path, line_no,
-                            "Schriftname zu lang: '%.*s'", (int)vlen, value_tok);
+            if (strlen(value) >= sizeof th->font) {
+                ok = lines_fail(&r, err, err_size, "Name des Zeichensatzes zu lang");
+                break;
             }
-            memcpy(th->font, value_tok, vlen);
-            th->font[vlen] = '\0';
+            snprintf(th->font, sizeof th->font, "%s", value);
             continue;
         }
 
-        char value[64];
-        if (vlen >= sizeof value) {
-            fclose(f);
-            return fail(err, err_size, path, line_no,
-                        "Wert zu lang: '%.*s'", (int)vlen, value_tok);
-        }
-        memcpy(value, value_tok, vlen);
-        value[vlen] = '\0';
+        int *slot = NULL;
+        for (size_t k = 0; k < field_count; k++)
+            if (strcmp(fields[k].name, name) == 0) { slot = fields[k].slot; break; }
 
-        int_field *matched = NULL;
-        for (size_t i = 0; i < field_count; i++) {
-            if (strcmp(name, fields[i].name) == 0) { matched = &fields[i]; break; }
-        }
-        if (!matched) {
-            fclose(f);
-            return fail(err, err_size, path, line_no, "unbekannter Name: '%s'", name);
+        if (!slot) {
+            ok = lines_fail(&r, err, err_size, "unbekannter Name „%s“", name);
+            break;
         }
 
-        char *end;
-        errno = 0;
-        long v = strtol(value, &end, 10);
-        if (*end != '\0' || errno == ERANGE) {
-            fclose(f);
-            return fail(err, err_size, path, line_no, "unlesbare Zahl: '%s'", value);
+        char *end = NULL;
+        long  v   = strtol(value, &end, 10);
+
+        if (end == value || (end && *end)) {
+            ok = lines_fail(&r, err, err_size, "„%s“ ist keine Zahl", value);
+            break;
         }
-        *matched->field = (int)v;
+        if (v < 0 || v > 10000) {
+            ok = lines_fail(&r, err, err_size, "%ld liegt ausserhalb des Bereichs", v);
+            break;
+        }
+
+        *slot = (int)v;
     }
 
-    bool had_error = ferror(f) != 0;
-    fclose(f);
-
-    if (had_error)
-        return fail(err, err_size, path, 0, "Datei nicht lesbar: Lesefehler");
-
-    return true;
+    lines_close(&r);
+    return ok;
 }
