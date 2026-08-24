@@ -41,14 +41,19 @@ bool        record_set_body(record *r, const char *gemtext);
 
 /* --- Kennungen ------------------------------------------------------------
  *
- * Zeitsortiert und dateisystemtauglich: JJJJMMTThhmmss-xxxx. Sortierbar,
- * lesbar, kollisionsarm - und ohne eine Bibliothek dafür.
+ * Zeitsortiert und dateisystemtauglich: JJJJMMTThhmmss-xxxx, also acht
+ * Ziffern für das Datum, ein T, sechs Ziffern für die Uhrzeit, ein Bindestrich
+ * und vier Hexadezimalziffern. Zusammen zwanzig Zeichen.
+ *
+ * Sortierbar, lesbar, kollisionsarm - und ohne eine Bibliothek dafür. Weil die
+ * Kennung zeitsortiert ist, ist die alphabetische Reihenfolge der Dateinamen
+ * zugleich die zeitliche; ein Verzeichnis muss dafür nicht sortiert werden.
  *
  * Die vier Zeichen am Ende kommen aus einem Zähler und der Uhr, nicht aus
  * einem Zufallsgenerator: zwei Datensätze in derselben Sekunde sollen sich
  * unterscheiden, aber die Kennung soll bei gleichem Ablauf reproduzierbar
  * bleiben, damit Tests sie prüfen können. */
-#define RECORD_ID_LEN 20   /* 15 + 1 + 4, ohne Null */
+#define RECORD_ID_LEN 20   /* 8 + 1 + 6 + 1 + 4, ohne Null */
 
 /* Schreibt eine Kennung nach out (mindestens RECORD_ID_LEN + 1 Bytes) aus der
  * übergebenen Zeit in Sekunden seit 1970. seq unterscheidet Datensätze
