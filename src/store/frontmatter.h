@@ -13,6 +13,11 @@
  * Kein verschachteltes Mapping, keine Anker, keine mehrzeiligen Blöcke, keine
  * Kommentare. Alles andere ist ein Fehler mit Zeilennummer. Ein fest
  * umrissener Ausschnitt lässt sich vollständig prüfen; "irgendwie YAML" nicht.
+ *
+ * Ein Schlüssel beginnt in Spalte eins. Führender Leerraum bedeutet in YAML
+ * Einrückung und damit Verschachtelung; eine so eingerückte Zeile wird deshalb
+ * abgewiesen, mit einer Meldung, die das ausdrücklich sagt. Getrimmt wird der
+ * Leerraum UM den Doppelpunkt und am Ende des Wertes.
  */
 #ifndef PDA_STORE_FRONTMATTER_H
 #define PDA_STORE_FRONTMATTER_H

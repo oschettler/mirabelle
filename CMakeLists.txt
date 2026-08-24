@@ -145,7 +145,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget gemtext)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget gemtext frontmatter)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
@@ -169,7 +169,8 @@ target_link_libraries(test_text_widget PRIVATE pda_ui pda_fonts)
 target_compile_definitions(test_text_widget
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-target_link_libraries(test_gemtext PRIVATE pda_store)
+target_link_libraries(test_gemtext     PRIVATE pda_store)
+target_link_libraries(test_frontmatter PRIVATE pda_store)
 
 target_link_libraries(test_textbuf PRIVATE pda_ui)
 
