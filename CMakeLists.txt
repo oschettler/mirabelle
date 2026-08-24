@@ -85,6 +85,7 @@ add_library(pda_store
     src/store/gemtext.c
     src/store/frontmatter.c
     src/store/record.c
+    src/store/query.c
     src/store/vault.c
 )
 # Der Speicher benutzt plat.h, sucht sich aber KEINE Umsetzung aus: welche
@@ -153,7 +154,7 @@ target_include_directories(pda_testsupport PUBLIC tests)
 target_compile_definitions(pda_testsupport
     PRIVATE PDA_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden")
 
-set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate)
+set(PDA_TESTS bitmap pbm golden draw utf8 fontc text expand plat keymap demo wm i18n menu dialog widget panel list textbuf text_widget scrollbar gemtext frontmatter record vault scroll collate query)
 
 add_test(NAME no_hardcoded_text
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/no_hardcoded_text.sh
@@ -177,6 +178,9 @@ target_link_libraries(test_text_widget PRIVATE pda_ui pda_fonts)
 target_compile_definitions(test_text_widget
     PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
+target_link_libraries(test_query       PRIVATE pda_store)
+target_compile_definitions(test_query
+    PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_link_libraries(test_gemtext     PRIVATE pda_store)
 target_link_libraries(test_frontmatter PRIVATE pda_store)
 target_link_libraries(test_record      PRIVATE pda_store pda_plat_headless)

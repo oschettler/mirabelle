@@ -332,6 +332,12 @@ int frontmatter_count(const frontmatter *fm)
     return fm ? (int)fm->count : 0;
 }
 
+const char *frontmatter_key_at(const frontmatter *fm, int i)
+{
+    if (!fm || i < 0 || (size_t)i >= fm->count) return NULL;
+    return fm->entries[i].key;
+}
+
 /* --- Nachschlagen ----------------------------------------------------------------- */
 
 static const fm_entry *find_entry(const frontmatter *fm, const char *key)

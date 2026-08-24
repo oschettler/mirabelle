@@ -43,6 +43,14 @@ void frontmatter_free(frontmatter *fm);
 int  frontmatter_count(const frontmatter *fm);
 bool frontmatter_has(const frontmatter *fm, const char *key);
 
+/* Der Schlüssel an Stelle i, in der Reihenfolge des Einlesens; NULL außerhalb.
+ *
+ * Zusammen mit frontmatter_count() ist das der Weg, alle Felder abzugehen,
+ * ohne ihre Namen zu kennen - eine Volltextsuche braucht das, und der
+ * generische Browser später auch. Ein count ohne diesen Zugriff wäre eine
+ * Zahl über Dinge, an die niemand herankommt. */
+const char *frontmatter_key_at(const frontmatter *fm, int i);
+
 /* Der Wert als Zeichenkette, oder NULL. Bei einer Liste der erste Eintrag. */
 const char *frontmatter_get(const frontmatter *fm, const char *key);
 
