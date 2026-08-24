@@ -59,8 +59,16 @@ Danach M11 (generischer Browser), M12 (Kalender), M13 (Lua).
 - **`make asan`.** Speicherfehler fallen im gewöhnlichen Bau nicht auf.
 - **Sollbilder ansehen, bevor man sie übernimmt.** `make test ACCEPT=1` blind
   auszuführen heißt, keinen Test mehr zu haben.
-- Beim Mutieren die Datei nach dem Zurückkopieren **`touch`en**, sonst ist der
-  Bau veraltet und man hält eine Testlücke für echt, die keine ist.
+- Beim Mutieren **nicht über das Bausystem übersetzen**, sondern die betroffene
+  Datei direkt mit `cc` zusammen mit ihrem Test. Ein inkrementeller Bau
+  entscheidet an Zeitstempeln; liegen Quelle, Objektdatei und Programm in
+  derselben Sekunde, läuft der alte Stand weiter und jede Mutation sieht aus,
+  als hätte sie überlebt. Ein `touch` genügt dagegen nicht - es hilft der
+  Objektdatei, nicht dem Binden. Woran man es merkt: **zwei Läufe liefern
+  verschiedene Überlebende.** Dann ist der Prüfstand falsch, nicht der Test.
+- Eine überlebende Mutation ist noch kein Befund. Erst nachrechnen, ob sie
+  überhaupt etwas ändert. Ist sie gleichwertig, weil der geänderte Zweig nie
+  erreicht wird, gehört nicht ein Test hinzu, sondern der tote Code weg.
 
 ## Bauen
 
