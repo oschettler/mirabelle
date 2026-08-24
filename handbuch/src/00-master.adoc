@@ -20,14 +20,19 @@ Olav Schettler
 [preface]
 == Vorwort
 
-Dieses Buch beschreibt ein Programm, das es zu großen Teilen noch nicht gibt.
+Dieses Buch beschreibt ein Programm, das du bauen kannst — Zeile für Zeile,
+von der ersten gesetzten Bildpunktreihe bis zu einem Browser, den du selbst in
+Lua schreibst.
 
-Das klingt nach einem schlechten Anfang, ist aber Absicht. Das PDA-Projekt
-entsteht Kapitel für Kapitel, und dieses Handbuch wächst mit. Wer es von vorne
-nach hinten liest, baut ein vollständiges kleines Betriebssystem für
-persönliche Daten: Aufgaben, Kalender, Adressbuch, Notizen, in der Optik des
-ersten Macintosh von 1984, geschrieben in C, erweiterbar in Lua, und am Ende
-auf einem eigenen Gerät mit Sieben-Zoll-Bildschirm.
+Das PDA-Projekt ist ein kleines Betriebssystem für persönliche Daten:
+Aufgaben, Kalender, Adressbuch, Notizen, in der Optik des ersten Macintosh von
+1984, geschrieben in C, erweiterbar in Lua, und am Ende auf einem eigenen
+Gerät mit Sieben-Zoll-Bildschirm.
+
+Es ist absichtlich klein. Der Bildschirm hat ein Bit je Pixel, das
+Dateiformat drei Regeln, die Schnittstelle zur Außenwelt achtzehn Funktionen.
+Nichts davon ist Nostalgie: kleine Systeme kann man ganz verstehen, und wer
+eines ganz versteht, versteht danach auch große besser.
 
 === Für wen ist das?
 
@@ -62,20 +67,21 @@ Die Kapitel bauen aufeinander auf, aber du musst nicht alles in der Reihenfolge
 lesen. Willst du das Programm nur benutzen, reichen die ersten drei Kapitel.
 Interessiert dich, wie ein Fenstersystem funktioniert, spring zu Kapitel 6.
 
-Jedes Kapitel beginnt mit einem Kasten, der sagt, was darin gebaut wird und
-welchen Stand das Projekt dabei hat.
-
 [IMPORTANT]
 .Was es schon gibt und was nicht
 ====
 Das Projekt entsteht in siebzehn Schritten, die im Fahrplan `ROADMAP.md`
-stehen. Zurzeit sind die Schritte M1 bis M7 fertig: Grafik, Schrift,
-Plattformschicht, Eingabe, Fenster, Menüs und Dialoge.
+stehen. Gebaut sind **M1 bis M13** und **M17**: von der Bitmap bis zu den
+Anwendungen, der Skriptanbindung und dem SPARTAN-Browser.
 
-Kapitel über spätere Schritte beschreiben, was *geplant* ist. Sie sind mit
-einem Hinweis „Geplant" gekennzeichnet. Du kannst sie lesen, aber noch nicht
-nachbauen — und du sollst wissen, woran du bist. Ein Handbuch, das den
-Unterschied verwischt, ist ärgerlicher als eines, das eine Lücke zugibt.
+Offen sind drei: M14 (aufgezeichnete Bedienabläufe), M15 (Touch und
+Bildschirmtastatur) und M16 (der Port auf das Gerät). Die Kapitel darüber
+beschreiben, was *geplant* ist, und sagen das oben mit einem Hinweis
+„Geplant". Ein Handbuch, das den Unterschied verwischt, ist ärgerlicher als
+eines, das eine Lücke zugibt.
+
+Alles andere in diesem Buch kannst du nachbauen, ausprobieren und ändern. Wo
+eine Datei genannt wird, gibt es sie.
 ====
 
 include::01-einleitung.adoc[leveloffset=+1]

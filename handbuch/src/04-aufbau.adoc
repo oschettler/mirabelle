@@ -76,7 +76,7 @@ Dreizehn Funktionen. Wer auf ein neues Gerät portiert, implementiert genau das
 und sonst nichts.
 ____
 
-Sie gliedern sich in fünf Gruppen:
+Sie gliedern sich in sechs Gruppen:
 
 [cols="1,3", options="header"]
 |===
@@ -95,19 +95,24 @@ Sie gliedern sich in fünf Gruppen:
 |`plat_ticks_ms`, `plat_sleep_ms`
 
 |Dateien
-|`plat_open`, `plat_read`, `plat_write`, `plat_close`, `plat_list`, `plat_mkdir`
+|`plat_open`, `plat_read`, `plat_write`, `plat_close`, `plat_list`,
+ `plat_mkdir`, `plat_rename`, `plat_remove`
+
+|Netz
+|`plat_connect`, `plat_send`, `plat_recv`, `plat_disconnect`
 |===
 
-Zwei plus zwei plus eins plus zwei plus sechs — dreizehn. Das ist wenig genug,
-dass eine Portierung auf ein neues Gerät überschaubar bleibt: Wer den nächsten
-Mikrocontroller anschließen will, muss nicht wissen, wie ein Fenster oder ein
-Menü funktioniert, sondern nur, wie man dort ein Bild zeigt, ein Ereignis
-abholt und eine Datei liest.
+Achtzehn Funktionen. Das ist wenig genug, dass eine Portierung auf ein neues
+Gerät überschaubar bleibt: Wer den nächsten Mikrocontroller anschließen will,
+muss nicht wissen, wie ein Fenster oder ein Menü funktioniert, sondern nur, wie
+man dort ein Bild zeigt, ein Ereignis abholt, eine Datei liest und eine
+Verbindung aufbaut.
 
-Die Zahl selbst verdient eine kurze Anmerkung. Beim Entwurf standen hier zwölf
-Funktionen, keine dreizehn. `plat_mkdir` kam erst in M4 dazu, weil die spätere
-Datenhaltung Verzeichnisse anlegen muss, wenn ein Nutzer seinen ersten
-Datensatz speichert. `DESIGN.md` kommentiert das selbst:
+Die Zahl selbst verdient eine Anmerkung. Beim Entwurf standen hier zwölf.
+`plat_mkdir` kam dazu, weil der Vault Verzeichnisse anlegen muss;
+`plat_rename` und `plat_remove` für sicheres Speichern — erst vollständig in
+eine Nebendatei schreiben, dann darüberlegen; die vier Netzfunktionen mit dem
+SPARTAN-Browser. `DESIGN.md` kommentiert das selbst:
 
 [quote, DESIGN.md, Abschnitt 3]
 ____
@@ -115,11 +120,17 @@ Die Zahl ist keine Zusage, wohl aber die Größenordnung: diese Schicht bleibt
 klein genug, dass eine Portierung überschaubar ist.
 ____
 
-Eine runde Zahl wie „dreizehn“ klingt nach einem endgültigen Entwurf. Das
-Beispiel `plat_mkdir` zeigt, dass sie das nie war — sie ist ein Nebenprodukt
-davon, alles, was wirklich gebraucht wird, in dieser Schicht zu halten, nicht
-mehr und nicht weniger. Wäre morgen eine vierzehnte Funktion nötig, käme sie
-dazu; keine wird erfunden, nur damit die Zahl stimmt.
+Eine runde Zahl klingt nach einem endgültigen Entwurf. Sie war das nie — sie
+ist ein Nebenprodukt davon, alles, was wirklich gebraucht wird, in dieser
+Schicht zu halten, nicht mehr und nicht weniger. Wird morgen eine neunzehnte
+Funktion nötig, kommt sie dazu; keine wird erfunden, nur damit die Zahl
+stimmt.
+
+Bemerkenswert ist, wie wenig die Netzfunktionen wissen. Keine kennt ein
+Protokoll — sie schicken Bytes und holen Bytes. Umgekehrt kennt der
+SPARTAN-Code (`src/net/spartan.c`) keine davon: er bekommt seinen Transport
+übergeben. Deshalb lässt sich das Protokoll ohne Netz prüfen, und der Umbau
+auf die Netzbibliothek des Geräts berührt es nicht.
 
 Bemerkenswert ist auch, was *nicht* dazukam, als Touch-Eingabe geplant wurde.
 Ein Fingertipp ist in diesem Entwurf ein Mausereignis mit `button = 1`; nur ein
@@ -130,9 +141,9 @@ weiteren Funktionen.
 
 === Drei Umsetzungen: SDL3, ESP32, headless
 
-Zu dieser einen Schnittstelle gibt es (geplant) drei Umsetzungen: eine für den
-Arbeitsplatz, eine für das Zielgerät, und eine, die überhaupt keine echte
-Ausgabe hat.
+Zu dieser einen Schnittstelle gibt es drei Umsetzungen: eine für den
+Arbeitsplatz, eine, die überhaupt keine echte Ausgabe hat, und — geplant — eine
+für das Zielgerät.
 
 **SDL3** (`src/plat/plat_sdl3.c`) ist die, die du in Kapitel 2 gestartet hast.
 Sie überlässt SDL bewusst zwei Dinge, die man leicht selbst falsch rechnet:

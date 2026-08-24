@@ -59,38 +59,46 @@ gestreifte Titelleiste; alle anderen bleiben leer.
 Fenster. Das klingt trivial, war es aber nicht ganz.
 
 [NOTE]
-.Ein echter Fehler und seine Reparatur
+.Wer ein Fenster hält, muss erfahren, wann es verschwindet
 ====
-Als das Schließfeld zum ersten Mal fertig war, stürzte das Programm bei einem
-Klick darauf ab. Die Ursache stand im Zusammenspiel zweier Teile: Die
-Fensterverwaltung (`wm.c`) gibt ein Fenster beim Schließen sofort frei — aber
-die Vorführung (`demo.c`) hielt in ihren eigenen Variablen `w_desk` und
-`w_keys` weiterhin Zeiger auf genau dieses Fenster und zeichnete beim
-nächsten Bild ungerührt weiter hinein. Ein Zugriff auf bereits freigegebenen
-Speicher.
+Die Fensterverwaltung gibt ein Fenster beim Schließen sofort frei. Wer
+daneben einen eigenen Zeiger darauf hält — und das tut jede Anwendung, die
+etwas hineinzeichnet —, greift beim nächsten Bild in freigegebenen Speicher.
 
-Die Lösung ist eine Rückmeldung: `window_set_on_close()` lässt die Vorführung
-eine Funktion hinterlegen, die aufgerufen wird, kurz bevor ein Fenster
-tatsächlich verschwindet — gleich, ob durch das Schließfeld, durch `wm_close()`
-oder wenn die ganze Fensterverwaltung beendet wird. In `src/demo.c` sieht das
-so aus:
+Deshalb gibt es `window_set_on_close()`. Damit hinterlegt eine Anwendung eine
+Funktion, die gerufen wird, kurz bevor ein Fenster wirklich verschwindet —
+gleich, ob durch das Schließfeld, durch `wm_close()` oder weil die ganze
+Fensterverwaltung endet. In `src/app/shell.c` sieht das so aus:
 
 [source,c]
 ----
-static void demo_window_closed(window *w, void *user)
+static void on_window_closed(window *w, void *user)
 {
-    demo_state *st = user;
-    if (w == st->w_desk) st->w_desk = NULL;
-    if (w == st->w_keys) st->w_keys = NULL;
+    shell *s = user;
+
+    for (int i = 0; i < s->app_count; i++)
+        if (s->apps[i].win == w) {
+            widget_destroy(s->apps[i].bar);
+            browser_destroy(s->apps[i].br);
+            s->apps[i].bar = NULL;
+            s->apps[i].br  = NULL;
+            s->apps[i].win = NULL;
+            return;
+        }
 }
 ----
 
-Ohne diese Rückmeldung hätte jede Anwendung sich selbst merken müssen, wann
-ein Fenster verschwindet — und garantiert hätte irgendwo jemand einen der
-Wege vergessen. Mit ihr gibt es nur einen Weg, und den kann man nicht
-vergessen, weil er der einzige ist. Der Fehler fiel übrigens nicht in der
-normalen Testsuite auf, sondern erst mit dem Adress-Sanitizer aus Kapitel 2 —
-eine grüne Testsuite hatte den Absturz schlicht nicht bemerkt.
+Die Rückmeldung ist der *einzige* Weg, auf dem ein Fenster verschwindet. Das
+ist der Punkt: gäbe es drei Wege, hätte jede Anwendung drei Stellen
+aufzuräumen, und eine davon vergäße jemand.
+
+Umgekehrt gilt dieselbe Vorsicht beim Beenden. `shell_destroy()` räumt die
+Fensterverwaltung **zuerst** weg, denn sie schließt jedes Fenster und löst
+damit diese Rückmeldung aus. Wer erst selbst aufräumt und dann die
+Fensterverwaltung beendet, gibt alles zweimal frei.
+
+Solche Fehler bemerkt eine grüne Testsuite nicht. Sie fallen erst unter dem
+Adress-Sanitizer auf — deshalb läuft `make asan` bei jedem Durchgang mit.
 ====
 
 === Menüs
@@ -252,25 +260,47 @@ ____
 
 Für dich am Arbeitsplatz zahlt sich das schon jetzt aus: kbd:[F10] betritt die
 Menüleiste, danach bewegen die Pfeiltasten die Hervorhebung, kbd:[Return]
-löst den markierten Eintrag aus, kbd:[Esc] klappt zu. In `src/demo.c`
-entscheidet genau eine Zeile, ob eine gedrückte Taste die Menüleiste betritt
-oder als gewöhnliches Kürzel behandelt wird:
+löst den markierten Eintrag aus, kbd:[Esc] klappt zu.
+
+Dass kbd:[F10] das tut, steht nicht im Quelltext, sondern in
+`data/keys/default.keys`:
+
+----
+menu.enter            F10            global
+----
+
+In `src/app/shell.c` schlägt genau eine Stelle nach, was eine gedrückte Taste
+bedeutet, und zwar in der Reihenfolge, in der die Bereiche gelten:
 
 [source,c]
 ----
-const char *action = st->km
-    ? keymap_lookup(st->km, e->key, e->mods, "app") : NULL;
-
-if (action && strcmp(action, "menu.enter") == 0) {
-    if (st->mb) menubar_enter(st->mb);
-    break;
-}
+const char *action = keymap_lookup(s->cfg.keymap, e->key, e->mods, inner);
+if (!action)
+    action = keymap_lookup(s->cfg.keymap, e->key, e->mods, "app");
 ----
 
-Das ist derselbe Mechanismus wie oben, nicht ein zweiter, eigens für die
+`inner` ist der Bereich dessen, was gerade den Fokus hat — `"list"` oder
+`"form"`. Deshalb bedeutet kbd:[Return] in einer Liste etwas anderes als in
+einem Formular, ohne dass irgendwo ein `if` darüber entscheidet.
+
+Das ist derselbe Mechanismus wie beim Menü, nicht ein zweiter, eigens für die
 Tastatur gebauter Weg. Wer jeden Befehl doppelt umsetzt — einen für die Maus,
 einen für die Tastatur —, vergisst früher oder später einen davon. Wer beide
 über dieselbe Belegungsdatei laufen lässt, kann das gar nicht.
+
+.Nicht jede Taste gehört der Schale
+[NOTE]
+====
+`list.next` bewegt die Auswahl und gehört der Liste; `list.open` öffnet einen
+Datensatz und gehört der Anwendung. Beides steht nebeneinander in derselben
+Datei, und die Schale muss unterscheiden: was sie selbst kann, führt sie aus,
+alles andere reicht sie an das Bedienelement weiter.
+
+Wer diese Unterscheidung wegläßt, bekommt eines von beidem — eine Auswahl, die
+sich nicht mehr bewegt, oder ein kbd:[Return], das nichts tut. Dasselbe gilt
+für Anwendungen ohne Browser: ein Lua-Skript, das kbd:[Return] für etwas
+eigenes benutzt, muss die Taste zu sehen bekommen.
+====
 
 === Zum Ausprobieren
 

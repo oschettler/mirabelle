@@ -131,22 +131,23 @@ Anstatt drei fast identischer Anwendungen zu schreiben — eine für Aufgaben,
 eine für Kontakte, eine für Notizen —, entsteht eine einzige, allgemeine
 Anwendung, die von einer kleinen Beschreibungsdatei gesteuert wird: welche
 Felder es gibt, welchen Typ sie haben, wie die Liste sortiert wird. Nur der
-Kalender bekommt eine eigene Ansicht mit Monatsraster und Wochenspalten dazu —
-ein Kalender ohne Wochenübersicht wäre kein Kalender, und diesen einen
-Sonderfall in die allgemeine Beschreibung zu pressen wäre am Ende komplizierter
-als eine eigene Ansicht zu schreiben.
+Kalender bekommt eine eigene Ansicht mit Monatsraster dazu — ein Kalender, der
+seine Termine als Liste zeigt, wäre keiner, und diesen einen Sonderfall in die
+allgemeine Beschreibung zu pressen wäre am Ende komplizierter als eine eigene
+Ansicht zu schreiben.
 
 [NOTE]
-.Noch nicht gebaut
+.Vier Anwendungen, vier Dateien
 ====
-Diese Schemadateien und die allgemeine Anwendung, die sie liest, gehören zu
-den Meilensteinen M9 bis M13 und existieren im Repository noch nicht. Was du
-gerade liest, ist der Plan aus `DESIGN.md`, nicht bereits lauffähiger Code.
-Die Kapitel 5 bis 7 dieses Buches — Grafik, Schrift, Fenster — beschreiben
-dagegen etwas, das schon läuft.
+Das ist kein Entwurf, sondern der Stand: `data/schema/` enthält vier solche
+Dateien, und daraus entstehen Aufgaben, Kontakte, Notizen und Termine. Im
+Quelltext des Browsers (`src/app/browser.c`) kommt keine davon namentlich vor.
+
+Wie weit das trägt, siehst du an der Zahl: eine fünfte Anwendung ist eine
+fünfte Datei, und im C-Code ändert sich dafür nichts.
 ====
 
-Bis dahin ist genug zu tun. Bevor eine Anwendung überhaupt einen Buchstaben
+Dahin ist es ein weiter Weg. Bevor eine Anwendung überhaupt einen Buchstaben
 zeigen kann, braucht sie einen Bildspeicher, eine Möglichkeit, Linien und
 Rechtecke hineinzuzeichnen, eine Schrift mit Umlauten, ein Fenster, das sich
 verschieben lässt, und Menüs, die sich bedienen lassen — mit der Maus und ganz

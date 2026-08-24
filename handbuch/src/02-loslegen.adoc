@@ -127,16 +127,44 @@ erzählt, wie der Fehler behoben wurde.
 ----
 
 Es öffnet sich ein Fenster mit 800 mal 480 Pixeln — oder ein Vielfaches davon,
-wenn dein Bildschirm mehr Platz hat, siehe `src/plat/plat_sdl3.c`. Darin
-liegen zwei kleinere Fenster: „Kürzel“ zeigt eine Handvoll Tastenkombinationen,
-„Schreibtisch“ eine Begrüßung und ein Eingabefeld. Beide Titel kommen aus
-`data/lang/de.strings`, nicht aus dem Quelltext — probier es aus, indem du dort
-`window.desk` änderst und neu baust.
+wenn dein Bildschirm mehr Platz hat, siehe `src/plat/plat_sdl3.c`. Oben liegt
+eine Menüleiste, darunter ein Fenster mit deinen Kontakten. Beim ersten Start
+ist es leer; deine Daten liegen unter `~/PDA`, und dort ist noch nichts.
 
-Das ist die „Vorführung“ aus `src/demo.c`, keine der vier PIM-Anwendungen aus
-Kapitel 1. Sie existiert, damit sich Fenster, Menüs und Texteingabe schon
-prüfen lassen, bevor es überhaupt Datensätze gibt. Kapitel 3 zeigt, was du
-damit alles tun kannst.
+Im Menü „Anwendungen“ stehen sieben Einträge. Vier davon — Aufgaben, Kontakte,
+Notizen, Termine — entstehen aus je einer Datei in `data/schema/`. Die anderen
+drei — SPARTAN, Gliederung, Agenda — sind Lua-Skripte in `data/apps/`. Keine
+davon steht namentlich im C-Quelltext.
+
+Wer sich das ansehen will, ohne ein Fenster zu öffnen:
+
+[source,bash]
+----
+./build/pda --apps
+----
+
+Das zählt auf, was gefunden wurde, und beendet sich. Praktisch, wenn du später
+eine eigene Anwendung dazulegst und wissen willst, ob sie angekommen ist — und
+wenn nicht, warum.
+
+Die Namen der Anwendungen kommen aus `data/lang/de.strings`, nicht aus dem
+Quelltext. Probier es aus: ändere dort `app.notes` und starte neu.
+
+.Wo deine Daten liegen
+[NOTE]
+====
+Voreingestellt ist `~/PDA`, ein Verzeichnis mit einem Unterverzeichnis je
+Sammlung und einer Datei je Datensatz. Zum Ausprobieren ist ein eigener Ort
+bequemer:
+
+[source,bash]
+----
+./build/pda --vault /tmp/probe-vault
+----
+
+Dann bleibt dein richtiger Vault unangetastet. `--lang en` schaltet die
+Sprache um.
+====
 
 === --shot: der eigene Bildspeicher als Datei
 

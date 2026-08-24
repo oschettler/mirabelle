@@ -1,14 +1,5 @@
 == Lua in einer halben Stunde
 
-[NOTE]
-.Geplant
-====
-Lua wird in Schritt M13 eingebaut. Gebaut sind zurzeit M1 bis M7. Dieses
-Kapitel bringt dir die Sprache trotzdem schon bei — sie ist klein genug, dass
-sich das an einem Nachmittag lohnt, und du kannst alles darin mit dem
-Lua-Programm auf deinem Rechner ausprobieren.
-====
-
 Lua ist eine kleine Sprache. Das ist keine Höflichkeitsfloskel: die gesamte
 Sprachbeschreibung passt in ein dünnes Heft, und der Übersetzer samt Bibliothek
 ist unter 300 Kilobyte groß. Genau deshalb steckt Lua in Spielen, in Routern,

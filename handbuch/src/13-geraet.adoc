@@ -3,7 +3,14 @@
 [NOTE]
 .Geplant
 ====
-Dieses Kapitel beschreibt Schritt M16. Gebaut sind zurzeit M1 bis M7.
+Dieses Kapitel beschreibt Schritt M16 — den Port auf das Gerät. Er ist noch
+nicht gebaut, ebenso wenig wie M14 und M15. Alles andere in diesem Buch
+kannst du nachbauen.
+
+Was hier steht, ist kein Wunschdenken: Anschlussbelegung, Zeitlage,
+Bounce-Puffer und die vertauschte Farbreihenfolge sind auf genau dieser
+Platine bestätigt, in einem anderen Projekt desselben Autors. `DESIGN.md`
+Abschnitt 12.6 hält sie fest.
 ====
 
 Alle bisherigen Kapitel liefen auf deinem Rechner, mit SDL3 als

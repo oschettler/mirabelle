@@ -340,10 +340,12 @@ image::diagramme/07-fensterteile.svg[Die Teile eines Fensters,align="center"]
   47 Pixel breiten Finger bequem zu treffen ist. Vergleiche mit dem Wert von
   `close_box` in der Datei.
 
-. Schreibe eine kleine Anwendung nach dem Vorbild von `src/demo.c`, öffne ein
-  Fenster und richte `window_set_on_close` ein. Schließe das Fenster einmal
+. Schreibe einen kleinen Test nach dem Vorbild von `tests/unit/test_wm.c`,
+  öffne ein Fenster und richte `window_set_on_close` ein. Schließe es einmal
   über `wm_close` und einmal, indem du in `wm_event` einen Klick auf das
   Schließfeld simulierst — die Rückmeldung muss in beiden Fällen kommen.
+  Danach lass die Fensterverwaltung zerstören, ohne vorher zu schließen: auch
+  dann muss sie kommen.
 
 . Zeichne von Hand nach, wie `m->outline` sich während eines simulierten
   `EV_MOUSE_DOWN`, mehrerer `EV_MOUSE_MOVE` und eines `EV_MOUSE_UP`

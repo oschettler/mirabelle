@@ -3,12 +3,11 @@
 Dieses Kapitel ist zum Nachschlagen da, nicht zum Durchlesen. Es hat zwei
 Teile, und der Unterschied ist wichtig:
 
-**Teil A** beschreibt die C-Schnittstellen, die es *heute gibt*. Alles darin
-kannst du aufrufen, sobald du `make` ausgeführt hast.
+**Teil A** beschreibt die C-Schnittstellen. Alles darin kannst du aufrufen,
+sobald du `make` ausgeführt hast.
 
-**Teil B** beschreibt die *geplante* Lua-API. Sie kommt in Schritt M13. Du
-kannst sie lesen, um zu verstehen, wohin das Projekt will — aufrufen kannst du
-sie noch nicht.
+**Teil B** beschreibt die Lua-API — das, was ein Skript in `data/apps/` sieht.
+Sie ist gebaut; drei Anwendungen benutzen sie.
 
 Die Erklärungen stammen aus den Kommentaren in den Kopfdateien unter `src/`.
 Wenn dir etwas unklar bleibt, sieh dort nach: die Kopfdatei ist immer der
@@ -469,16 +468,7 @@ Zeichen verwechselt werden: `KEY_UP`, `KEY_DOWN`, `KEY_LEFT`, `KEY_RIGHT`,
 `KEY_ESCAPE`, `KEY_SPACE` mit ihren ASCII-Werten.
 
 // =========================================================================
-== Teil B: Die geplante Lua-API
-
-[NOTE]
-.Geplant
-====
-Dieser Teil beschreibt Schritt M13. Gebaut sind zurzeit M1 bis M7. Die Namen
-können sich noch ändern: die Erfahrung aus den Schritten M8 bis M12 fließt
-hinein, und eine API, die man vor der ersten Anwendung festzurrt, ist meistens
-die falsche.
-====
+== Teil B: Die Lua-API
 
 Die Namen sind an https://www.lexaloffle.com/[Picotron] angelehnt, eine
 Fantasie-Arbeitsstation von Lexaloffle. Dort heißen die Zeichenbefehle `cls`,

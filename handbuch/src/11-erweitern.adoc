@@ -2,8 +2,11 @@
 
 Die vorigen Kapitel haben erklärt, wie das Projekt aufgebaut ist. Dieses
 Kapitel dreht die Blickrichtung um: du änderst etwas, baust neu und siehst dem
-Ergebnis beim Erscheinen zu. Alle vier Beispiele funktionieren mit dem Stand,
-der heute im Repository liegt — M1 bis M7.
+Ergebnis beim Erscheinen zu.
+
+Vier Beispiele, und in dreien davon fasst du keine Zeile C an. Das ist kein
+Kunststück, sondern der Punkt des ganzen Entwurfs: was ein Nutzer sehen oder
+ändern können soll, steht in einer Datei unter `data/`, nicht im Programm.
 
 === Ein Tastenkürzel ändern
 
@@ -97,28 +100,29 @@ Sprache. Für Deutsch ist das `data/lang/de.strings`. Eine Zeile daraus:
 
 [source]
 ----
-demo.click               = Klick: {0}, {1} ({2}x)
+dialog.delete.body       = „{0}“ wirklich löschen? Das lässt sich nicht rückgängig machen.
 ----
 
-`{0}`, `{1}` und `{2}` sind nummerierte Platzhalter. Der Code füllt sie mit
-Werten — hier vermutlich x-Koordinate, y-Koordinate und Klickzahl —, aber die
-Katalogdatei entscheidet, in welcher *Reihenfolge* und mit welchem Text
-drumherum sie erscheinen. Das ist kein Stilmittel, sondern notwendig: die
+`{0}` ist ein nummerierter Platzhalter. Der Code füllt ihn — hier mit der
+Zeile, die in der Liste steht —, aber die Katalogdatei entscheidet, an welcher
+*Stelle* und mit welchem Text drumherum er erscheint. Das ist kein Stilmittel, sondern notwendig: die
 Wortstellung ändert sich zwischen Sprachen. Ein deutscher Satz kann das Objekt
 vor dem Verb nennen, ein englischer meist nicht, und ein Satz, der Werte
 zusammenklebt — `"Klick: " + x + ", " + y` —, kann diese Reihenfolge in einer
 anderen Sprache gar nicht mehr ändern, ohne den Code selbst anzufassen. Die
 Katalogdatei kann es, weil sie `{0}` und `{1}` frei anordnen darf.
 
-Willst du zum Beispiel `demo.greeting` anpassen:
+Willst du zum Beispiel den Namen einer Anwendung ändern:
 
 [source]
 ----
-demo.greeting            = Grüße aus Köln, Fräulein Müller!
+app.notes                = Zettelkasten
 ----
 
-Du änderst den Text, speicherst, baust neu — der neue Text erscheint überall,
-wo der Schlüssel `demo.greeting` verwendet wird.
+Du änderst den Text, speicherst, baust neu — der neue Name steht im Menü und
+in der Titelleiste. Der Schlüssel `app.notes` steht in `data/schema/note.schema`
+und ist zugleich der Name der Aktion, die die Anwendung öffnet; deshalb genügt
+diese eine Zeile.
 
 Was du dabei *nicht* tun darfst: den Schlüssel selbst löschen oder
 umbenennen, ohne die englische Datei mitzuziehen. Es gibt eine
@@ -252,16 +256,21 @@ gezeichnet wird — der Schließknopf sieht weiterhin elf Pixel groß aus, reagi
 aber schon, wenn du etwas daneben tippst. Für den Arbeitsplatz mit Maus steht
 `hit_slop` deshalb auf 0.
 
+.Eine eigene Anwendung ist eine Datei
 [NOTE]
-.Geplant
 ====
-Sobald M11 (eine erste eigene Anwendung als Lua-Tabelle) und M13
-(Schemadateien für Formulare) fertig sind, wird eine eigene Anwendung nicht
-mehr bedeuten, C-Code zu schreiben. Du wirst eine Tabelle mit Feldern
-beschreiben — Name, Typ, Pflicht oder optional — und der generische Formular-
-und Listendarsteller zeichnet daraus ein vollständiges Fenster, mit
-denselben Tastenkürzeln, Texten aus dem Katalog und demselben Thema wie jede
-andere Anwendung des Systems.
+Seit M11 und M13 bedeutet eine eigene Anwendung nicht mehr, C-Code zu
+schreiben. Du hast zwei Wege, und beide brauchen keinen Übersetzer:
+
+* Eine **Schemadatei** in `data/schema/` beschreibt Felder, Spalten und
+  Formular. Daraus entstehen Liste und Maske, mit denselben Tastenkürzeln,
+  Texten aus dem Katalog und demselben Thema wie jede andere Anwendung.
+
+* Ein **Lua-Skript** in `data/apps/` zeichnet selbst. Das ist der Weg für
+  alles, was keine Liste von Datensätzen ist — der SPARTAN-Browser etwa.
+
+Wie beides geht, steht im Kapitel über Lua und in dem darauf folgenden über
+die API.
 ====
 
 === Zum Ausprobieren
@@ -274,10 +283,11 @@ andere Anwendung des Systems.
   erfundene Aktion `record.reopen`. Baue neu und lies die Fehlermeldung —
   steht die richtige Zeilennummer darin?
 
-. Ändere `demo.hint` in `data/lang/de.strings` auf einen eigenen Text, der
-  einen der Platzhalter `{0}` benutzt, falls die Aktion, die den Text
-  aufruft, einen Wert übergibt. Prüfe mit dem Sprachtest, ob `de.strings` und
-  `en.strings` noch dieselben Schlüssel haben.
+. Ändere `status.error` in `data/lang/de.strings` so, dass der Platzhalter
+  `{0}` am Anfang steht statt am Ende. Löse dann im Programm einen Fehler aus —
+  sichere eine Notiz ohne Titel — und sieh dir die Statuszeile an. Prüfe mit
+  dem Sprachtest, ob `de.strings` und `en.strings` noch dieselben Schlüssel
+  haben.
 
 . Lege eine Kopie von `desktop.theme` mit doppelt so großem `close_box` und
   `hit_slop` gleich `20` an. Baue das Programm mit diesem Thema und
