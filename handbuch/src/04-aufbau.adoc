@@ -65,14 +65,14 @@ die Datei würde nicht einmal übersetzen, geschweige denn verlinken. Die Regel
 steht also nicht nur als Kommentar da, sie ist Teil des Bauplans. Das ist mehr
 wert als jede Konvention, die sich nur auf gute Vorsätze verlässt.
 
-=== Die dreizehn Plattformfunktionen
+=== Die neunzehn Plattformfunktionen
 
 Ganz unten im Stapel liegt `plat/` — die gesamte Schnittstelle zur Außenwelt.
 Der Kommentar am Anfang von `src/plat/plat.h` sagt es geradeheraus:
 
 [quote, src/plat/plat.h]
 ____
-Dreizehn Funktionen. Wer auf ein neues Gerät portiert, implementiert genau das
+Neunzehn Funktionen. Wer auf ein neues Gerät portiert, implementiert genau das
 und sonst nichts.
 ____
 
@@ -102,7 +102,7 @@ Sie gliedern sich in sechs Gruppen:
 |`plat_connect`, `plat_send`, `plat_recv`, `plat_disconnect`
 |===
 
-Achtzehn Funktionen. Das ist wenig genug, dass eine Portierung auf ein neues
+Neunzehn Funktionen. Das ist wenig genug, dass eine Portierung auf ein neues
 Gerät überschaubar bleibt: Wer den nächsten Mikrocontroller anschließen will,
 muss nicht wissen, wie ein Fenster oder ein Menü funktioniert, sondern nur, wie
 man dort ein Bild zeigt, ein Ereignis abholt, eine Datei liest und eine
@@ -122,9 +122,14 @@ ____
 
 Eine runde Zahl klingt nach einem endgültigen Entwurf. Sie war das nie — sie
 ist ein Nebenprodukt davon, alles, was wirklich gebraucht wird, in dieser
-Schicht zu halten, nicht mehr und nicht weniger. Wird morgen eine neunzehnte
+Schicht zu halten, nicht mehr und nicht weniger. Wird morgen eine zwanzigste
 Funktion nötig, kommt sie dazu; keine wird erfunden, nur damit die Zahl
 stimmt.
+
+Damit die Zahl nicht still veraltet, zählt `tests/plat_count.sh` bei jedem
+Testlauf die Deklarationen in `plat.h` und vergleicht sie mit dem, was hier,
+in `DESIGN.md` und im Kopf der Datei selbst steht. Eine Zahl, die niemand
+nachzählt, ist irgendwann keine Angabe mehr, sondern eine Erinnerung.
 
 Bemerkenswert ist, wie wenig die Netzfunktionen wissen. Keine kennt ein
 Protokoll — sie schicken Bytes und holen Bytes. Umgekehrt kennt der

@@ -276,6 +276,14 @@ add_test(NAME no_hardcoded_text
                  ${CMAKE_CURRENT_SOURCE_DIR})
 set_tests_properties(no_hardcoded_text PROPERTIES TIMEOUT 30)
 
+# Die Zahl der Plattformfunktionen steht an vier Stellen in Prosa. Eine Zahl,
+# die niemand nachzählt, ist irgendwann keine Angabe mehr, sondern eine
+# Erinnerung.
+add_test(NAME plat_count
+         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/plat_count.sh
+                 ${CMAKE_CURRENT_SOURCE_DIR})
+set_tests_properties(plat_count PROPERTIES TIMEOUT 30)
+
 # Der Indextest läuft nur, wenn es SQLite gibt.
 if(TARGET pda_index)
     list(APPEND PDA_TESTS index)

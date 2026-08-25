@@ -261,8 +261,8 @@ bekommt.
 
 Jetzt zum eigentlichen Kern: Aufgaben, Kontakte und Notizen sind im
 PDA-Projekt *derselbe Code*. Was sie unterscheidet, ist nicht Programmlogik,
-sondern eine Datendatei — ein Schema. `DESIGN.md` zeigt das Schema für
-Aufgaben:
+sondern eine Datendatei — ein Schema. So sieht das Schema für Aufgaben aus,
+gekürzt um die Kommentare:
 
 [source,lua]
 ----
@@ -270,48 +270,56 @@ Aufgaben:
 return {
   type   = "task",
   folder = "Aufgaben",
-  label  = "app.tasks",                      -- Schlüssel im Textkatalog
+  label  = "app.tasks",              -- Schlüssel im Textkatalog
+
+  sort    = "due",
+  columns = { "done", "title", "due" },
+  form    = { "title", "due", "priority", "category", "done", "body" },
+
   fields = {
-    { name="title",    kind="text",   label="field.title",    required=true },
-    { name="due",      kind="date",   label="field.due" },
-    { name="priority", kind="choice", label="field.priority", values={1,2,3,4,5} },
-    { name="done",     kind="bool",   label="field.done" },
-    { name="category", kind="choice", label="field.category", values_from="categories" },
-    { name="body",     kind="gemtext", label="field.notes" },
+    { name = "title",    kind = "text",    label = "field.title", required = true },
+    { name = "due",      kind = "date",    label = "field.due" },
+    { name = "priority", kind = "choice",  label = "field.priority",
+      values = { 1, 2, 3, 4, 5 } },
+    { name = "category", kind = "choice",  label = "field.category",
+      values = { "privat", "arbeit", "einkauf" } },
+    { name = "done",     kind = "bool",    label = "field.done" },
+    { name = "body",     kind = "gemtext", label = "field.notes" },
   },
-  views = {
-    list = { columns={"done","title","due"}, sort="due", group_by="category" },
-    form = { "title","due","priority","category","done","body" },
-  },
-  actions = { { key="record.toggle_done", label="action.toggle" } },
 }
 ----
 
 Lies das Zeile für Zeile: `folder` sagt, wo die Dateien dieses Typs liegen —
-`Aufgaben/`, wie im Verzeichnisbaum oben. `fields` listet jedes Front-Matter-
-Feld mit seiner Art (`kind`) auf: Text, Datum, eine Auswahl aus festen
-Werten, ein Wahrheitswert. `views` beschreibt zwei Ansichten — eine Liste
-mit bestimmten Spalten, sortiert und gruppiert, und ein Formular mit den
-Feldern in der Reihenfolge, in der sie eingegeben werden. `actions` fügt
-eine Tastenaktion hinzu, die den Erledigt-Status umschaltet.
+`Aufgaben/`, wie im Verzeichnisbaum oben. `fields` listet jedes
+Front-Matter-Feld mit seiner Art (`kind`) auf: Text, Datum, eine Auswahl aus
+festen Werten, ein Wahrheitswert. `columns` sind die Spalten der Liste, `form`
+die Felder des Formulars in der Reihenfolge, in der man sie eingibt, und `sort`
+das Feld, nach dem sortiert wird.
 
-Eine einzige generische Anwendung, `apps/browser.lua`, liest ein solches
-Schema und baut daraus Liste, Formular, Menüs und Tastenkürzel — für
-Aufgaben, für Kontakte und für Notizen entsteht so eine vollständige
-Anwendung *ohne eine einzige Zeile eigenen Programmcodes*. Auch die
-Feldtypen selbst sind keine Sonderfälle im Programm, sondern Einträge in
-einer Registratur, sodass ein neuer Feldtyp ebenfalls nur eine Tabelle ist:
+Genau ein Feld darf `gemtext` sein. Es ist kein Feld im Front Matter, sondern
+der Körper des Datensatzes — und einen Körper hat ein Datensatz nur einmal.
 
-[source,lua]
-----
-kind.date = {
-  parse   = function(s) ... end,     -- "25.08.2026" wird Zeitstempel
-  format  = function(v) ... end,     -- Zeitstempel wird "25.08.2026"
-  compare = function(a,b) ... end,
-  widget  = function(field) return date_field(field) end,
-  index   = function(v) return v end,
-}
-----
+.Die Datei ist Lua, der Vertrag ist es nicht
+[NOTE]
+====
+Gelesen wird die Datei von Lua, weil ein eigenes Format ein eigener Parser
+wäre, mit eigenen Meldungen und eigenen Grenzen — alles davon ein zweites Mal
+richtig zu machen. Was dabei herauskommt, ist aber eine C-Struktur (`schema` in
+`src/app/schema.h`), und die ist der Vertrag: der Browser sieht der Anwendung
+nicht an, woher sie kam. Das ist Entscheidung D-15.
+
+Der Preis dafür steht in `CMakeLists.txt`: ohne Lua gibt es keine Schemata,
+ohne Schemata keine Anwendung. Deshalb bricht das Bauen ab, statt still etwas
+Unbrauchbares zu erzeugen.
+====
+
+Der generische Browser (`src/app/browser.c`) liest ein solches Schema und baut
+daraus Liste, Formular, Menüs und Tastenkürzel — für Aufgaben, für Kontakte und
+für Notizen entsteht so eine vollständige Anwendung *ohne eine einzige Zeile
+eigenen Programmcodes*. Auch die Feldtypen sind keine Sonderfälle im Programm,
+sondern Einträge in einer Registratur (`src/app/fieldkind.c`): jeder Typ sagt,
+wie er einen Wert anzeigt, wie er ihn zurückliest und welches Bedienelement er
+dafür braucht. Ein neuer Feldtyp ist ein Eintrag mehr, keine Verzweigung mehr.
 
 image::diagramme/08-daten.svg[Der Weg der Daten,align="center"]
 

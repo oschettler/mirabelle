@@ -120,7 +120,7 @@ app.notes                = Zettelkasten
 ----
 
 Du änderst den Text, speicherst, baust neu — der neue Name steht im Menü und
-in der Titelleiste. Der Schlüssel `app.notes` steht in `data/schema/note.schema`
+in der Titelleiste. Der Schlüssel `app.notes` steht in `data/schema/note.lua`
 und ist zugleich der Name der Aktion, die die Anwendung öffnet; deshalb genügt
 diese eine Zeile.
 

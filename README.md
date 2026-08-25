@@ -25,8 +25,13 @@ seven applications:
 | Tasks, Contacts, Notes, Events | one schema file each, no code |
 | SPARTAN browser, Outline, Agenda | one Lua file each, no code |
 
+Building needs a C11 compiler, CMake 3.18, SDL 3 and **Lua 5.4** — the schema
+files are Lua tables, so without Lua there would be no applications at all
+(decision D-16). SQLite is optional: without it every query is answered by
+walking the files.
+
     make                # build
-    make test           # 39 suites
+    make test           # 41 suites
     make asan           # the same under the sanitizers
     ./build/pda         # run it; the vault defaults to ~/PDA
     ./build/pda --apps  # list what was found, then exit
@@ -35,7 +40,7 @@ seven applications:
 catalogue, and `--shot <file.pbm>` writes one frame and exits.
 
 See [DESIGN.md](DESIGN.md) for the system design and the numbered decisions
-D-1 to D-15, [ROADMAP.md](ROADMAP.md) for the seventeen chapters, and
+D-1 to D-17, [ROADMAP.md](ROADMAP.md) for the seventeen chapters, and
 [STAND.md](STAND.md) for where to pick the work up. The handbook under
 [handbuch/](handbuch/) doubles as a textbook.
 
@@ -44,6 +49,11 @@ D-1 to D-15, [ROADMAP.md](ROADMAP.md) for the seventeen chapters, and
 Nothing that a user can change is compiled in. Screen layout, key bindings,
 every visible string, the sort order, the glyphs and the applications
 themselves are files under [data/](data/); a fifth application is a fifth file.
+
+A script gets the program's own widgets, not copies of them: the SPARTAN
+browser scrolls with the same scrollbar and lays out gemtext with the same view
+as the built-in applications (D-17). A rebuilt widget is a second truth, and it
+drifts the moment the original changes.
 
 Two decisions are worth knowing before reading the code. The screen is **one
 bit per pixel** — patterns take the place of colour, and that is why an

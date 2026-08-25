@@ -1,7 +1,8 @@
 /* Die Plattformschicht: die gesamte Schnittstelle zur Außenwelt.
  *
- * Vierzehn Funktionen. Wer auf ein neues Gerät portiert, implementiert genau
- * das und sonst nichts. Alles darüber ist portables C und weiß weder von SDL noch
+ * Neunzehn Funktionen. Wer auf ein neues Gerät portiert, implementiert genau
+ * das und sonst nichts. Die Zahl steht auch in DESIGN.md und im Handbuch;
+ * tests/plat_count.sh zählt nach, damit sie nicht auseinanderlaufen. Alles darüber ist portables C und weiß weder von SDL noch
  * von einem Betriebssystem.
  *
  * Es gibt drei Umsetzungen: plat_sdl3 für den Arbeitsplatz, plat_esp32 für das

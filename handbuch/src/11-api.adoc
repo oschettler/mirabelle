@@ -415,7 +415,7 @@ Der **letzte** Knopf ist der Voreinstellungsknopf und bekommt den Fokus. Der
 **erste** ist immer der abbrechende — kbd:[Esc] liefert 0.
 
 // -------------------------------------------------------------------------
-=== plat/plat.h — Die dreizehn Funktionen
+=== plat/plat.h — Die neunzehn Funktionen
 
 Das ist die gesamte Schnittstelle zur Außenwelt.
 
@@ -435,7 +435,18 @@ size_t     plat_write(plat_file *f, const void *buf, size_t n);
 void       plat_close(plat_file *f);
 bool       plat_list(const char *dir, plat_dirent *out, int cap, int *count);
 bool       plat_mkdir(const char *path);
+bool       plat_rename(const char *from, const char *to);
+bool       plat_remove(const char *path);
+
+plat_socket *plat_connect(const char *host, int port, char *err, size_t err_size);
+bool         plat_send(plat_socket *s, const char *data, size_t len);
+long         plat_recv(plat_socket *s, char *buf, size_t cap);
+void         plat_disconnect(plat_socket *s);
 ----
+
+`plat_rename` und `plat_remove` gibt es für sicheres Speichern: erst
+vollständig in eine Nebendatei schreiben, dann darüberlegen. Ein Absturz mitten
+im Schreiben kostet dann die neue Fassung, nicht die alte.
 
 Die Ereignisstruktur:
 

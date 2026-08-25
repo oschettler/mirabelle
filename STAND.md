@@ -5,8 +5,9 @@ Fahrplan in [ROADMAP.md](ROADMAP.md).
 
 ## Wo wir stehen
 
-**Fertig: M1 bis M13 und M17.** 39 Testsuiten, warnungsfrei unter
-`-Wall -Wextra -Wpedantic`, ebenso unter Address- und UB-Sanitizer.
+**Fertig: M1 bis M13 und M17.** 41 Testsuiten, warnungsfrei unter
+`-Wall -Wextra -Wpedantic`, ebenso unter Address- und UB-Sanitizer. Alle
+Mutationsprüfstände laufen ohne unerklärte Überlebende.
 
 | Meilenstein | Inhalt |
 |---|---|
@@ -22,7 +23,7 @@ Fahrplan in [ROADMAP.md](ROADMAP.md).
 | M10 | Sortierung nach DIN 5007, Abfragen, SQLite mit FTS5 |
 | M11 | Schemata, Feldtyp-Registratur, generischer Browser |
 | M12 | Datumsrechnung, Monatsansicht, Ansichtsregistratur |
-| M13 | Lua 5.4, die API, ein zweiter Schemalader, Skriptanwendungen |
+| M13 | Lua 5.4, die API, der Schemalader, Skriptanwendungen |
 | M17 | SPARTAN-Protokoll, Netz in `plat.h`, Gemtext-Anzeige |
 | — | Die Schale: Fenster, Menüs, Rollbalken, Dialoge, Skriptanwendungen |
 
@@ -38,28 +39,20 @@ Lua-Datei. Keine davon wird im C-Code namentlich genannt.
 
 ## Was als Nächstes dran ist
 
-Teil V ist abgeschlossen. Es folgen **M14 bis M17** (Härten und Portieren,
-siehe ROADMAP.md) und die **Überarbeitung des Handbuchs**: die vierzehn
-vorhandenen Kapitel sind noch im alten Ton geschrieben und müssen nach
-`handbuch/STIL.md` neu gefasst werden - kein Erlebnisbericht, sondern ein
-Entwurf aus einem Guss. Dabei kommen die Kapitel zu M9 bis M13 dazu.
+Es folgen **M14 bis M16** (aufgezeichnete Bedienung, Touch, die Portierung auf
+den ESP32-S3; siehe ROADMAP.md). M17 ist vorgezogen und fertig.
 
 ## Offene Punkte
 
-- **Handbuch überarbeiten**, am Ende. `handbuch/STIL.md` verlangt seit
-  `0b5b716` einen Entwurf aus einem Guss statt eines Erlebnisberichts; die 14
-  vorhandenen Kapitel sind noch im alten Ton geschrieben und werden dabei
-  spürbar kürzer.
-- **Rollbalken sind fertig.** Modell (`ui/scroll.h`), Widget, die Anbindung von
-  Liste und mehrzeiligem Textfeld, und im Schreibtischfenster der Vorführung
-  steht einer neben dem Notizfeld. Wer einen will, hängt ihn an
-  `list_scroll()` beziehungsweise `text_widget_scroll()`.
-- **Panels lassen sich noch nicht verschachteln.** `panel.h` stellt es in
-  Aussicht, gebaut ist es nicht. Deshalb steht der Balken der Vorführung neben
-  dem Formular und nicht darin - die Anwendung zieht ihm den Platz vom Layout
-  ab und reicht ihm Ereignisse selbst. Das ist tragfähig, aber jede weitere
-  Anwendung müsste es abschreiben; spätestens für M11 lohnt sich entweder ein
-  Panel als Widget oder ein Bedienelement, das Inhalt und Balken zusammenfasst.
+- **Handbuch weiter überarbeiten.** Die sechzehn Kapitel sind inhaltlich auf
+  Stand, aber nicht alle im Ton von `handbuch/STIL.md`: kein Erlebnisbericht,
+  sondern ein Entwurf aus einem Guss. Wer ein Kapitel anfasst, zieht es dabei
+  mit.
+- **Ein Font-Editor als Lua-Anwendung** ist vorgesehen und braucht eine
+  Entscheidung: Lua kommt über `store.*` nur an den Vault, es gibt kein `io`
+  und kein `os`. Zum Bearbeiten von `data/fonts/*.part` bräuchte es entweder
+  einen ausdrücklich erlaubten Pfad für Bestandsdaten oder Zeichensätze als
+  Datensätze im Vault.
 - `radio`, `popup_menu`, `date_field` kommen, wenn eine Anwendung sie braucht.
 
 ## Arbeitsweise, die sich bewährt hat
@@ -86,11 +79,24 @@ Entwurf aus einem Guss. Dabei kommen die Kapitel zu M9 bis M13 dazu.
   nicht an einem Absturz - der Zeiger zeigte auf einen aufgegebenen Stapel,
   der zufällig noch lesbar war. Wer ein Widget außerhalb eines Panels hält,
   hält auch eine Kopie des Themas.
+- **Was das Programm schon hat, baut ein Skript nicht nach.** Rollbalken,
+  Gemtext-Anzeige und Schreibmarke waren in `data/apps/spartan.lua` einmal
+  nachgebaut. Jeder Nachbau sah dem Original ähnlich, bis jemand hinsah - dem
+  Balken fehlte der untere Pfeil. Wenn ein Skript etwas nachbaut, das es im
+  Programm gibt, ist das ein Loch in der Schnittstelle, kein Fleiß (D-17).
+- **Zahlen in Prosa veralten still.** Die Zahl der Plattformfunktionen stand an
+  vier Stellen und war an dreien falsch. `tests/plat_count.sh` zählt sie jetzt
+  nach. Wo eine Angabe im Text von etwas Zählbarem abhängt, ist ein Test
+  billiger als Aufmerksamkeit.
 - Eine überlebende Mutation ist noch kein Befund. Erst nachrechnen, ob sie
   überhaupt etwas ändert. Ist sie gleichwertig, weil der geänderte Zweig nie
   erreicht wird, gehört nicht ein Test hinzu, sondern der tote Code weg.
 
 ## Bauen
+
+Gebraucht werden ein C11-Compiler, CMake 3.18, SDL 3 und **Lua 5.4**; SQLite
+ist wahlfrei. Lua ist Pflicht, weil die Schemadateien Lua-Tabellen sind (D-16)
+- ohne sie gäbe es keine Anwendung.
 
 ```
 make            übersetzen

@@ -120,10 +120,11 @@ Wochenbeginn und Formate aus dem Katalog.
 ist.
 
 **M13 · Lua-Anbindung**
-Lua 5.4 einbetten, die API aus DESIGN.md Abschnitt 11 exportieren, Anwendungen
-umstellen, eine reine Lua-Anwendung als Beweis schreiben.
+Lua 5.4 einbetten, die API aus DESIGN.md Abschnitt 11 exportieren, die Schemata
+darauf umstellen, eine reine Lua-Anwendung als Beweis schreiben.
 *Lehrstoff:* Eine C-Bibliothek für ein Skript öffnen, ohne die Schichten zu
-verletzen.
+verletzen — und die Gegenrichtung: einem Skript die *echten* Bedienelemente
+geben statt Bausteine, mit denen es sie nachbaut (D-17).
 
 ## Teil VI — Härten und portieren (M14 bis M17)
 
@@ -174,8 +175,9 @@ in C schon zweimal geschrieben hast.
 Der Aufnahmeapparat vor dem Touch-Thema, weil er der einzige Weg ist, die
 Touch-Bedienung ohne Gerät zu prüfen.
 Das Gerät zum Schluss, weil bis dahin alles Portierungsrelevante hinter den
-Funktionen von `plat.h` liegt — inzwischen achtzehn: vierzehn für Bildschirm,
-Eingabe, Zeit und Dateien, vier für das Netz.
+Funktionen von `plat.h` liegt — inzwischen neunzehn: fünfzehn für Bildschirm,
+Eingabe, Zeit und Dateien, vier für das Netz. `tests/plat_count.sh` zählt nach,
+damit diese Zahl nicht still veraltet.
 
 ## Was zuerst schiefgehen wird
 

@@ -116,8 +116,7 @@ data/
             system12.metrics
   lang/     de.strings  en.strings  de.sort
   collate/  search.fold
-  schema/   task.schema  contact.schema  note.schema  event.schema
-            task.lua                    (dieselbe Anwendung in Lua, D-15)
+  schema/   task.lua  contact.lua  note.lua  event.lua
   keys/     default.keys
   themes/   desktop.theme
   apps/     spartan.lua  outline.lua  agenda.lua
@@ -175,7 +174,7 @@ long         plat_recv(plat_socket *s, char *buf, size_t cap);
 void         plat_disconnect(plat_socket *s);
 ```
 
-Achtzehn Funktionen. `plat_headless` schreibt `plat_present` in eine Bitmap,
+Neunzehn Funktionen. `plat_headless` schreibt `plat_present` in eine Bitmap,
 liest Ereignisse aus einer Warteschlange, die der Test füllt, und lässt die Uhr
 stillstehen, bis jemand sie stellt — deshalb laufen fast alle Tests ohne Fenster
 und ohne Grafikkarte, und jeder Lauf ist gleich.
@@ -778,30 +777,65 @@ Aufgaben, Kontakte und Notizen sind derselbe Code. Nur die Daten unterscheiden s
 return {
   type   = "task",
   folder = "Aufgaben",
-  label  = "app.tasks",                      -- Schlüssel im Textkatalog
+  label  = "app.tasks",              -- Schlüssel im Textkatalog
+
+  sort    = "due",
+  columns = { "done", "title", "due" },
+  form    = { "title", "due", "priority", "category", "done", "body" },
+
   fields = {
-    { name="title",    kind="text",   label="field.title",    required=true },
-    { name="due",      kind="date",   label="field.due" },
-    { name="priority", kind="choice", label="field.priority", values={1,2,3,4,5} },
-    { name="done",     kind="bool",   label="field.done" },
-    { name="category", kind="choice", label="field.category", values_from="categories" },
-    { name="body",     kind="gemtext", label="field.notes" },
+    { name = "title",    kind = "text",    label = "field.title", required = true },
+    { name = "due",      kind = "date",    label = "field.due" },
+    { name = "priority", kind = "choice",  label = "field.priority",
+      values = { 1, 2, 3, 4, 5 } },
+    { name = "category", kind = "choice",  label = "field.category",
+      values = { "privat", "arbeit", "einkauf" } },
+    { name = "done",     kind = "bool",    label = "field.done" },
+    { name = "body",     kind = "gemtext", label = "field.notes" },
   },
-  views = {
-    list = { columns={"done","title","due"}, sort="due", group_by="category" },
-    form = { "title","due","priority","category","done","body" },
-  },
-  actions = { { key="record.toggle_done", label="action.toggle" } },
 }
 ```
 
+Das ist die Datei, wie sie im Repository liegt. Drei Dinge aus dem ursprünglichen
+Entwurf stehen bewusst **nicht** darin, und zwar so lange, bis jemand sie
+braucht:
+
+- `views` als verschachtelte Tabelle. Ansicht, Spalten, Sortierung und
+  Formularreihenfolge stehen flach im Kopf. Eine Verschachtelungsebene, die
+  genau ein Kind hat, ist eine Ebene zu viel.
+- `group_by`. Gruppierte Listen gibt es nicht; die Liste ist eine Liste.
+- `values_from` und `actions`. Beides verlangt einen Ausdruck, den etwas
+  auswerten muss - eine Datei, die rechnet. Sobald ein Schema rechnet, ist es
+  keine Beschreibung mehr, sondern ein Programm, und dann wäre die Frage, warum
+  es nicht gleich eine Skriptanwendung ist.
+
 **Nachtrag zur Umsetzung (D-15):** Der Vertrag ist nicht Lua, sondern die
-Struktur `schema` in `app/schema.h`. Wer ein Schema hat, hat ein `schema` — ob
-es aus einer Textdatei kam (`data/schema/*.schema`, gelesen seit M11) oder aus
-einer Lua-Tabelle (M13), sieht der Browser nicht. Lua kommt damit als zweiter
-Lader dazu und nicht als Ersatz. Das ist nicht bloß der Reihenfolge der
-Meilensteine geschuldet: auf dem Gerät darf Lua fehlen, und die Anwendungen
-laufen trotzdem.
+Struktur `schema` in `app/schema.h`. Wer ein Schema hat, hat ein `schema`; die
+Lua-Tabelle ist die Schreibweise, in der es in einer Datei steht.
+
+Diese Trennung hat sich ausgezahlt, als sie geprüft wurde. Es gab eine Zeit
+lang zwei Lader — ein eigenes Zeilenformat und Lua — und beide ergaben dieselbe
+Struktur. Geblieben ist der Lua-Lader, denn ein eigenes Format heißt: ein
+eigener Parser, eigene Meldungen, eigene Grenzen, und alles davon ein zweites
+Mal richtig. Was von der Trennung bleibt, ist die Arbeitsteilung:
+
+- **Lesen** (`lua/pdalua_schema.c`) prüft, ob die Tabelle die richtige Gestalt
+  hat: Zeichenketten, wo Namen stehen, Listen, wo Listen stehen.
+- **Prüfen** (`schema_check` in `app/schema.c`) prüft, ob das Ergebnis eine
+  Anwendung beschreibt, die es geben kann. Ein Schema, dessen `columns` ein
+  Feld nennt, das es nicht gibt, ist einwandfrei geschrieben und trotzdem
+  falsch.
+
+Käme je ein zweiter Lader dazu, prüfte er mit derselben Funktion. Läge diese
+Prüfung zweimal vor, wären es früher oder später zwei verschiedene.
+
+**Damit ist Lua Pflicht.** Ohne Lua gibt es keine Schemata, ohne Schemata keine
+Anwendung — ein Programm ohne Lua hätte nichts zu zeigen. CMake bricht ab,
+statt still etwas Unbrauchbares zu bauen. Die Schale kennt Lua trotzdem nicht:
+sie bekommt einen Lader mit Dateiendung (`shell_schemas`), so wie sie für
+Skripte eine Handvoll Funktionszeiger bekommt. Das hält sie prüfbar — ein Test
+kann einen eigenen Lader einsetzen, und ein Schemafehler sieht nicht aus wie
+ein Schalenfehler.
 
 Eine generische Anwendung liest das Schema und baut daraus
 Liste, Formular, Menüs und Tastenkürzel. **Aufgaben, Kontakte und Notizen
@@ -829,13 +863,14 @@ also eine Schemadatei **plus** eine Ansicht mit rund 200 Zeilen, die sich in
 dieselbe Ansichtsregistratur einträgt wie `list` und `form`.
 
 **Umsetzung seit M12:** Die Registratur ist `schema_view` in `app/schema.h`, und
-ein Schema tritt mit einer Zeile ein:
+ein Schema tritt mit zwei Einträgen ein:
 
-```
-view     month date
+```lua
+view       = "month",
+view_field = "date",
 ```
 
-`data/schema/event.schema` ist die vierte Anwendung und die einzige, die davon
+`data/schema/event.lua` ist die vierte Anwendung und die einzige, die davon
 Gebrauch macht. Alles andere - laden, filtern, öffnen, speichern, löschen -
 ist für Liste und Raster derselbe Code; von außen ist der Unterschied nur zu
 sehen, wenn man ihn sucht (`browser_list()` gegen `browser_month()`). Genau das
@@ -1124,4 +1159,6 @@ Zeichenkette im Quelltext.
 | D-12 | Textkörper in Gemtext statt Markdown | Ein Parser mit einem Bit Zustand; Notizendarsteller und SPARTAN-Browser werden dieselbe Funktion |
 | D-13 | Textmodell getrennt vom Textwidget | Der schwierigste Teil eines Editors ist die Schreibmarke, nicht das Zeichnen — getrennt ist er ohne Bildschirm prüfbar |
 | D-14 | Elementmaße nach dem Style Guide, Auflösung und Schrift nicht | Ein Style Guide beschreibt das Aussehen; womit man es erreicht, bleibt Sache des Projekts |
-| D-15 | Der Schemavertrag ist die C-Struktur, nicht Lua | Der Browser läuft ohne Lua; Lua wird ein zweiter Lader statt der einzige |
+| D-15 | Der Schemavertrag ist die C-Struktur, nicht die Lua-Tabelle | Lesen und Prüfen bleiben getrennt: der Leser prüft die Gestalt der Datei, `schema_check` die Anwendung dahinter. Ein zweiter Lader bräuchte keine zweite Prüfung |
+| D-16 | Lua ist Pflicht, nicht Beiwerk | Die Schemadateien sind Lua-Tabellen; ohne Lua gäbe es keine Anwendung. CMake bricht ab, statt still etwas Unbrauchbares zu bauen. Die Schale kennt Lua trotzdem nicht — sie bekommt einen Lader (`shell_schemas`) |
+| D-17 | Ein Skript bekommt die echten Bedienelemente, keine nachgebauten | Ein Nachbau ist eine zweite Wahrheit: er geht auseinander, sobald sich das Original ändert, und niemand merkt es. Wenn ein Skript etwas nachbaut, das es schon gibt, ist das ein Loch in der Schnittstelle |
