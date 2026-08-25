@@ -44,7 +44,7 @@ den ESP32-S3; siehe ROADMAP.md). M17 ist vorgezogen und fertig.
 
 ## Offene Punkte
 
-- **Handbuch weiter überarbeiten.** Die sechzehn Kapitel sind inhaltlich auf
+- **Handbuch weiter überarbeiten.** Die siebzehn Kapitel sind inhaltlich auf
   Stand, aber nicht alle im Ton von `handbuch/STIL.md`: kein Erlebnisbericht,
   sondern ein Entwurf aus einem Guss. Wer ein Kapitel anfasst, zieht es dabei
   mit.

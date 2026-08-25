@@ -13,6 +13,7 @@ Wenn ja, muss sich ein Browser schreiben lassen, ohne eine Zeile C anzufassen.
 Das Protokoll heißt https://spartan.mozz.us/[SPARTAN] und ist absichtlich
 winzig. Eine Anfrage ist eine Zeile:
 
+[source]
 ----
 mozz.us /gemtext.gmi 0\r\n
 ----
@@ -20,6 +21,7 @@ mozz.us /gemtext.gmi 0\r\n
 Rechnername, Pfad, Länge des Rumpfes, den der Client anschließend sendet —
 meistens null. Die Antwort ist ebenfalls eine Zeile, dann der Inhalt:
 
+[source]
 ----
 2 text/gemini\r\n
 # Die Hauptseite
@@ -49,10 +51,11 @@ bauen, Antwort lesen, Verweise auflösen. Kein einziger Aufruf geht nach
 draußen. Wer die Bytes überträgt, wird übergeben:
 
 [source,c]
+[source]
 ----
 typedef struct {
     void *user;
-    bool  (*open)(void *user, const char *host, int port, char *err, size_t n);
+    bool  (*open)(void *user, const char *host, int port, char *err, size_t err_size);
     bool  (*send_all)(void *user, const char *data, size_t len);
     long  (*recv_some)(void *user, char *buf, size_t cap);
     void  (*close)(void *user);
@@ -119,6 +122,7 @@ einfrieren.
 Kommentar. Es benutzt aus C:
 
 [source,lua]
+[source]
 ----
 net.fetch(adresse)           -- holt eine Seite
 net.resolve(basis, verweis)  -- löst einen Verweis auf
@@ -198,10 +202,15 @@ Dateien löschen können, auch nicht versehentlich.
   Funktionen darum. Baue einen Fall dazu, in dem der Server mitten in der
   Statuszeile schließt. Was soll passieren, und was passiert?
 
-. Öffne `data/apps/spartan.lua` und ändere die Darstellung der Verweise von
-  `[3]` auf `(3)`. Starte neu — ohne zu übersetzen. Wie lange hat das
-  gedauert?
+. Öffne `data/apps/spartan.lua` und tausche die Adresszeile gegen eine, die
+  die Adresse in Großbuchstaben zeigt. Starte neu — ohne zu übersetzen. Wie
+  lange hat das gedauert?
 
-. Suche in `data/apps/spartan.lua` die Zeile `local BAR = 16` und den
-  Kommentar darunter. Warum steht diese Zahl zweimal im System, und was wäre
-  nötig, damit sie nur einmal dasteht?
+. Suche in `data/apps/spartan.lua` die Zeile `local BAR = theme.scrollbar_w`.
+  Schreib stattdessen `local BAR = 16` und ändere `scrollbar_w` in
+  `data/themes/desktop.theme` auf 24. Was geht kaputt, und was sagt das über
+  Zahlen, die zweimal im System stehen?
+
+. Die Verweise werden als `[3] Name` gezeigt — aber nicht vom Skript. Finde in
+  `src/app/gemview.c` die Stelle, die das tut, und überlege, warum sie dort
+  richtig aufgehoben ist und nicht im Browser.

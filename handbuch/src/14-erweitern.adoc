@@ -14,6 +14,7 @@ Alle Tastenkürzel des Projekts stehen in einer einzigen Datei,
 `data/keys/default.keys`. Kein Kürzel steckt fest im C-Code. Eine Zeile daraus:
 
 [source]
+[source]
 ----
 record.new            Cmd+N          app
 ----
@@ -26,6 +27,7 @@ verbunden, davor der Tastenname. Das dritte ist der *Bereich*.
 Bereiche sind der Teil, der beim ersten Lesen leicht übersehen wird, aber
 entscheidend ist. Die Datei selbst erklärt es im Kopf:
 
+[source]
 [source]
 ----
 # Bereiche: global gilt überall. Sonst wird erst im Bereich des gerade
@@ -43,6 +45,7 @@ fokussierten Bedienelements sucht und erst danach, wenn nichts gefunden wurde,
 im Bereich `global`:
 
 [source,c]
+[source]
 ----
 const char *keymap_lookup(const keymap *km, int key, uint8_t mods, const char *scope)
 {
@@ -60,6 +63,7 @@ const char *keymap_lookup(const keymap *km, int key, uint8_t mods, const char *s
 Angenommen, du willst kbd:[Cmd+N] durch kbd:[Cmd+Shift+N] ersetzen, weil dir
 kbd:[Cmd+N] zu leicht aus Versehen gedrückt wird. Du änderst genau eine Zeile:
 
+[source]
 [source]
 ----
 record.new            Cmd+Shift+N    app
@@ -79,6 +83,7 @@ Versehen ein Kürzel doppelt vergibst. Trägst du versehentlich `Cmd+N` noch
 einmal im Bereich `app` ein — etwa für eine zweite Aktion, ohne die erste
 Zeile zu löschen — meldet der Parser das beim nächsten Bauen:
 
+[source]
 ----
 default.keys:35: Kürzel 'Cmd+N' im Bereich 'app' ist bereits in Zeile 34 an 'record.new' vergeben
 ----
@@ -99,6 +104,7 @@ Sichtbarer Text steht nicht im C-Code, sondern in Katalogdateien, eine je
 Sprache. Für Deutsch ist das `data/lang/de.strings`. Eine Zeile daraus:
 
 [source]
+[source]
 ----
 dialog.delete.body       = „{0}“ wirklich löschen? Das lässt sich nicht rückgängig machen.
 ----
@@ -114,6 +120,7 @@ Katalogdatei kann es, weil sie `{0}` und `{1}` frei anordnen darf.
 
 Willst du zum Beispiel den Namen einer Anwendung ändern:
 
+[source]
 [source]
 ----
 app.notes                = Zettelkasten
@@ -146,6 +153,7 @@ jemand Englisch braucht.
 Der Zeichensatz liegt als Textdatei vor, `data/fonts/system12-ascii.part`.
 Jede Glyphe ist ein kleines Punktraster aus `#` und `.`:
 
+[source]
 [source]
 ----
 glyph U+0021 width 4        # !
@@ -198,6 +206,7 @@ Aus diesem Fehlschlag ist `data/fonts/derived.map` entstanden, eine Liste,
 die jedem abgeleiteten Zeichen seinen Grundbuchstaben zuordnet:
 
 [source]
+[source]
 ----
 U+00E4 U+0061   # ä von a
 U+00E0 U+0061   # à
@@ -220,6 +229,7 @@ Alle Maße der Fensteroberfläche — Titelleistenhöhe, Rahmenbreite, Schriftar
 — stehen in einer Themendatei, `data/themes/desktop.theme`:
 
 [source]
+[source]
 ----
 titlebar_h    20
 border         1
@@ -238,6 +248,7 @@ Eine eigene Kopie mit größeren Maßen ist schnell angelegt: Datei kopieren,
 Werte anheben, in der Konfiguration einbinden. Der interessanteste Wert dabei
 ist `hit_slop`, und die Themendatei erklärt selbst, wofür er gedacht ist:
 
+[source]
 [source]
 ----
 # Für das Gerät gibt es in M15 ein zweites Thema. Dort sind Titelleiste und

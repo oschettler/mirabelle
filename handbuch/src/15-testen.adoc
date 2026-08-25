@@ -191,22 +191,23 @@ wenigstens ein Test anschlägt. Das nennt man einen Mutationstest. Bleibt die
 Suite grün, obwohl der Code jetzt falsch ist, hat sie diese Stelle nie
 wirklich geprüft, egal wie viele grüne Zeilen sie ausgibt.
 
-Das Projekt hat diese Methode mehrfach angewendet und mehrfach etwas gefunden.
-Vier Beispiele zeigen, wie unterschiedlich ein Test versagen kann, ohne dass
-man es ihm ansieht.
+Etwa ein Drittel aller Lücken in diesem Projekt kam so ans Licht. Vier davon
+stehen hier, weil sie vier verschiedene Arten zeigen, wie ein Test versagen
+kann, ohne dass man es ihm ansieht. Jede davon ist eine Regel für den nächsten
+Test.
 
-**Ein Muster, das seine eigene Prüfung unterläuft.** Kapitel 5 erklärt, dass
-ein gezeichnetes Muster am Zielbild haftet, nicht am gezeichneten Objekt — ein
-graues Rechteck sieht überall auf dem Bildschirm gleich aus. Der erste Test
-dafür verschob dasselbe Rechteck über zwei verschiedene `origin`-Werte und
-verglich die Ergebnisse. Das Problem: `PAT_GRAY50`, das Schachbrettmuster,
-setzt ein Bit genau dann, wenn `x + y` ungerade ist. Bei einer Verschiebung
-mit gerader Quersumme — etwa `(2, 2)`, wobei sich `x + y` überall um vier
-ändert — sieht das Schachbrett danach exakt gleich aus wie vorher. Der Test
-verglich zwei Bilder, die aus dem falschen Grund übereinstimmten: nicht weil
-das Muster korrekt am Ziel haftete, sondern weil das Schachbrettmuster gegen
-genau diese Verschiebung blind ist. Der Kommentar in
-`tests/unit/test_draw.c` hält das fest:
+**Eine Eingabe darf nicht gegen den Fehler blind sein.** Kapitel 5 erklärt,
+dass ein gezeichnetes Muster am Zielbild haftet, nicht am gezeichneten Objekt —
+ein graues Rechteck sieht überall auf dem Bildschirm gleich aus. Prüfen lässt
+sich das, indem man dasselbe Rechteck über zwei verschiedene `origin`-Werte
+verschiebt und die Ergebnisse vergleicht. Nur: `PAT_GRAY50`, das
+Schachbrettmuster, setzt ein Bit genau dann, wenn `x + y` ungerade ist. Bei
+einer Verschiebung mit gerader Quersumme — etwa `(2, 2)`, wobei sich `x + y`
+überall um vier ändert — sieht das Schachbrett danach exakt gleich aus wie
+vorher. Ein solcher Vergleich stimmt aus dem falschen Grund überein: nicht
+weil das Muster korrekt am Ziel haftet, sondern weil das Muster gegen genau
+diese Verschiebung blind ist. Der Kommentar in `tests/unit/test_draw.c` hält
+die Regel fest:
 
 [source,c]
 ----
@@ -217,19 +218,16 @@ genau diese Verschiebung blind ist. Der Kommentar in
  * PAT_HATCH, dessen Phase auch waagerecht wandert. */
 ----
 
-Selbst ein Fehler, der das Muster fälschlich am Objekt statt am Ziel verankert
-hätte, wäre mit der alten Verschiebung unentdeckt geblieben: eine Testeingabe
-kann zufällig genau die Eigenschaft verdecken, die sie beweisen soll.
+Ein Fehler, der das Muster fälschlich am Objekt statt am Ziel verankert, bliebe
+mit einer geraden Verschiebung unentdeckt. Eine Testeingabe kann genau die
+Eigenschaft verdecken, die sie beweisen soll — und ob sie das tut, sieht man
+ihr nicht an, man muss es ausrechnen.
 
-**Zwei Fenster, die sich nicht berühren.** M6 führte überlappende Fenster ein:
-von hinten nach vorn gezeichnet, von vorn nach hinten getroffen. Der
-ursprüngliche Test für die Fensterverwaltung benutzte zwei Fenster, die sich
-gar nicht überlappten. Ob die Trefferprüfung — welches Fenster einen Klick an
-einer bestimmten Stelle bekommt — in der richtigen Reihenfolge lief, blieb
-deshalb unbemerkt: ohne Überlappung gibt es an keiner Stelle zwei Fenster, die
-um denselben Klick konkurrieren könnten. Die Reparatur steht in
-`tests/unit/test_wm.c`, als zwei eigene Tests mit sich überlappenden
-Rechtecken:
+**Was einander nie begegnet, prüft keine Reihenfolge.** Fenster werden von
+hinten nach vorn gezeichnet und von vorn nach hinten getroffen. Zwei Fenster,
+die sich nicht überlappen, prüfen davon nichts: es gibt keine Stelle, an der
+zwei von ihnen um denselben Klick konkurrieren. `tests/unit/test_wm.c` legt sie
+deshalb absichtlich übereinander:
 
 [source,c]
 ----
@@ -247,16 +245,15 @@ hit_part part = HIT_NONE;
 CHECK(wm_hit(m, x, y, &part) == b);
 ----
 
-Erst mit einem Punkt, der in beiden Fenstern liegt, prüft der Test überhaupt
-etwas über die Reihenfolge — `overlap_is_hit_front_to_back` und
-`overlap_is_drawn_back_to_front` nageln seither beide Richtungen einzeln fest.
+Erst ein Punkt, der in beiden Fenstern liegt, prüft überhaupt etwas über die
+Reihenfolge. `overlap_is_hit_front_to_back` und `overlap_is_drawn_back_to_front`
+nageln beide Richtungen einzeln fest.
 
-**Ein Tab zu wenig.** Der Dialog aus M7 lässt sich mit kbd:[Tab] zwischen
-seinen Knöpfen bewegen, mit Umbruch am Ende zurück zum ersten. Bei zwei
-Knöpfen ist das eine Falle für den Test selbst: prüft man den Fokus erst nach
-*zwei* Tabs, landet man beim Knopf, bei dem man auch ohne jeden Umbruch
-gelandet wäre. Genau das stand im ursprünglichen Test. `tests/unit/test_dialog.c`
-korrigiert es mit einem Kommentar, der die Falle benennt:
+**Prüfe nach einem Schritt, nicht nach zweien.** Ein Dialog lässt sich mit
+kbd:[Tab] zwischen seinen Knöpfen bewegen, mit Umbruch am Ende zurück zum
+ersten. Bei zwei Knöpfen ist das eine Falle: nach *zwei* Tabs steht der Fokus
+dort, wo er auch ohne jeden Umbruch stünde. `tests/unit/test_dialog.c` benennt
+sie im Kommentar:
 
 [source,c]
 ----
@@ -267,17 +264,15 @@ event tab = { .kind = EV_KEY_DOWN, .key = KEY_TAB };
 CHECK(dialog_event(d, &tab));   /* Fokus 1 -> 0, also mit Umbruch */
 ----
 
-Eine Mutation, die den Umbruch ganz entfernt, bliebe mit der alten Prüfung
-unentdeckt — mit der neuen, nach genau einem Tab, schlägt sie zuverlässig
-fehl.
+Eine Mutation, die den Umbruch ganz entfernt, bliebe nach zwei Tabs
+unentdeckt; nach genau einem schlägt sie zuverlässig fehl.
 
-**Ein Test, der hängt statt fehlzuschlagen.** Bei den Mutationstests zur
-Menüleiste (M7 Teil 3) ließ eine Mutation — die Schrittgrenze beim
-Weiterrücken durch die Einträge entfernt — einen Test nicht fehlschlagen,
-sondern in einer Endlosschleife hängen bleiben. Das ist schlimmer als ein
-Fehlschlag: ein hängender Test blockiert den gesamten Lauf, und jeder Test
-danach kommt nie zu Wort, ohne dass irgendetwas verrät, was passiert ist. Die
-Antwort steht seither in `CMakeLists.txt`, für jeden einzelnen Test:
+**Ein hängender Test ist schlimmer als ein fehlschlagender.** Nicht jede
+Mutation lässt einen Test fehlschlagen — manche lassen ihn in einer
+Endlosschleife stehen, etwa wenn die Schrittgrenze beim Weiterrücken durch
+Menüeinträge entfällt. Ein hängender Test blockiert den ganzen Lauf: jeder
+Test danach kommt nie zu Wort, und nichts verrät, was passiert ist. Die
+Antwort steht in `CMakeLists.txt`, für jeden einzelnen Test:
 
 [source,cmake]
 ----
@@ -288,24 +283,23 @@ Dreißig Sekunden sind für Tests, die normalerweise Sekundenbruchteile
 brauchen, reichlich Luft — und genug, damit ein hängender Test als
 `Timeout` gemeldet wird statt den ganzen Lauf lahmzulegen.
 
-Keiner dieser vier Fälle wäre beim bloßen Lesen des Testcodes aufgefallen —
-jeder Test sah für sich betrachtet vernünftig aus. Erst der Versuch, ihn
-absichtlich scheitern zu lassen, zeigte, dass er es nicht konnte.
+Keine dieser vier Fallen sieht man einem Test beim Lesen an — jeder von ihnen
+sieht für sich betrachtet vernünftig aus. Erst der Versuch, ihn absichtlich
+scheitern zu lassen, zeigt, ob er es kann.
 
 === Der Sanitizer sieht, was die Suite übersieht
 
-Ein Test kann nur das prüfen, worauf er achtet — und ein Speicherfehler
-äußert sich oft gar nicht dort, wo er passiert. Genau das erlebte das Projekt
-bei einem gemeldeten Absturz: ein Klick auf das Schließfeld links in der
-Titelleiste ließ das ganze Programm abstürzen, obwohl die gesamte Testsuite
-grün war. Die Ursache: die Fensterverwaltung schloss ein Fenster selbst,
-sobald der Nutzer das Schließfeld traf, aber der Eigentümer des Fensters
-erfuhr davon nichts. Die Vorführung hielt danach einen Zeiger auf bereits
-freigegebenen Speicher und zeichnete beim nächsten Bild hinein — ein Fehler,
-der erst beim nächsten Zeichenaufruf sichtbar wurde, nicht an der Stelle, wo
-er entstand.
+Ein Test kann nur das prüfen, worauf er achtet — und ein Speicherfehler äußert
+sich oft gar nicht dort, wo er passiert.
 
-Damit so etwas nicht wieder unbemerkt bleibt, gibt es `make asan`:
+Der typische Fall sieht so aus: die Fensterverwaltung schließt ein Fenster
+selbst, sobald der Nutzer das Schließfeld trifft. Wer einen Zeiger darauf hält
+und das nicht mitbekommt, zeichnet beim nächsten Bild in freigegebenen
+Speicher. Das Programm stürzt ab — beim *nächsten* Zeichenaufruf, nicht an der
+Stelle, an der der Fehler entstand. Die Testsuite bleibt dabei grün, weil kein
+Test das Fenster nach dem Schließen anfasst.
+
+Dagegen gibt es `make asan`:
 
 [source,make]
 ----
@@ -320,34 +314,33 @@ das zur Laufzeit mitprotokolliert, welcher Speicher gerade gültig ist. Greift
 das Programm auf bereits freigegebenen Speicher zu, meldet der Sanitizer
 genau das, mit beiden Stellen: wo freigegeben wurde, und wo fälschlich noch
 zugegriffen wurde. `CMakeLists.txt` schaltet dafür `-fsanitize=address,undefined`
-zu, in einem eigenen Bauverzeichnis neben dem normalen. Mit der
-zurückgenommenen Reparatur meldet `make asan` die Stelle samt beider
-Aufrufpfade; mit der Reparatur laufen alle Suiten sauber durch.
+zu, in einem eigenen Bauverzeichnis neben dem normalen.
 
-Die Lehre ist unbequem, aber wichtig: eine grüne Testsuite beweist nicht, dass
-kein Speicherfehler vorliegt — nur, dass keiner der Tests einen ausgelöst hat,
-an einer Stelle, an der es auffiel. Ein Speicherfehler fällt eben nur auf,
-wenn jemand hinsieht.
+Probier es aus: nimm die Rückmeldung `window_set_on_close` aus Kapitel 7
+versuchsweise heraus. `make test` bleibt grün, `make asan` nennt die Stelle
+samt beider Aufrufpfade.
 
-=== Der Wächter, der zuerst selbst geprüft werden musste
+Die Regel dahinter ist unbequem, aber wichtig: eine grüne Testsuite beweist
+nicht, dass kein Speicherfehler vorliegt — nur, dass keiner der Tests einen an
+einer Stelle ausgelöst hat, an der er auffiel.
+
+=== Ein Wächter muss selbst geprüft werden
 
 Nicht jeder Test prüft Bilder oder Zustände. `tests/no_hardcoded_text.sh` ist
 ein anderer Fall: ein Skript, das den Quelltext selbst durchsucht und dafür
 sorgt, dass kein sichtbarer Text fest im Code steht, sondern über den
-Textkatalog kommt (das Kapitel über das Dazubauen erklärt den Katalog selbst). Geprüft wird eng:
-an `gfx_text` darf kein Zeichenkettenliteral als Text gehen, an `wm_open`
-keines als Titel.
+Textkatalog kommt. Geprüft wird eng: an `gfx_text` darf kein
+Zeichenkettenliteral als Text gehen, an `wm_open` keines als Titel.
 
-Beim Schreiben dieses Wächters stellten sich zwei Schwächen heraus, und beide
-sind lehrreich, weil sie zeigen, dass ein Wächter genauso geprüft werden muss
-wie das, was er bewacht.
+Ein Wächter hat zwei Arten zu versagen, und beide sind leise: er übersieht
+etwas, oder er meldet etwas Falsches. Beides muss man ihm ansehen können,
+bevor man sich auf ihn verlässt.
 
-Die erste: ein Aufruf wie `wm_open(m, rect, "Text", WIN_NORMAL)` steht im
-Quelltext oft nicht in einer einzigen Zeile, sondern über mehrere verteilt,
-mit Zeilenumbrüchen zwischen den Argumenten. Ein Wächter, der zeilenweise
-sucht, würde einen solchen Aufruf einfach übersehen — nicht weil er falsch
-prüft, sondern weil er nie hinschaut, wo der verbotene Text tatsächlich
-steht. Die Lösung steht im Kommentar am Kopf der Datei:
+Das erste: ein Aufruf wie `wm_open(m, rect, "Text", WIN_NORMAL)` steht im
+Quelltext oft nicht in einer einzigen Zeile, sondern über mehrere verteilt.
+Ein Wächter, der zeilenweise sucht, übersieht ihn — nicht weil er falsch
+prüft, sondern weil er nie hinschaut, wo der verbotene Text steht. Die Antwort
+steht im Kommentar am Kopf der Datei:
 
 [source,bash]
 ----
@@ -361,12 +354,11 @@ verwandelt. Der Preis dafür: die Fehlermeldung kann keine Zeilennummer mehr
 nennen, nur noch den Dateinamen. Ein bewusster Tausch — lieber jeden Fund
 melden, ohne genau zu sagen wo, als manche Funde gar nicht zu melden.
 
-Die zweite Schwäche traf ausgerechnet den richtigen Weg: der Aufruf
-`T(cat, "schlüssel")`, mit dem sichtbarer Text korrekt über den Katalog
-geholt wird, hat selbst ein Zeichenkettenliteral als Argument — seinen
-Schlüssel. Ein Wächter, der stur nach Zeichenkettenliteralen sucht, hätte
-also ausgerechnet den korrekten Aufruf als Fehler gemeldet. Die Lösung blendet
-Katalogaufrufe vor der eigentlichen Suche aus:
+Das zweite trifft ausgerechnet den richtigen Weg: der Aufruf
+`T(cat, "schlüssel")`, mit dem sichtbarer Text korrekt über den Katalog geholt
+wird, hat selbst ein Zeichenkettenliteral als Argument — seinen Schlüssel. Ein
+Wächter, der stur nach Literalen sucht, meldet also ausgerechnet den korrekten
+Aufruf. Deshalb werden Katalogaufrufe vor der eigentlichen Suche ausgeblendet:
 
 [source,bash]
 ----
@@ -375,10 +367,15 @@ Katalogaufrufe vor der eigentlichen Suche aus:
 flat=$(tr '\n' ' ' < "$f" | sed -E 's/T[fn]?\([^()]*\)/KATALOG/g')
 ----
 
-Beide Schwächen führen zur selben Lehre: es reicht nicht, zu prüfen, ob ein
-Wächter falschen Code erkennt. Man muss auch prüfen, ob er *richtigen* Code in
-Ruhe lässt — sonst verliert er, sobald er einen korrekten Aufruf fälschlich
-meldet, das Vertrauen aller, die ihn danach ignorieren.
+Beides führt zur selben Regel: es reicht nicht zu prüfen, ob ein Wächter
+falschen Code erkennt. Er muss auch *richtigen* Code in Ruhe lassen. Ein
+Wächter, der einen korrekten Aufruf meldet, verliert das Vertrauen aller — und
+wird danach ignoriert, auch wenn er einmal recht hat.
+
+Denselben Dienst tut `tests/plat_count.sh`: es zählt die Deklarationen in
+`src/plat/plat.h` und vergleicht sie mit der Zahl, die Header, `DESIGN.md` und
+dieses Buch nennen. Wo eine Angabe im Text von etwas Zählbarem abhängt, ist ein
+Test billiger als Aufmerksamkeit.
 
 === Zum Ausprobieren
 
@@ -398,3 +395,7 @@ meldet, das Vertrauen aller, die ihn danach ignorieren.
 . Entferne in `tests/no_hardcoded_text.sh` die Zeile mit `sed -E`, die
   Katalogaufrufe ausblendet, und lass es über den Quelltext laufen. Zähl
   nach, wie viele falsche Meldungen dabei entstehen.
+
+. Ändere im Kopf von `src/plat/plat.h` die Zahl der Funktionen auf eine
+  falsche und lass `make test` laufen. Welcher Test meldet sich, und was
+  genau vergleicht er?

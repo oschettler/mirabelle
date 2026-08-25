@@ -293,7 +293,7 @@ end
 ----
 
 Dass es die echten Widgets sind und keine nachgebauten, ist Absicht und in
-Kapitel 12 begründet. Für dich heißt es: was du hier bedienst, sieht genauso
+Kapitel 13 begründet. Für dich heißt es: was du hier bedienst, sieht genauso
 aus und verhält sich genauso wie in Aufgaben, Kontakten und Notizen.
 
 === Module

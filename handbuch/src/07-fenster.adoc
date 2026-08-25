@@ -4,8 +4,8 @@ Ein Fenstersystem, das mehrere Fenster gleichzeitig zeigt, muss zwei Fragen
 beantworten, die auf den ersten Blick nichts miteinander zu tun haben: Welches
 Fenster sieht der Nutzer an einer bestimmten Stelle? Und welches Fenster trifft
 ein Klick an derselben Stelle? Dieses Kapitel zeigt, wie `src/ui/wm.c` beide
-Fragen mit derselben Liste beantwortet — und wie zwei Fehler beim Bau
-tatsächlich auftraten.
+Fragen mit derselben Liste beantwortet — und welche zwei Regeln über
+Lebensdauern daran hängen.
 
 === Die z-sortierte Liste
 
@@ -119,12 +119,13 @@ case EV_MOUSE_MOVE: {
         ...
     }
 
-    m->outline = r;   /* nur der Umriss wandert */
+    m->outline = r;
     return true;
 }
 ----
 
-Erst bei `EV_MOUSE_UP` übernimmt das Fenster tatsächlich die neue Lage:
+Die letzte Zeile ist die entscheidende: es wandert der Umriss, nicht das
+Fenster. Erst bei `EV_MOUSE_UP` übernimmt das Fenster die neue Lage:
 
 [source,c]
 ----
@@ -225,57 +226,56 @@ CHECK(hit2 == w2);
 CHECK_EQ(part, HIT_CLOSE_BOX);   /* mit hit_slop=6 schon */
 ----
 
-=== Zwei Fehler beim Bau
+=== Zwei Regeln über Lebensdauern
 
-Beide folgenden Fehler stammen aus der tatsächlichen Entwicklungsgeschichte
-des Projekts. Beide zeigen etwas, das keine noch so sorgfältige Codeprüfung
-von allein findet.
+Ein Fenstersystem verwaltet Speicher, den andere benutzen: das Thema kommt von
+außen, das Fenster geht an einen Eigentümer. Beide Richtungen haben eine Regel,
+und beide Regeln stehen im Code, nicht nur hier.
 
-==== Ein Zeiger auf ein Thema, das nicht mehr existierte
+==== Ein Thema wird kopiert, nie als Zeiger gehalten
 
-Als die Fensterverwaltung entstand, speicherte `wm_create` zunächst nur einen
-*Zeiger* auf das übergebene Thema, nicht das Thema selbst. Eine Testhilfe
-legte ihr Thema als lokale Variable an und übergab dessen Adresse an
-`wm_create` — und nach der Rückkehr dieser Hilfsfunktion existierte diese
-Variable nicht mehr. Ihr Speicher, ein paar Bytes auf dem Stapelspeicher
-(dem "stack"), konnte längst von etwas anderem überschrieben sein.
-
-Der Test hing danach, ohne eine einzige Zeile Ausgabe zu erzeugen. Der Grund:
-`window_draw` las über den toten Zeiger Maße, die nicht mehr die ursprünglich
-gesetzten Werte waren, sondern Zufallswerte aus wiederverwendetem
-Stapelspeicher — und füllte damit ein absurd großes Rechteck. Eine Schleife,
-die über ein Rechteck mit einer solchen Kantenlänge zeichnet, stürzt dabei
-nicht ab und gibt auch keine Fehlermeldung aus — sie läuft einfach immer
-weiter. Gefunden wurde die Ursache erst mit einer Stichprobe des laufenden,
-scheinbar hängenden Prozesses: ein Blick auf seinen aktuellen Aufrufstapel
-zeigte ihn mitten in der Zeichenschleife über dieses eine, riesige Rechteck
-fest.
-
-Die Reparatur ist eine einzige Zeile in `wm_create`, in `src/ui/wm.c`:
+`wm_create` bekommt ein Thema übergeben und legt eine Kopie davon an
+(`src/ui/wm.c`):
 
 [source,c]
 ----
 m->th       = *th;   /* Kopie, damit der Aufrufer sein Thema nicht am Leben halten muss */
 ----
 
-Statt eines Zeigers hält die Verwaltung jetzt eine *Kopie* des Themas. Ein
-Thema ist, wie `theme.h` zeigt, eine Handvoll Ganzzahlen — das Kopieren
-kostet nichts der Rede Wert, und damit entfällt eine ganze Klasse von
-Zeigerfallen: niemand außerhalb der Verwaltung muss ihr Thema künstlich am
-Leben erhalten, nur damit die Verwaltung später noch darauf zugreifen darf.
+Ein Thema ist, wie `theme.h` zeigt, eine Handvoll Ganzzahlen — das Kopieren
+kostet nichts der Rede wert. Ein Zeiger dagegen kostet eine Zusage, die der
+Aufrufer einhalten muss: *dein Thema muss meine Verwaltung überleben.* Diese
+Zusage ist leicht zu geben und leicht zu brechen, und zwar auf die
+unangenehmste Art.
 
-==== Der Absturz beim Klick auf das Schließfeld
+[WARNING]
+====
+Ein Thema, das als lokale Variable in einer Hilfsfunktion angelegt und dessen
+Adresse weitergereicht wird, existiert nach der Rückkehr dieser Funktion nicht
+mehr. Der Speicher liegt auf dem *Stapelspeicher* (englisch „stack"), dem
+Bereich, in dem Funktionen ihre lokalen Variablen halten, und wird beim
+nächsten Aufruf wiederverwendet.
 
-Der zweite Fehler war handfester: ein Klick auf das Schließfeld ließ das
-ganze Programm abstürzen. Die Ursache lag darin, dass die Fensterverwaltung
-ein Fenster *selbst* schließt, sobald der Nutzer das Schließfeld trifft —
-`wm_event` ruft dafür intern `wm_close` auf. Der Eigentümer des Fensters, die
-Anwendung, erfuhr davon aber nichts. Sie hielt weiterhin einen Zeiger auf
-dieses Fenster und zeichnete beim nächsten Bild in bereits freigegebenen
-Speicher hinein.
+Was dann passiert, ist kein Absturz. Über einen solchen Zeiger gelesene Maße
+sind einfach andere Zahlen — und eine Zeichenschleife über ein Rechteck mit
+absurder Kantenlänge stürzt nicht ab, sie läuft weiter. Das Programm scheint
+zu hängen, ohne eine Zeile Ausgabe. Ein Absturz wäre die freundlichere
+Variante gewesen.
+====
 
-Die Lösung ist eine Rückmeldung, `window_set_on_close`, deklariert in
-`src/ui/window.h`:
+Deshalb gilt die Regel im ganzen Projekt und nicht nur hier: **wer ein Widget
+oder eine Verwaltung außerhalb eines Panels hält, hält auch eine Kopie des
+Themas.** Sie steht in `handbuch/../STAND.md` unter den Arbeitsregeln, weil
+diese Falle mehr als eine Stelle betrifft.
+
+==== Wer ein Fenster besitzt, erfährt von seinem Ende
+
+Die Fensterverwaltung schließt ein Fenster *selbst*, sobald der Nutzer das
+Schließfeld trifft: `wm_event` ruft dafür intern `wm_close`. Der Eigentümer —
+die Anwendung, die den Zeiger hält — erführe davon nichts und zeichnete beim
+nächsten Bild in freigegebenen Speicher.
+
+Die Antwort darauf ist eine Rückmeldung, deklariert in `src/ui/window.h`:
 
 [source,c]
 ----
@@ -292,12 +292,14 @@ typedef void (*window_close_fn)(window *w, void *user);
 void window_set_on_close(window *w, window_close_fn fn, void *user);
 ----
 
-Entscheidend ist der Satz „gleich ob über das Schließfeld, über `wm_close`
-oder beim Abräumen der ganzen Verwaltung“. Es gibt drei Wege, wie ein Fenster
-verschwinden kann, und ein Eigentümer, der nur einen davon kennt, vergisst
-irgendwann einen der anderen. Die Lösung dafür ist kein Aufruf an drei
-Stellen, sondern ein einziger, an der Stelle, durch die *alle* drei Wege
-zwangsläufig laufen — `window_destroy` in `src/ui/window.c`:
+Entscheidend ist der erste Satz: „gleich ob über das Schließfeld, über
+`wm_close` oder beim Abräumen der ganzen Verwaltung". Es gibt drei Wege, wie
+ein Fenster verschwinden kann, und ein Eigentümer, der nur einen davon kennt,
+vergisst irgendwann einen der anderen.
+
+Die Antwort darauf ist kein Aufruf an drei Stellen, sondern ein einziger — an
+der Stelle, durch die *alle* drei Wege zwangsläufig laufen
+(`src/ui/window.c`):
 
 [source,c]
 ----
@@ -314,15 +316,14 @@ void window_destroy(window *w)
 }
 ----
 
-`wm_close` ruft `window_destroy` auf, und `wm_destroy` ruft es beim Abräumen
-für jedes verbliebene Fenster auf — der Klick auf das Schließfeld führt über
+`wm_close` ruft `window_destroy` auf, `wm_destroy` ruft es beim Abräumen für
+jedes verbliebene Fenster auf, und der Klick auf das Schließfeld führt über
 `wm_close` zum selben Punkt. Damit die Rückmeldung *vor* der Freigabe kommt,
-steht der Aufruf als Erstes in der Funktion, noch vor `bitmap_free`. Ein
-Eigentümer, der `window_set_on_close` einmal einrichtet, kann sich seither
-darauf verlassen, benachrichtigt zu werden, egal auf welchem der drei Wege
-sein Fenster verschwindet — genau wie das Clipping aus Kapitel 5 an einer
-einzigen Stelle geprüft wird, wird das Schließen an einer einzigen Stelle
-gemeldet.
+steht der Aufruf als Erstes in der Funktion, noch vor `bitmap_free`.
+
+Das ist dieselbe Bauform wie das Clipping aus Kapitel 5: eine Sache, die
+überall gelten muss, wird an genau einer Stelle geprüft beziehungsweise
+gemeldet — nicht an jeder Stelle, an der sie gebraucht wird.
 
 image::diagramme/07-zorder.svg[Zeichen- und Trefferreihenfolge,align="center"]
 

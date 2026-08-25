@@ -735,7 +735,7 @@ Unterstützt werden `schlüssel: skalar` und `schlüssel: [a, b, c]`, mehr nicht
 Kein verschachteltes Mapping, keine Anker, keine mehrzeiligen Blöcke. Alles
 andere ist ein Fehler mit Zeilennummer. Das sind etwa 150 Zeilen C, ein ideales
 Kurskapitel über Parser, und es hält uns eine Abhängigkeit mit 20 000 Zeilen vom
-Hals. Der zulässige Ausschnitt steht als Grammatik in `docs/frontmatter.md` und
+Hals. Der zulässige Ausschnitt steht als Grammatik im Kopf von `store/frontmatter.h` und
 wird gegen eine Sammlung gültiger und ungültiger Beispieldateien getestet.
 
 ### 9.4 Index und Abfragen

@@ -1,13 +1,13 @@
 /* Ein Schema aus einer Lua-Tabelle, siehe pdalua.h.
  *
- * Das ist die Einlösung von D-15: derselbe Vertrag, zwei Lader. Was hier
- * herauskommt, ist Byte für Byte dieselbe `schema`-Struktur wie aus
- * schema_load() - ein Test lädt beide Fassungen desselben Schemas und
- * vergleicht sie.
+ * Das ist die Einlösung von D-15: der Vertrag ist die C-Struktur `schema` aus
+ * app/schema.h, Lua nur die Schreibweise, in der sie in einer Datei steht. Der
+ * Browser sieht einer Anwendung nicht an, woher sie kam.
  *
- * Der Gewinn ist nicht, dass man Schemata in Lua schreiben kann. Der Gewinn
- * ist, dass der Browser es nicht merkt: auf dem Gerät kann Lua fehlen, und die
- * Anwendungen laufen trotzdem.
+ * Diese Datei prüft die Gestalt der Tabelle - Zeichenketten, wo Namen stehen,
+ * Listen, wo Listen stehen. Ob das Ergebnis eine Anwendung beschreibt, die es
+ * geben kann, prüft schema_check() zum Schluss. Käme je ein zweiter Lader
+ * dazu, prüfte er mit derselben Funktion.
  */
 #include <lauxlib.h>
 #include <lua.h>

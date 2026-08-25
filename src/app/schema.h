@@ -61,7 +61,7 @@ typedef enum {
     FIELD_TEXT,     /* eine Zeile Text */
     /* Mehrere Zeilen. Ein solches Feld ist NICHT ein Eintrag im Front Matter,
      * sondern der Gemtext-Körper des Datensatzes selbst - deshalb kann es je
-     * Schema höchstens eines geben, und schema_load besteht darauf. */
+     * Schema höchstens eines geben, und schema_check besteht darauf. */
     FIELD_GEMTEXT,
     FIELD_DATE,     /* JJJJ-MM-TT; sortiert und vergleicht sich als Text */
     FIELD_BOOL,     /* ja/nein */
@@ -110,27 +110,26 @@ typedef struct {
 
     /* Die Übersichtsansicht. Ohne Angabe eine Liste.
      *
-     *     view month date
+     *     view       = "month",
+     *     view_field = "date",
      *
      * Bei VIEW_MONTH nennt view_field das Feld, das den Tag trägt; es muss
-     * vom Typ date sein, und schema_load besteht darauf. Ein Kalender ohne
+     * vom Typ date sein, und schema_check besteht darauf. Ein Kalender ohne
      * Datum wäre ein leeres Raster, und der Fehler fiele erst auf, wenn
      * jemand ihn öffnet. */
     schema_view view;
     char        view_field[SCHEMA_NAME_MAX];
 } schema;
 
-/* Bei einem Fehler false und eine Meldung "datei:zeile: text" in err. Ein
- * halbfertiges Schema kommt nie zurück. */
-bool schema_load(schema *s, const char *path, char *err, size_t err_size);
-
 /* Prüft ein fertig gefülltes Schema: Kopf vollständig, jedes Feld brauchbar,
  * jeder Name in columns, sort, form und view ein Feld, das es gibt.
  *
- * schema_load() ruft das selbst. Öffentlich ist es für den zweiten Lader - die
- * Lua-Fassung in lua/pdalua.h -, damit es nur eine Vorstellung davon gibt, was
- * ein gültiges Schema ist. Läge diese Prüfung zweimal vor, wären es früher oder
- * später zwei verschiedene.
+ * Gelesen werden Schemata aus Lua-Dateien (lua/pdalua.h), und der Leser ruft
+ * diese Prüfung zum Schluss selbst. Sie ist trotzdem getrennt und öffentlich,
+ * weil sie eine andere Frage beantwortet: der Leser prüft, ob die Datei die
+ * richtige Gestalt hat, diese Funktion, ob das Ergebnis eine Anwendung
+ * beschreibt, die es geben kann. Ein Schema, dessen columns ein Feld nennt,
+ * das es nicht gibt, ist einwandfrei geschrieben und trotzdem falsch.
  *
  * path erscheint in der Meldung und darf NULL sein. */
 bool schema_check(const schema *s, const char *path, char *err, size_t err_size);

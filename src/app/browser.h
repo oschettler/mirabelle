@@ -16,7 +16,7 @@
  * Im Vault, als Datensätze (record.h). Jedes Feld des Schemas ist ein Eintrag
  * im Front Matter - mit einer Ausnahme: ein Feld vom Typ `gemtext` IST der
  * Körper des Datensatzes. Deshalb darf es höchstens eines geben, und
- * schema_load besteht darauf.
+ * schema_check besteht darauf.
  *
  * ## Warum kein Index nötig ist
  *

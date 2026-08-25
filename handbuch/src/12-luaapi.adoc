@@ -1,0 +1,237 @@
+== Die Lua-API
+
+Dieses Kapitel ist die Gegenseite zum vorigen: was ein Skript sieht. Die Namen
+sind an https://www.lexaloffle.com/[Picotron] angelehnt, eine
+Fantasie-Arbeitsstation von Lexaloffle. Dort heißen die Zeichenbefehle `cls`,
+`line`, `rect`, `print` — kurz, kleingeschrieben, ohne Namensraum. Das ist
+Absicht: wer eine kleine Anwendung schreibt, soll wenig tippen müssen.
+
+Was hier steht, ist vollständig. Was nicht hier steht, gibt es nicht — die
+Wahrheit dazu ist die Tabelle `API[]` in `src/lua/pdalua.c` und die Aufrufe von
+`lua_setglobal` in `src/lua/`.
+
+=== Eine Anwendung anmelden
+
+Eine Skriptdatei unter `data/apps/` meldet ihre Anwendung mit `app{}` an:
+
+[source,lua]
+----
+app{
+  name  = "spartan",          -- frei wählbar, für send()
+  title = "app.spartan",      -- Schlüssel im Katalog, Pflicht
+
+  draw  = function(w, h) end, -- Pflicht; w und h sind der Inhaltsbereich
+  event = function(e) end,    -- true zurückgeben heißt: verbraucht
+  update = function() end,    -- einmal je Bild, vor draw
+}
+----
+
+`title` und `draw` sind Pflicht; fehlt eines, meldet das Laden einen Fehler und
+die Anwendung erscheint nicht. Alles andere ist wahlfrei.
+
+=== Ereignisse
+
+Es gibt kein `btn()` und kein `mouse()`. Ein Skript bekommt dieselben
+Ereignisse wie jedes Widget, als Tabelle:
+
+[source,lua]
+----
+event = function(e)
+  if e.kind == "key_down" and e.key == key.enter then ... end
+  if e.kind == "text"     then ... e.text ... end
+  if e.kind == "mouse_down" and e.clicks >= 2 then ... end
+end
+----
+
+`e.kind` ist einer von `"mouse_down"`, `"mouse_up"`, `"mouse_move"`,
+`"wheel"`, `"key_down"`, `"key_up"`, `"text"`, `"quit"`. Dazu kommen `e.x`,
+`e.y`, `e.key`, `e.clicks`, `e.wheel`, `e.mods` und `e.text`.
+
+Die Tastennamen stehen in der globalen Tabelle `key`:
+
+[source,lua]
+----
+key.up  key.down  key.left  key.right
+key.home  key.last  key.pageup  key.pagedown
+key.enter  key.escape  key.tab  key.space
+key.backspace  key.del
+----
+
+Getippter Text kommt ausschließlich über `e.kind == "text"`, nie über
+`key_down` — der Grund steht oben in Teil A.
+
+=== Zeichnen
+
+[source,lua]
+----
+cls([pat])                     -- Fläche löschen
+pset(x, y)
+line(x0, y0, x1, y1)
+rect(x, y, w, h)               -- Rahmen
+rectfill(x, y, w, h, [pat])    -- gefüllt
+oval(x, y, w, h)
+ovalfill(x, y, w, h)
+rrect(x, y, w, h, r)           -- abgerundet
+rrectfill(x, y, w, h, r)
+print(s, x, y)                 -- y ist die Oberkante, nicht die Grundlinie
+clip(x, y, w, h)               -- clip() ohne Angaben hebt es wieder auf
+camera(x, y)                   -- Ursprung verschieben
+pattern(p)                     -- "white", "gray", "gray25", "gray75", "hatch", ...
+mode(m)                        -- "copy", "or", "xor", "clear", "notcopy"
+textwidth(s)
+textheight()
+caret()                        -- blinkt die Schreibmarke gerade sichtbar?
+----
+
+`caret()` gibt es, damit ein Skript, das ein Eingabefeld selbst zeichnet, im
+selben Takt blinkt wie jedes Textfeld des Programms. Zwei Schreibmarken, die
+gegeneinander blinken, sehen aus wie ein Fehler. Der Takt kommt aus
+`ui/caret.h` und wird nur im Hauptprogramm gestellt; ein Skript kann ihn
+abfragen, aber nicht verstellen.
+
+=== Bedienelemente
+
+Ein Skript baut ein Bedienelement nicht nach, es bekommt das echte (D-17). Es
+sind dieselben, die der Browser und das Notizfeld benutzen — mit denselben
+Tests und demselben Aussehen.
+
+[source,lua]
+----
+local ansicht = gemview()
+local balken  = scrollbar(ansicht)   -- oder scrollbar() ohne Anzeige
+
+ansicht:place(x, y, w, h)
+ansicht:set_text(gemtext)            -- nil leert die Anzeige
+ansicht:draw()
+ansicht:event(e)                     -- true, wenn verbraucht
+
+ansicht:link_count()
+ansicht:link_url(n)                  -- Nummer ab 1, wie angezeigt
+ansicht:selected()                   -- gewählter Verweis, oder 0
+ansicht:select(n)
+ansicht:was_opened()                 -- einmal true nach Doppelklick oder Return
+ansicht:frame()                      -- x, y, w, h
+----
+
+Der Rollbalken kann *an* einer Anzeige hängen. Dann teilen sich beide ein
+Bildlaufmodell: es gibt keine zweite Zahl, die jemand abgleichen müsste, und
+keine Stelle, an der die Anzeige woanders steht als der Balken zeigt.
+
+[source,lua]
+----
+balken:place(x, y, w, h)
+balken:set(gesamt, sichtbar)   -- nur bei einem Balken ohne Anzeige nötig
+balken:draw()
+balken:event(e)
+
+balken:value()                 -- Bildlaufposition
+balken:scroll_to(v)
+balken:scroll_by(d)
+balken:max()
+balken:width()
+balken:frame()
+----
+
+Das Mausrad nimmt der Balken nur über sich an, weil er dort neben anderen
+Bedienelementen sitzt. Ein Fenster, das nur eine Sache zeigt, rollt überall —
+dann ruft das Skript `balken:scroll_by(-e.wheel)` selbst.
+
+Die Maße kommen aus dem Thema, nicht aus dem Skript:
+
+[source,lua]
+----
+theme.titlebar_h    theme.border        theme.scrollbar_w
+theme.menubar_h     theme.menubar_left  theme.menu_item_h
+theme.menu_pad      theme.button_h      theme.button_gap
+theme.dialog_pad    theme.grow_box      theme.box_margin
+----
+
+Ohne diese Tabelle stünde die Breite eines Rollbalkens zweimal im System —
+einmal im Thema und einmal als Zahl in einem Skript. Beim Gerätethema aus M15
+gingen die beiden auseinander.
+
+=== Daten
+
+[source,lua]
+----
+store.find(typ, filter, opts)   -- Liste von Datensätzen
+store.ids(typ)                  -- nur die Kennungen
+store.get(typ, id)
+store.put(typ, rec)
+store.delete(typ, id)
+store.search(text)
+----
+
+Abgefragt wird mit Datenstrukturen, nie mit SQL-Zeichenketten:
+
+[source,lua]
+----
+store.find("Aufgaben", { done = "no" }, { sort = "due", limit = 50 })
+----
+
+SQL entsteht an genau einer Stelle im C-Code. Eine Anwendung kann dadurch weder
+Syntax noch Escaping falsch machen.
+
+`store` ist die einzige Tür nach draußen: es gibt kein `io` und kein `os`.
+Alles, was ein Skript an Dateien anfassen kann, ist ein Datensatz in einer
+Sammlung.
+
+=== Netz und Gemtext
+
+Nur vorhanden, wenn das Programm sie eingerichtet hat — ein Zustand, der bloß
+ein Schema lesen soll, hat keinen Zugang nach draußen:
+
+[source,lua]
+----
+net.fetch(adresse)             -- Seite, oder nil und eine Meldung
+net.resolve(basis, verweis)    -- Verweis auf eine Adresse auflösen
+gemtext.parse(text)            -- Liste von Zeilen mit kind, text, url
+----
+
+=== Texte und Nachrichten
+
+[source,lua]
+----
+T(key)              -- Text aus dem Katalog
+Tn(key, n)          -- mit Plural
+log(...)            -- wie Luas print, nach stderr
+
+on(name, fn)        -- auf eine Nachricht hören
+send(name, ...)     -- allen Hörern etwas schicken
+----
+
+`on` und `send` sind die Nachrichtenform aus Picotron. Dort hat jeder Prozess
+einen eigenen Lua-Zustand und redet nur über Nachrichten. Dieses Projekt
+übernimmt die *Form*, nicht die Isolation (Entscheidung D-4) — für ein
+Kursprojekt wäre die zu viel Maschinerie. Sollte sie je gebraucht werden, ist
+der Nachrichtenbus die richtige Stelle, sie nachzurüsten.
+
+`log` heißt `log` und nicht `print`, weil `print` das Zeichnen ist. Ein Skript,
+das Luas `print` erwartet, bekommt sonst Text auf den Bildschirm gemalt statt
+ins Terminal.
+
+=== Zum Nachschlagen
+
+Wenn du wissen willst, was eine Funktion *wirklich* tut, sind die Tabelle
+`API[]` in `src/lua/pdalua.c` und die Aufrufe von `lua_setglobal` in `src/lua/`
+die Wahrheit. Was dort nicht steht, gibt es nicht — auch wenn es hier stünde.
+
+Die Tests unter `tests/unit/test_lua.c` sind oft die beste Beschreibung. Sie
+zeigen jede Funktion im Gebrauch, und sie lügen nicht: was dort steht, wird bei
+jedem Bauen geprüft.
+
+=== Zum Ausprobieren
+
+. Leg unter `data/apps/` eine Datei mit einer eigenen Anwendung an: `app{}` mit
+  `title` aus dem Katalog und einem `draw`, das ein Rechteck und einen Text
+  zeichnet. Starte `./build/pda --apps` — erscheint sie?
+
+. Lass `title` weg und starte neu. Was meldet das Programm, und wo kommt die
+  Meldung her?
+
+. Zeichne in deiner Anwendung eine Schreibmarke, die im richtigen Takt blinkt.
+  Vergleiche sie mit der Adresszeile im SPARTAN-Browser: sieht sie gleich aus?
+
+. Häng einen `scrollbar()` an einen `gemview()` und lass dir mit
+  `balken:value()` und `ansicht:link_count()` anzeigen, was passiert, wenn du
+  eine lange Seite lädst. Warum braucht der Balken hier kein `set()`?

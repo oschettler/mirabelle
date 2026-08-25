@@ -143,7 +143,7 @@ static void build_row(const browser *b, record *rec, char *out, size_t out_size)
 
     for (int i = 0; i < b->s->column_count; i++) {
         const schema_field *f = schema_field_by_name(b->s, b->s->columns[i]);
-        if (!f) continue;      /* schema_load hat das schon ausgeschlossen */
+        if (!f) continue;      /* schema_check hat das schon ausgeschlossen */
 
         char shown[VALUE_MAX];
         fieldkind_of(f)->format(f, b->cat, field_value(f, rec), shown, sizeof shown);

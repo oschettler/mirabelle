@@ -189,9 +189,10 @@ hinausgeht, ist ein Fehler — und zwar einer mit Zeilennummer, nicht ein
 stilles Weglassen des Feldes. `DESIGN.md` nennt das einen „idealen
 Kurskapitel über Parser": etwa 150 Zeilen C reichen für diesen Ausschnitt,
 gegen eine ausgewachsene YAML-Bibliothek mit zwanzigtausend Zeilen, die das
-Projekt sich damit erspart. Die zulässige Grammatik steht als eigenes
-Dokument in `docs/frontmatter.md` und wird gegen eine Sammlung gültiger und
-ungültiger Beispieldateien getestet — derselbe Grundsatz wie beim Gemtext-
+Projekt sich damit erspart. Die zulässige Grammatik steht im Kopf von
+`src/store/frontmatter.h` — dort, wo sie niemand übersehen kann, der den Parser
+anfasst — und wird gegen eine Sammlung gültiger und ungültiger Beispiele
+getestet — derselbe Grundsatz wie beim Gemtext-
 Parser: klein genug, dass man ihn vollständig verstehen kann, und ein Test,
 der jede Zeile davon auch wirklich prüft.
 
@@ -357,15 +358,13 @@ sie ursprünglich ersparen sollte.
 
 === Zum Ausprobieren
 
-Nichts aus diesem Kapitel läuft schon — die Aufgaben hier sind Kopf- und
-Papieraufgaben, keine Programmieraufgaben.
-
 . Schreib von Hand eine `.gmi`-Datei für eine Notiz, die du wirklich
   aufschreiben würdest — Front Matter mit `type: note`, `title`, `tags`,
   und darunter ein Gemtext-Körper mit mindestens einer Überschrift, einer
-  Liste und einem Verweis mit `=>`. Prüfe danach am Text, ob jede Zeile
-  eindeutig einem der sechs Zeilentypen zuzuordnen ist, ohne dass du dafür
-  wissen musst, was in einer anderen Zeile steht.
+  Liste und einem Verweis mit `=>`. Leg sie unter `~/PDA/Notizen/` ab und
+  starte `./build/pda`: erscheint sie in den Notizen? Prüfe danach am Text,
+  ob jede Zeile eindeutig einem der sechs Zeilentypen zuzuordnen ist, ohne
+  dass du dafür wissen musst, was in einer anderen Zeile steht.
 
 . Nimm zehn Wörter mit Umlauten oder ß — zum Beispiel „Straße", „Müller",
   „Übung", „Köln" — und ordne sie zweimal von Hand: einmal nach DIN 5007
@@ -373,10 +372,11 @@ Papieraufgaben, keine Programmieraufgaben.
   Unicode-Reihenfolge der Zeichen. Wo unterscheiden sich die beiden Listen,
   und warum?
 
-. Überleg dir ein Schema für Rezepte, im selben Stil wie `task.lua` oben:
-  welche Felder braucht ein Rezept (Zutaten, Zubereitungszeit, Portionen,
-  Kategorie …), welchen `kind` hat jedes davon, und wie sähen `list`- und
-  `form`-Ansicht aus? Schreib es als Lua-Tabelle auf.
+. Schreib ein Schema für Rezepte, im selben Stil wie `task.lua` oben: welche
+  Felder braucht ein Rezept (Zutaten, Zubereitungszeit, Portionen, Kategorie
+  …), welchen `kind` hat jedes davon, was gehört in `columns`, was in `form`?
+  Leg es als `data/schema/rezept.lua` ab und starte `./build/pda --apps`.
+  Erscheint deine Anwendung? Wenn nicht, sagt die Meldung, warum.
 
 . Überleg, welche Front-Matter-Felder eine Notiz *nicht* braucht, die eine
   Aufgabe braucht, und umgekehrt. Was passiert mit dem winzigen YAML-Parser

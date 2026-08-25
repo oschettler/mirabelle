@@ -72,14 +72,12 @@ void pdalua_set_vault(lua_State *L, vault *v,
 /* Liest ein Schema aus einer Lua-Datei.
  *
  * Die Datei gibt eine Tabelle zurück, wie DESIGN.md Abschnitt 10 sie zeigt.
- * Heraus kommt dieselbe `schema`-Struktur, die schema_load() aus einer
- * Textdatei liest - das ist D-15: der Vertrag ist die Struktur, nicht die
- * Sprache. Ein Test lädt beide Fassungen desselben Schemas und vergleicht sie
- * Feld für Feld.
+ * Heraus kommt die `schema`-Struktur aus app/schema.h - das ist D-15: der
+ * Vertrag ist die Struktur, nicht die Sprache.
  *
- * Geprüft wird danach genauso streng: die Tabelle geht durch dieselbe
- * Schlussprüfung wie eine Textdatei. Eine Spalte, die kein Feld ist, fällt
- * also auch hier beim Laden auf. */
+ * Zum Schluss geht die gefüllte Struktur durch schema_check(). Diese Funktion
+ * prüft die Gestalt der Datei, jene die Anwendung dahinter; eine Spalte, die
+ * kein Feld ist, fällt deshalb ebenfalls beim Laden auf. */
 bool pdalua_schema(lua_State *L, const char *path, schema *out,
                    char *err, size_t err_size);
 

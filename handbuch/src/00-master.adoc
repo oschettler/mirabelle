@@ -80,13 +80,13 @@ lesen.
 |Kapitel 5 bis 7
 
 |eine eigene Anwendung schreiben willst
-|Kapitel 9, dann 10 und 11, dann 13
+|Kapitel 9, dann 10 und 12, dann 13
 
 |verstehen willst, wie geprüft wird
-|Kapitel 14 — es lohnt sich früher, als man denkt
+|Kapitel 15 — es lohnt sich früher, als man denkt
 
 |es auf ein Gerät bringen willst
-|Kapitel 15, und vorher `DESIGN.md` Abschnitt 12
+|Kapitel 16, und vorher `DESIGN.md` Abschnitt 12
 |===
 
 [IMPORTANT]
@@ -128,15 +128,17 @@ include::10-lua.adoc[leveloffset=+1]
 
 include::11-api.adoc[leveloffset=+1]
 
-include::12-netz.adoc[leveloffset=+1]
+include::12-luaapi.adoc[leveloffset=+1]
 
-include::13-erweitern.adoc[leveloffset=+1]
+include::13-netz.adoc[leveloffset=+1]
 
-include::14-testen.adoc[leveloffset=+1]
+include::14-erweitern.adoc[leveloffset=+1]
 
-include::15-geraet.adoc[leveloffset=+1]
+include::15-testen.adoc[leveloffset=+1]
 
-include::16-glossar.adoc[leveloffset=+1]
+include::16-geraet.adoc[leveloffset=+1]
+
+include::17-glossar.adoc[leveloffset=+1]
 
 [colophon]
 == Impressum

@@ -298,11 +298,11 @@ zum Beispiel ein `+` gegen ein `-` — und schaut, ob wenigstens ein Test
 danach fehlschlägt. Bleibt die Testsuite grün, hat sie diese Zeile gar nicht
 wirklich geprüft.
 
-Genau das passierte beim Test, der beweisen sollte, dass ein Muster am
-Zielbild haftet und nicht am gezeichneten Objekt — der Eigenschaft aus
-weiter oben in diesem Kapitel. Der ursprüngliche Test verschob dasselbe
-Rechteck über zwei verschiedene `origin`-Werte und verglich die Ergebnisse.
-Der Kommentar in `tests/unit/test_draw.c` erzählt, was dabei auffiel:
+Ein Beispiel dafür steht im Test, der prüft, dass ein Muster am Zielbild haftet
+und nicht am gezeichneten Objekt — der Eigenschaft aus weiter oben in diesem
+Kapitel. Er verschiebt dasselbe Rechteck über zwei verschiedene `origin`-Werte
+und vergleicht die Ergebnisse. Die Verschiebung darf dabei nicht beliebig sein,
+und der Kommentar in `tests/unit/test_draw.c` sagt warum:
 
 [source,c]
 ----
@@ -323,12 +323,14 @@ haftet, sondern weil das Schachbrettmuster gegen genau diese Art Verschiebung
 blind ist. Selbst ein Fehler, der das Muster fälschlich am Objekt statt am
 Ziel verankert hätte, wäre unentdeckt geblieben.
 
-Die Reparatur ist im Testcode selbst zu sehen: eine Verschiebung mit
-*ungerader* Quersumme, dazu testweise ein zweites Muster, `PAT_HATCH`, dessen
-Phase auch bei geraden Verschiebungen wandert. Das ist eine der lehrreichsten
-Stellen im Projekt, weil sie zeigt, dass ein grüner Test allein nichts
-beweist — er beweist nur, dass die gewählten Eingaben nicht durch den Fehler
-gefallen sind. Ob sie das tatsächlich könnten, ist eine eigene Frage.
+Deshalb steht dort eine Verschiebung mit *ungerader* Quersumme und dazu ein
+zweiter Durchgang mit `PAT_HATCH`, dessen Phase auch bei geraden Verschiebungen
+wandert.
+
+Das ist eine der lehrreichsten Stellen im Projekt, weil sie zeigt, dass ein
+grüner Test allein nichts beweist — er beweist nur, dass die gewählten Eingaben
+nicht durch den Fehler gefallen sind. Ob sie das könnten, ist eine eigene
+Frage, und der Mutationstest ist die Art, sie zu stellen.
 
 === Zum Ausprobieren
 

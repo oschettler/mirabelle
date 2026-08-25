@@ -52,7 +52,7 @@ typedef struct {
 } glyph;
 ----
 
-`tools/fontc` übersetzt die `.fnt`-Datei einmalig in C-Quelltext, der
+Das Werkzeug `fontc` (`tools/fontc.c`) übersetzt die `.fnt`-Datei einmalig in C-Quelltext, der
 mitgebaut wird — nicht zur Laufzeit gelesen. `docs/fnt-format.md` nennt drei
 Gründe: `gfx/` dürfte sonst Dateien lesen und würde damit die Plattformschicht
 kennen, was die Schichtenregel aus `DESIGN.md` verletzt; erzeugter Code landet

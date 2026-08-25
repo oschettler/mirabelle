@@ -8,6 +8,7 @@ Stelle, an der beides zusammenkommt — `src/app/shell.c`, die *Schale*.
 Der Anspruch daran ist nachprüfbar, und du kannst es selbst tun:
 
 [source,bash]
+[source]
 ----
 grep -n '"Aufgaben"\|"Kontakte"\|"Notizen"\|"Termine"' \
      src/app/shell.c src/app/browser.c
@@ -26,6 +27,7 @@ Beim Start liest die Schale das Verzeichnis `data/schema` und macht aus jeder
 Schemadatei eine Anwendung:
 
 [source,c]
+[source]
 ----
 for (int i = 0; i < n && s->app_count < APPS_MAX; i++) {
     if (entries[i].is_dir) continue;
@@ -66,6 +68,7 @@ einer Datei steht.
 Jedes Schema nennt einen Katalogschlüssel für seinen Namen:
 
 [source,lua]
+[source]
 ----
 label = "app.notes",
 ----
@@ -73,6 +76,7 @@ label = "app.notes",
 Dieser Schlüssel ist *zugleich* der Name der Aktion, die die Anwendung öffnet.
 Deshalb genügt in `data/keys/default.keys` eine Zeile:
 
+[source]
 ----
 app.notes             Cmd+4          global
 ----
@@ -84,6 +88,7 @@ Zeile in der Tastenbelegung, kein Code.
 Der Menüeintrag entsteht aus demselben Schlüssel:
 
 [source,c]
+[source]
 ----
 for (int i = 0; i < s->app_count; i++) {
     s->app_items[i].key    = s->apps[i].label;
@@ -101,6 +106,7 @@ in dieser Reihenfolge nach — erst der Bereich dessen, was den Fokus hat, dann
 Damit bedeutet kbd:[Return] in einer Liste etwas anderes als in einem
 Formular, ohne dass irgendwo ein `if` darüber entscheidet:
 
+[source]
 ----
 list.open             Return         list
 form.accept           Return         form
@@ -137,6 +143,7 @@ Browser (`src/app/browser.h`) und einen Rollbalken daneben. Die Fenster
 stehen versetzt, wie auf einem Schreibtisch:
 
 [source,c]
+[source]
 ----
 int top    = menubar_height(s->mb) + 12;
 int offset = index * 24;

@@ -15,11 +15,13 @@ Jede Schicht kennt nur die direkt darunter. `ui/` ruft nie SDL auf, `gfx/`
 kennt keine Fenster, `store/` weiß nichts von Pixeln.
 ____
 
-Das Diagramm am Ende dieses Kapitels zeigt den vollständigen Stapel. Was
-davon heute schon läuft: `core/` (Ereignisse, UTF-8, Zeit), `gfx/` (Bitmap,
-Muster, Schrift), `ui/` (Fenster, Menüs, Dialoge) und `plat/`, die
-Plattformschicht, um die es gleich geht. `store/` — die Datenhaltung — und die
-Lua-Anbindung darüber sind erst für spätere Kapitel geplant, siehe Kapitel 1.
+Das Diagramm am Ende dieses Kapitels zeigt den vollständigen Stapel: `core/`
+(Ereignisse, UTF-8, Zeit, Sortierung), `gfx/` (Bitmap, Muster, Schrift), `ui/`
+(Fenster, Menüs, Dialoge, Widgets), `store/` (Datensätze und Vault), `net/`
+(das SPARTAN-Protokoll), `app/` (der generische Browser und die Schale),
+`lua/` (die Skriptanbindung) und ganz unten `plat/`, die Plattformschicht, um
+die es gleich geht. Alles davon läuft; nur `src/plat/plat_esp32.c` fehlt noch,
+siehe den Hinweis weiter unten.
 
 Ein Satz wie „`gfx/` kennt keine Fenster“ wäre in vielen Projekten eine
 Absichtserklärung, die mit der Zeit verwässert — irgendwann importiert doch
@@ -43,7 +45,7 @@ add_library(pda_ui
     src/ui/menu.c
     src/ui/dialog.c
 )
-target_link_libraries(pda_ui PUBLIC pda_gfx pda_core)
+target_link_libraries(pda_ui PUBLIC pda_gfx pda_core pda_fonts)
 ----
 
 `pda_ui` verlinkt gegen `pda_gfx` und `pda_core` — sonst gegen nichts. SDL3

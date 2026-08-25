@@ -28,6 +28,7 @@ langsam. Ein Umriss dagegen ist nur eine Linie. In `src/ui/wm.c` sieht das so
 aus:
 
 [source,c]
+[source]
 ----
 if (m->drag != DRAG_NONE) {
     g->pat  = PAT_BLACK;
@@ -71,6 +72,7 @@ gleich, ob durch das Schließfeld, durch `wm_close()` oder weil die ganze
 Fensterverwaltung endet. In `src/app/shell.c` sieht das so aus:
 
 [source,c]
+[source]
 ----
 static void on_window_closed(window *w, void *user)
 {
@@ -135,10 +137,11 @@ schafft. Das Zielgerät aus `DESIGN.md`, ein Mikrocontroller ohne
 Grafikbeschleuniger, ist genau ein Fall, in dem eine Zeitschwelle zur
 Wackelangelegenheit würde.
 
-Auch dieses Verhalten war nicht von Anfang an da — ursprünglich klappte ein
-Menü nach jedem Loslassen sofort wieder zu, und ein kurzer Klick zum bloßen
-Öffnen war gar nicht möglich. Beide Bedienweisen nebeneinander zu erlauben war
-eine bewusste Nachbesserung, keine Selbstverständlichkeit.
+Beide Bedienweisen nebeneinander zu erlauben ist keine Selbstverständlichkeit:
+wer nur auf das Loslassen achtet, klappt das Menü nach einem kurzen Klick
+sofort wieder zu, und ein Klick zum bloßen Öffnen wäre gar nicht möglich.
+Deshalb entscheidet der *Ort* des Loslassens und nicht die Tatsache, dass
+losgelassen wurde.
 
 Deaktivierte Einträge — in der Vorführung ist das „Einsetzen“, solange nichts
 in der Zwischenablage liegt — werden grau gerastert und lösen keine Aktion
@@ -151,6 +154,7 @@ Jeder Befehl, den du mit der Maus auslösen kannst, hat auch ein Tastenkürzel.
 Die vollständige Liste steht in `data/keys/default.keys`, einer reinen
 Textdatei:
 
+[source]
 [source]
 ----
 edit.undo             Cmd+Z          global
@@ -220,6 +224,7 @@ gerade gilt (welches Bedienelement hat den Fokus?), und erst danach, falls
 dort nichts gefunden wurde, im Bereich `global`:
 
 [source,c]
+[source]
 ----
 const char *keymap_lookup(const keymap *km, int key, uint8_t mods, const char *scope)
 {
@@ -265,6 +270,7 @@ löst den markierten Eintrag aus, kbd:[Esc] klappt zu.
 Dass kbd:[F10] das tut, steht nicht im Quelltext, sondern in
 `data/keys/default.keys`:
 
+[source]
 ----
 menu.enter            F10            global
 ----
@@ -273,6 +279,7 @@ In `src/app/shell.c` schlägt genau eine Stelle nach, was eine gedrückte Taste
 bedeutet, und zwar in der Reihenfolge, in der die Bereiche gelten:
 
 [source,c]
+[source]
 ----
 const char *action = keymap_lookup(s->cfg.keymap, e->key, e->mods, inner);
 if (!action)

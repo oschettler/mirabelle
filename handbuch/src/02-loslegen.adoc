@@ -13,7 +13,7 @@ versteht:
 
 [source,cmake]
 ----
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18)
 project(pda C)
 
 set(CMAKE_C_STANDARD 11)
@@ -68,14 +68,14 @@ Das baut zuerst neu, falls nötig, und lässt danach `ctest` im Verzeichnis
 
 [source]
 ----
-Test #4: golden ........... Passed
-Test #6: utf8 ............. Passed
+Test  #4: golden ........... Passed
+Test  #6: utf8 ............. Passed
 Test #13: wm ............... Passed
 ...
-100% tests passed out of 16
+100% tests passed out of 41
 ----
 
-Ein Teil dieser sechzehn Testsuiten vergleicht gezeichnete Bilder mit
+Ein Teil dieser Testsuiten vergleicht gezeichnete Bilder mit
 sogenannten Sollbildern — genau den `.pbm`-Dateien aus Kapitel 1. Ändert sich
 absichtlich etwas am Zeichencode, weichen diese Bilder ab, und der Test schlägt
 fehl. Um das neue Bild als richtig zu übernehmen, läufst du:
@@ -100,23 +100,24 @@ Konsole. Sieh dir das ruhig einmal live an, in Aufgabe 3 unten.
 alle Tests laufen. Der Anlass dafür steht als Kommentar direkt in
 `CMakeLists.txt`:
 
-[source,c]
+[source,cmake]
 ----
-// Speicherfehler finden, bevor sie abstürzen.
-//
-// Der Anlass war ein Zugriff auf ein bereits geschlossenes Fenster: das
-// Programm stürzte beim Nutzer ab, die Testsuite blieb grün. Mit -fsanitize
-// meldet derselbe Test die Stelle samt beider Aufrufpfade - wo freigegeben
-// wurde und wo darauf zugegriffen wird.
+# Speicherfehler finden, bevor sie abstürzen.
+#
+# Der Anlass war ein Zugriff auf ein bereits geschlossenes Fenster: das
+# Programm stürzte beim Nutzer ab, die Testsuite blieb grün. Mit -fsanitize
+# meldet derselbe Test die Stelle samt beider Aufrufpfade - wo freigegeben
+# wurde und wo darauf zugegriffen wird.
 ----
 
-Was dort in einer Zeile steht, war ein echter Fehler: Ein Klick auf das
-Schließfeld eines Fensters gab dessen Speicher frei, aber die Vorführung
-zeichnete im nächsten Bild weiter dorthin. Alle sechzehn Testsuiten liefen
-grün — ein Speicherfehler, der nicht abstürzt, hinterlässt in einer normalen
-Testsuite einfach keine Spur. Erst der Sanitizer zeigt ihn, mit beiden
-Stellen: wo freigegeben und wo trotzdem noch zugegriffen wurde. Kapitel 3
-erzählt, wie der Fehler behoben wurde.
+Der Fall, um den es geht, ist typisch: ein Fenster wird geschlossen, sein
+Speicher freigegeben, und jemand zeichnet im nächsten Bild weiter dorthin.
+Ein Speicherfehler, der nicht abstürzt, hinterlässt in einer gewöhnlichen
+Testsuite keine Spur — sie bleibt grün. Erst der Sanitizer zeigt ihn, mit
+beiden Stellen: wo freigegeben und wo trotzdem noch zugegriffen wurde.
+
+Die Regel, die daraus folgt, steht in Kapitel 7: wer ein Fenster besitzt, muss
+von seinem Ende erfahren.
 ====
 
 === Das Programm starten
