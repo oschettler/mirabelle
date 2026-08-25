@@ -71,7 +71,7 @@ bool plat_init(const plat_config *cfg)
     if (scale < 1) scale = 1;
     if (scale > 3) scale = 3;
 
-    const char *title = (cfg && cfg->title) ? cfg->title : "PDA";
+    const char *title = (cfg && cfg->title) ? cfg->title : "mirabelle";
     if (!SDL_CreateWindowAndRenderer(title, s_w * scale, s_h * scale, 0,
                                      &s_window, &s_renderer)) {
         SDL_Quit();

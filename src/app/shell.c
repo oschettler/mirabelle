@@ -62,7 +62,7 @@ struct shell {
      * Anwendungen es gibt. Die Felder müssen die Menüleiste überleben, also
      * liegen sie hier und nicht auf einem Stapel. */
     menu_item app_items[APPS_MAX];
-    menu      menus[3];
+    menu      menus[4];
 
     char last_action[64];
     char last_error[256];
@@ -172,6 +172,15 @@ static void load_scripts(shell *s)
 
 /* --- Menüs ------------------------------------------------------------------------- */
 
+/* Das erste Menü trägt kein Wort, sondern das Zeichen der Mirabelle - so wie
+ * in System 1 das erste Menü der Apfel war. Der Titel kommt trotzdem aus dem
+ * Katalog (`menu.mirabelle`), und dort steht ein Zeichen aus dem privaten
+ * Bereich von Unicode. Die Menüleiste zeichnet also Text wie überall sonst;
+ * sie weiß von keinem Logo. */
+static const menu_item MIRABELLE_ITEMS[] = {
+    { "menu.mirabelle.about", "app.about" },
+};
+
 static const menu_item FILE_ITEMS[] = {
     { "menu.file.new",    "record.new"    },
     { "menu.file.save",   "record.save"   },
@@ -205,11 +214,12 @@ static bool build_menus(shell *s)
         s->app_items[i].action = s->apps[i].label;
     }
 
-    s->menus[0] = (menu){ "menu.file",  FILE_ITEMS, 6 };
-    s->menus[1] = (menu){ "menu.edit",  EDIT_ITEMS, 6 };
-    s->menus[2] = (menu){ "menu.apps",  s->app_items, s->app_count };
+    s->menus[0] = (menu){ "menu.mirabelle", MIRABELLE_ITEMS, 1 };
+    s->menus[1] = (menu){ "menu.file",       FILE_ITEMS, 6 };
+    s->menus[2] = (menu){ "menu.edit",       EDIT_ITEMS, 6 };
+    s->menus[3] = (menu){ "menu.apps",       s->app_items, s->app_count };
 
-    s->mb = menubar_create(s->menus, 3, s->cfg.catalog, s->cfg.keymap, &s->th);
+    s->mb = menubar_create(s->menus, 4, s->cfg.catalog, s->cfg.keymap, &s->th);
     return s->mb != NULL;
 }
 
@@ -447,7 +457,7 @@ static bool is_app_label(const shell *s, const char *action)
 static bool shell_handles(const char *action)
 {
     static const char *const OURS[] = {
-        "app.quit", "window.close",
+        "app.quit", "app.about", "window.close",
         "record.new", "record.save", "record.delete",
         "list.open", "form.accept", "form.cancel",
     };
@@ -486,6 +496,23 @@ void shell_run_action(shell *s, const char *action)
 
     if (strcmp(action, "app.quit") == 0) {
         s->running = false;
+        return;
+    }
+
+    /* Der einzige Dialog, der nichts fragt: er sagt etwas und hat einen Knopf.
+     * Die Anwendung dahinter wird trotzdem gemerkt, damit sie nach dem
+     * Schließen wieder aktiv wird - sonst stünde danach gar kein Fenster im
+     * Vordergrund, und die nächste Taste liefe ins Leere. */
+    if (strcmp(action, "app.about") == 0) {
+        if (s->ask) return;
+
+        const char *btns[] = { "button.ok" };
+
+        s->ask_app = shell_active_app(s);
+        s->ask     = dialog_open(s->wm, s->cfg.catalog, "dialog.about.body",
+                                 NULL, 0, btns, 1);
+        if (!s->ask)
+            snprintf(s->last_error, sizeof s->last_error, "kein Speicher");
         return;
     }
 

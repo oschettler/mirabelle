@@ -54,9 +54,9 @@ Docker und `nomnoml` für die Diagramme (`npm install -g nomnoml`).
 
 ```
 cd handbuch
-asciidoctor              -o output/pda-handbuch.html src/00-master.adoc
+asciidoctor              -o output/mirabelle-handbuch.html src/00-master.adoc
 asciidoctor-pdf -a pdf-theme=build/theme.yml \
-                         -o output/pda-handbuch.pdf  src/00-master.adoc
+                         -o output/mirabelle-handbuch.pdf  src/00-master.adoc
 ```
 
 Der zweite Weg ist beim Schreiben bequemer: ein Durchgang dauert Sekunden.
@@ -68,7 +68,7 @@ Am schnellsten geht es lokal, wenn Asciidoctor installiert ist:
 ```bash
 cd handbuch
 asciidoctor -a toc=left -a toclevels=2 -a icons=font -a data-uri \
-            -D output -o pda-handbuch.html src/00-master.adoc
+            -D output -o mirabelle-handbuch.html src/00-master.adoc
 ```
 
 `-a data-uri` bettet die Diagramme als Daten-URI ein; die HTML-Datei braucht

@@ -1,4 +1,4 @@
-# PDA — Systementwurf
+# mirabelle — Systementwurf
 
 Ein PalmOS-inspiriertes PIM-Paket (Aufgaben, Kalender, Kontakte, Notizen) mit der
 Optik von Macintosh System 1, einer Picotron-artigen API, Gemtext+SQLite als

@@ -1,4 +1,11 @@
-# An SDA-based PIM suite
+<img src="docs/mirabelle.svg" alt="" width="90" align="right">
+
+# mirabelle
+
+A pocket computer you can build yourself. Small, yellow, round: a mirabelle is
+not the biggest fruit in the garden, but one you can take in at a glance — and
+so is this system. The fruit sits at the far left of the menu bar, where System
+1 had its apple.
 
 Let's code a [PalmOS-inspired PIM suite](https://en.wikipedia.org/wiki/Palm_OS#Built-in_applications) (todos, calendar, rolodex, notes) for [its API](https://www.lexaloffle.com/dl/docs/picotron_manual.txt), minus the handwriting recognition.
 
@@ -12,7 +19,7 @@ The system will later be extended with an information browser, using the SPARTAN
 
 The system should be extensible in Lua.
 
-The while system should be based on a neat, small, generic API.
+The whole system should be based on a neat, small, generic API.
 
 ## Where things stand
 
@@ -30,15 +37,20 @@ files are Lua tables, so without Lua there would be no applications at all
 (decision D-16). SQLite is optional: without it every query is answered by
 walking the files.
 
-    make                   # build
-    make test              # 42 suites
-    make asan              # the same under the sanitizers
-    ./build/pda            # run it; the vault defaults to ~/PDA
-    ./build/pda --apps     # list what was found, then exit
-    ./build/pda --version  # version and licence, then exit
+    make                         # build
+    make test                    # 42 suites
+    make asan                    # the same under the sanitizers
+    ./build/mirabelle            # run it; the vault defaults to ~/PDA
+    ./build/mirabelle --apps     # list what was found, then exit
+    ./build/mirabelle --version  # version and licence, then exit
 
 `--vault <dir>` or `PDA_VAULT` points somewhere else, `--lang en` switches the
 catalogue, and `--shot <file.pbm>` writes one frame and exits.
+
+The vault still lives at `~/PDA` and the variable is still `PDA_VAULT`: those
+name a directory of somebody's notes, and renaming them would quietly orphan
+it. The internal prefix in the source (`pda_ui`, `PDA_DATA_DIR`) stays too — a
+product name and a symbol prefix are different things.
 
 See [DESIGN.md](DESIGN.md) for the system design and the numbered decisions
 D-1 to D-17, [ROADMAP.md](ROADMAP.md) for the seventeen chapters, and

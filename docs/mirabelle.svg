@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Das Logo von mirabelle: eine Mirabelle, schwarz auf weiß, Stiel oben.
+
+  Schwarzweiß, weil das Programm es ist - ein Bit je Pixel, kein Farbton
+  dazwischen.
+
+  Dieselbe Frucht steht in data/fonts/system12-logo.part als neun mal neun
+  Pixel, dort aber als Fläche. Ein Umriss braucht Platz: bei neun Pixeln
+  bliebe von ihm nur ein grauer Fleck.
+
+  Diese Datei ist die Vorlage. handbuch/build/generate-diagrams.sh legt eine
+  Kopie neben die Kapitel, weil der Handbuchbau nur sein eigenes Verzeichnis
+  sieht.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 120 140" width="120" height="140"
+     role="img" aria-label="mirabelle">
+  <title>mirabelle</title>
+
+  <rect x="0" y="0" width="120" height="140" fill="#fff"/>
+
+  <g fill="none" stroke="#000" stroke-width="6"
+     stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- Die Frucht. Vier Bögen, deren Kontrollpunkte an den Anschlüssen auf
+         einer Linie liegen - so gibt es an keiner Stelle einen Knick. Eine
+         Mulde für den Stiel wäre so ein Knick, und aus zwei Knicken werden
+         beim Zeichnen zwei Hörner. Der Stiel setzt stattdessen einfach
+         darüber an. -->
+    <path d="M60 34
+             C 30 34, 12 58, 12 88
+             C 12 116, 34 132, 60 132
+             C 86 132, 108 116, 108 88
+             C 108 58, 90 34, 60 34 Z"/>
+
+    <!-- Der Stiel. Er beginnt innerhalb der Frucht, damit dort keine Lücke
+         klafft. Eine Mirabelle hängt an einem kurzen, geraden Stielchen. -->
+    <path d="M60 42 C 59 30, 58 18, 56 8"/>
+
+    <!-- Ein Blatt, nach rechts. Zwei Bögen, die sich an der Spitze treffen. -->
+    <path d="M61 26 C 73 14, 91 13, 103 19
+             C 93 33, 73 37, 61 26 Z"/>
+
+    <!-- Die Naht. Sie unterscheidet eine Pflaume von einem Apfel. Oben und
+         unten endet sie vor dem Rand; durchgezogen sähe die Frucht aus wie
+         zwei Hälften. -->
+    <path d="M60 44 C 67 68, 67 96, 61 120"/>
+
+  </g>
+</svg>

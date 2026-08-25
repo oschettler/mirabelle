@@ -16,6 +16,8 @@
 #include "gfx/bitmap.h"
 #include "gfx/draw.h"
 #include "gfx/text.h"
+#include <dirent.h>
+
 #include "support/golden.h"
 
 extern const font system12;
@@ -97,6 +99,90 @@ static int check_required_set(const font *f, int *missing_out)
     fclose(fp);
     *missing_out = missing;
     return checked;
+}
+
+/* Jedes Zeichen, das im Textkatalog steht, muss die Schrift auch zeichnen
+ * können.
+ *
+ * required.set sagt, was eine Schrift können muss; dieser Test sagt, was
+ * gebraucht wird. Ohne ihn fällt ein Zeichen erst auf, wenn jemand die Stelle
+ * im Programm öffnet und dort ein Kästchen sieht - der Geviertstrich „—" ist
+ * genau so hereingekommen, wo im Deutschen ein Halbgeviertstrich „–" steht.
+ *
+ * Geprüft werden die Werte, nicht die Kommentare: gezeichnet wird nur, was
+ * hinter dem Gleichheitszeichen steht. */
+static int check_catalog_file(const char *path, const font *f, int *missing_out)
+{
+    FILE *fp = fopen(path, "rb");
+    if (!fp) {
+        printf("  nicht lesbar: %s\n", path);
+        return 0;
+    }
+
+    int  checked = 0, missing = 0, line_no = 0;
+    char line[1024];
+
+    while (fgets(line, sizeof line, fp)) {
+        line_no++;
+
+        const char *p = line;
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '#' || *p == '\n' || *p == '\r' || *p == '\0') continue;
+
+        const char *eq = strchr(p, '=');
+        if (!eq) continue;
+
+        const char *value = eq + 1;
+        while (*value == ' ' || *value == '\t') value++;
+
+        while (*value && *value != '\n' && *value != '\r') {
+            uint32_t cp = utf8_next(&value);
+            if (cp <= 0x20) continue;          /* Leerzeichen zeichnet niemand */
+
+            checked++;
+            const glyph *g = font_find(f, cp);
+            if (!g || g->codepoint != cp) {
+                if (missing < 12)
+                    printf("  %s:%d: U+%04X fehlt in der Schrift\n",
+                           path, line_no, cp);
+                missing++;
+            }
+        }
+    }
+
+    fclose(fp);
+    *missing_out = missing;
+    return checked;
+}
+
+TEST(every_catalogue_character_can_be_drawn)
+{
+    char dir[512];
+    snprintf(dir, sizeof dir, "%s/lang", PDA_DATA_DIR);
+
+    DIR *d = opendir(dir);
+    REQUIRE(d != NULL);
+
+    int files = 0, checked = 0, missing = 0;
+    struct dirent *e;
+
+    while ((e = readdir(d)) != NULL) {
+        size_t len = strlen(e->d_name);
+        if (len < 9 || strcmp(e->d_name + len - 8, ".strings") != 0) continue;
+
+        char path[1024];
+        snprintf(path, sizeof path, "%s/%s", dir, e->d_name);
+
+        int m = 0;
+        checked += check_catalog_file(path, &system12, &m);
+        missing += m;
+        files++;
+    }
+    closedir(d);
+
+    CHECK(files >= 2);          /* Deutsch und Englisch */
+    CHECK(checked > 500);
+    CHECK_EQ(missing, 0);
 }
 
 TEST(font_covers_required_set)
@@ -338,6 +424,7 @@ TEST(golden_specimen)
 int main(void)
 {
     RUN(font_covers_required_set);
+    RUN(every_catalogue_character_can_be_drawn);
     RUN(derived_glyphs_contain_their_base);
     RUN(font_find_hits_first_last_and_middle);
     RUN(font_find_falls_back_to_replacement);

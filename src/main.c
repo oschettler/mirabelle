@@ -32,7 +32,7 @@
 #define PDA_DATA_DIR "data"
 #endif
 
-#define PDA_NAME    "PDA"
+#define PDA_NAME    "mirabelle"
 #define PDA_VERSION "0.1"
 #define PDA_YEAR    "2026"
 #define PDA_AUTHOR  "Olav Schettler"
@@ -155,7 +155,8 @@ int main(int argc, char **argv)
 
     if (has_flag(argc, argv, "--version")) return print_version(lang);
 
-    plat_config cfg = { .width = 800, .height = 480, .scale = 0, .title = "PDA" };
+    plat_config cfg = { .width = 800, .height = 480, .scale = 0,
+                        .title = PDA_NAME };
     if (!plat_init(&cfg)) {
         fprintf(stderr, "Der Bildschirm ließ sich nicht öffnen.\n");
         return 1;

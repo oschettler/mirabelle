@@ -596,6 +596,50 @@ static void pick_menu_item(shell *s, int x, int item)
     shell_event(s, &mv);
     shell_event(s, &pd);
     shell_event(s, &pu);
+
+    /* Trifft der Griff einen Eintrag, der etwas fragt, steht danach ein modaler
+     * Dialog im Weg und die Schale nimmt nichts anderes mehr an. Esc räumt ihn
+     * weg - für einen Test, der die Leiste abklopft, ist das der Weg zurück in
+     * einen brauchbaren Zustand. */
+    event esc = { .kind = EV_KEY_DOWN, .key = KEY_ESCAPE };
+    shell_event(s, &esc);
+}
+
+TEST(the_mirabelle_menu_says_what_this_is)
+{
+    /* Das erste Menü hat genau einen Eintrag, und der sagt, was das Programm
+     * ist. Der Dialog fragt nichts - er hat einen Knopf, und danach ist das
+     * Fenster wieder aktiv, aus dem man kam. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    char err[256] = "";
+    int  notes = app_by_label(s, "app.notes");
+    REQUIRE(shell_open_app(s, notes, err, sizeof err));
+
+    window *win = shell_app_window(s, notes);
+    REQUIRE(win != NULL);
+    CHECK(window_is_active(win));
+
+    shell_run_action(s, "app.about");
+    CHECK(!window_is_active(win));   /* der Dialog liegt davor */
+
+    /* Zweimal fragen geht nicht: modal heißt modal. */
+    shell_run_action(s, "app.about");
+
+    event esc = { .kind = EV_KEY_DOWN, .key = KEY_ESCAPE };
+    shell_event(s, &esc);
+
+    CHECK(window_is_active(win));
+    CHECK(shell_running(s));
+
+    /* Und die Anwendung darunter hat davon nichts abbekommen. */
+    CHECK(shell_app_is_open(s, notes));
+
+    shell_destroy(s);
+    teardown();
 }
 
 TEST(the_menu_bar_opens_an_application)
@@ -618,7 +662,9 @@ TEST(the_menu_bar_opens_an_application)
 
     /* Wo „Anwendungen" anfängt, hängt von der Breite der Titel davor ab - und
      * die hängt an der Schrift. Also wird die Leiste abgeklopft: gesucht ist
-     * der Titel, unter dem der erste Eintrag eine Anwendung öffnet. */
+     * der Titel, unter dem der erste Eintrag eine Anwendung öffnet. Unterwegs
+     * kommt der Griff auch am Mirabellenmenü vorbei und öffnet dessen Dialog;
+     * pick_menu_item räumt ihn wieder weg. */
     int menu_x = -1;
     for (int x = 4; x < 400 && menu_x < 0; x += 4) {
         pick_menu_item(s, x, 0);
@@ -1337,6 +1383,7 @@ int main(void)
     RUN(a_shortcut_and_the_menu_do_the_same_thing);
     RUN(a_click_reaches_the_list_in_the_active_window);
 
+    RUN(the_mirabelle_menu_says_what_this_is);
     RUN(the_menu_bar_opens_an_application);
     RUN(return_opens_a_record_and_escape_closes_it_again);
     RUN(the_arrow_keys_still_belong_to_the_list);

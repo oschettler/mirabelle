@@ -178,7 +178,7 @@ Glyphe änderst:
 . Die Zeichen in der `.part`-Datei ändern.
 . `make` aufrufen — ein eigenes Werkzeug (`tools/fontc.c`, aus Kapitel 6)
   übersetzt die Textdatei in das Format, das das Programm liest.
-. `./build/pda --shot bild.pbm` aufrufen und `bild.pbm` ansehen. Das schreibt
+. `./build/mirabelle --shot bild.pbm` aufrufen und `bild.pbm` ansehen. Das schreibt
   den tatsächlichen Bildspeicher des Programms in eine Datei, ohne
   Fensterrahmen und ohne Skalierung — du siehst genau die Pixel, die das
   Programm zeichnen würde.

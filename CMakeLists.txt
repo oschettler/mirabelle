@@ -198,19 +198,19 @@ endif()
 # stillschweigend weg.
 
 if(TARGET pda_plat_sdl3)
-    add_executable(pda src/main.c)
-    target_compile_definitions(pda
+    add_executable(mirabelle src/main.c)
+    target_compile_definitions(mirabelle
         PRIVATE PDA_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
     # Jede Bibliothek genau einmal nennen. pda_ui bringt pda_fonts mit,
     # pda_lua bringt pda_app mit, und die Plattformschicht steht weiter unten -
     # etwas doppelt zu nennen ergibt eine Warnung des Binders.
-    target_link_libraries(pda PRIVATE pda_lua)
+    target_link_libraries(mirabelle PRIVATE pda_lua)
 
     if(UNIX AND NOT APPLE)
-        target_link_libraries(pda PRIVATE
+        target_link_libraries(mirabelle PRIVATE
             "$<LINK_GROUP:RESCAN,pda_plat_sdl3,pda_store>")
     else()
-        target_link_libraries(pda PRIVATE pda_plat_sdl3)
+        target_link_libraries(mirabelle PRIVATE pda_plat_sdl3)
     endif()
 endif()
 
@@ -239,7 +239,8 @@ set(PDA_FONT_PARTS
     ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12.head
     ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12-ascii.part
     ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12-latin.part
-    ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12-fallback.part)
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12-fallback.part
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/system12-logo.part)
 
 set(PDA_FONT_FNT ${CMAKE_CURRENT_BINARY_DIR}/system12.fnt)
 add_custom_command(

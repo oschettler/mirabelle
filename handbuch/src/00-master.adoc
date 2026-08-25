@@ -1,4 +1,4 @@
-= PDA: Ein Taschencomputer zum Selberbauen
+= mirabelle: Ein Taschencomputer zum Selberbauen
 Olav Schettler
 :doctype: book
 :toc: left
@@ -14,24 +14,31 @@ Olav Schettler
 :email: olav@schettler.net
 :revnumber: 0.1
 :revremark: Entwurf, entsteht mit dem Projekt
-:description: Handbuch und Lehrbuch zum PDA-Projekt: ein PIM-Paket im Stil von Macintosh System 1, gebaut in C und Lua, von der ersten Bitmap bis zum eigenen Gerät.
+:description: Handbuch und Lehrbuch zu mirabelle: ein Taschencomputer im Stil von Macintosh System 1, gebaut in C und Lua, von der ersten Bitmap bis zum eigenen Gerät.
 :keywords: C, Lua, SDL3, ESP32, Bitmapgrafik, Macintosh System 1, Gemtext
 :copyright: Copyright (C) 2026 Olav Schettler. GNU GPL Version 3 oder neuer.
 
 [preface]
 == Vorwort
 
+image::mirabelle.svg[mirabelle,110,align="center"]
+
 Dieses Buch beschreibt ein Programm, das du bauen kannst — Zeile für Zeile,
 von der ersten gesetzten Bildpunktreihe bis zu einem Browser, den du selbst in
 Lua schreibst.
 
-Das PDA-Projekt ist ein kleines Betriebssystem für persönliche Daten:
-Aufgaben, Kalender, Adressbuch, Notizen, in der Optik des ersten Macintosh von
-1984, geschrieben in C, erweiterbar in Lua, und am Ende auf einem eigenen
-Gerät mit Sieben-Zoll-Bildschirm.
+**mirabelle** ist ein kleines Betriebssystem für persönliche Daten: Aufgaben,
+Kalender, Adressbuch, Notizen, in der Optik des ersten Macintosh von 1984,
+geschrieben in C, erweiterbar in Lua, und am Ende auf einem eigenen Gerät mit
+Sieben-Zoll-Bildschirm.
+
+Der Name gehört zur Sache. Eine Mirabelle ist klein, gelb und rund, sie wächst
+ohne viel Zutun, und man isst sie in einem Bissen — nicht das größte Obst im
+Garten, aber eines, das man ganz überblickt. Die Frucht steht als Zeichen ganz
+links in der Menüleiste, dort, wo bei System 1 der Apfel saß.
 
 Es ist absichtlich klein. Der Bildschirm hat ein Bit je Pixel, das
-Dateiformat drei Regeln, die Schnittstelle zur Außenwelt achtzehn Funktionen.
+Dateiformat drei Regeln, die Schnittstelle zur Außenwelt neunzehn Funktionen.
 Nichts davon ist Nostalgie: kleine Systeme kann man ganz verstehen, und wer
 eines ganz versteht, versteht danach auch große besser.
 
@@ -111,7 +118,7 @@ eine Datei genannt wird, gibt es sie.
 
 Programm und Buch stehen unter der **GNU General Public License, Version 3
 oder neuer**. Der volle Text liegt als `LICENSE` im Repository, und
-`./build/pda --version` nennt sie dir auch ohne Nachschlagen.
+`./build/mirabelle --version` nennt sie dir auch ohne Nachschlagen.
 
 Das heißt in aller Kürze: du darfst das Ganze benutzen, weitergeben und
 verändern — und wenn du eine veränderte Fassung weitergibst, gibst du auch
@@ -169,7 +176,7 @@ include::17-glossar.adoc[leveloffset=+1]
 [colophon]
 == Impressum
 
-*PDA: Ein Taschencomputer zum Selberbauen*
+*mirabelle: Ein Taschencomputer zum Selberbauen*
 
 Autor: Olav Schettler +
 Kontakt: olav@schettler.net

@@ -1,6 +1,10 @@
-build/
+# Nur das Bauverzeichnis im Wurzelverzeichnis, mit führendem Schrägstrich.
+# Ohne ihn trifft das Muster jedes Verzeichnis namens "build" - und damit auch
+# handbuch/build/, in dem der Bauplan des Handbuchs liegt. Der fehlte deshalb
+# im Repository: aus einem frischen Klon ließ sich das Buch nicht bauen.
+/build/
 node_modules/
 package-lock.json
 tests/golden/*.actual.pbm
-build-asan/
+/build-asan/
 handbuch/output/

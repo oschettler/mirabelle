@@ -30,7 +30,7 @@ Nutzdaten kosten.
 Warum diesen Umweg gehen, wo eine einzige Datenbankdatei doch viel bequemer
 wäre? Drei Gründe, und keiner davon ist Bequemlichkeit für später:
 
-**Die Daten überleben das Programm.** Stirbt das PDA-Projekt in zwanzig
+**Die Daten überleben das Programm.** Stirbt mirabelle in zwanzig
 Jahren — weil der Mikrocontroller nicht mehr hergestellt wird, weil du die
 Lust verlierst, weil eine neue Idee kommt —, bleiben deine Notizen lesbare
 Textdateien. Kein Programm muss sie retten. Das ist der Unterschied zwischen
@@ -141,8 +141,8 @@ solchen benennen sollte, nicht schönreden.
 Der entscheidende Grund, ihn trotzdem einzugehen, ist keiner der drei
 technischen — er steht in `DESIGN.md` unter Entscheidung D-12: **der
 Notizen-Darsteller und der Spartan-Browser aus Schritt M17 werden dieselbe
-Funktion.** Spartan ist das einfache Netzwerkprotokoll, mit dem das
-PDA-Projekt später Seiten aus dem Netz abrufen und darstellen kann, und
+Funktion.** Spartan ist das einfache Netzwerkprotokoll, mit dem mirabelle
+später Seiten aus dem Netz abrufen und darstellen kann, und
 Gemtext ist genau das Format, das Spartan- und Gemini-Server ausliefern.
 Zeigt das Projekt eine abgerufene Seite an, ist das Gemtext. Zeigt es eine
 eigene Notiz an, ist das — wenn der Textkörper ebenfalls Gemtext ist — exakt
@@ -260,8 +260,8 @@ bekommt.
 
 === Schemagesteuerte Anwendungen
 
-Jetzt zum eigentlichen Kern: Aufgaben, Kontakte und Notizen sind im
-PDA-Projekt *derselbe Code*. Was sie unterscheidet, ist nicht Programmlogik,
+Jetzt zum eigentlichen Kern: Aufgaben, Kontakte und Notizen sind in
+mirabelle *derselbe Code*. Was sie unterscheidet, ist nicht Programmlogik,
 sondern eine Datendatei — ein Schema. So sieht das Schema für Aufgaben aus,
 gekürzt um die Kommentare:
 
@@ -362,7 +362,7 @@ sie ursprünglich ersparen sollte.
   aufschreiben würdest — Front Matter mit `type: note`, `title`, `tags`,
   und darunter ein Gemtext-Körper mit mindestens einer Überschrift, einer
   Liste und einem Verweis mit `=>`. Leg sie unter `~/PDA/Notizen/` ab und
-  starte `./build/pda`: erscheint sie in den Notizen? Prüfe danach am Text,
+  starte `./build/mirabelle`: erscheint sie in den Notizen? Prüfe danach am Text,
   ob jede Zeile eindeutig einem der sechs Zeilentypen zuzuordnen ist, ohne
   dass du dafür wissen musst, was in einer anderen Zeile steht.
 
@@ -375,7 +375,7 @@ sie ursprünglich ersparen sollte.
 . Schreib ein Schema für Rezepte, im selben Stil wie `task.lua` oben: welche
   Felder braucht ein Rezept (Zutaten, Zubereitungszeit, Portionen, Kategorie
   …), welchen `kind` hat jedes davon, was gehört in `columns`, was in `form`?
-  Leg es als `data/schema/rezept.lua` ab und starte `./build/pda --apps`.
+  Leg es als `data/schema/rezept.lua` ab und starte `./build/mirabelle --apps`.
   Erscheint deine Anwendung? Wenn nicht, sagt die Meldung, warum.
 
 . Überleg, welche Front-Matter-Felder eine Notiz *nicht* braucht, die eine

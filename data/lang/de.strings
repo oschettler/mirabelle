@@ -6,6 +6,12 @@
 # Pluralformen als Schlüsselvarianten .one und .other.
 
 # --- Menüleiste -------------------------------------------------------------
+# Das erste Menü trägt das Zeichen der Mirabelle, nicht ein Wort. U+E000 liegt
+# im privaten Bereich von Unicode und wird von data/fonts/system12-logo.part
+# gezeichnet. Es ist keine Übersetzung - in jeder Sprache steht hier dasselbe.
+menu.mirabelle           = 
+menu.mirabelle.about     = Über mirabelle
+
 menu.file                = Ablage
 menu.file.new            = Neu
 menu.file.open           = Öffnen
@@ -26,9 +32,6 @@ menu.view.calendar       = Kalender
 menu.view.contacts       = Kontakte
 menu.view.notes          = Notizen
 
-menu.special             = Spezial
-menu.special.search      = Suchen
-menu.special.about       = Über PDA
 
 # --- Knöpfe -----------------------------------------------------------------
 button.ok                = OK
@@ -39,7 +42,7 @@ button.discard           = Verwerfen
 # --- Dialoge ----------------------------------------------------------------
 dialog.discard.title     = Änderungen verwerfen?
 dialog.discard.body      = „{0}“ wurde geändert. Sollen die Änderungen verworfen werden?
-dialog.about.body        = Ein PIM-Paket im Stil von Macintosh System 1.
+dialog.about.body        = mirabelle 0.1 – ein Taschencomputer im Stil von Macintosh System 1. Freie Software unter der GNU GPL, Version 3 oder neuer.
 
 # --- Lizenz -----------------------------------------------------------------
 # Zwei Sätze aus der Ausgabe von --version. Sie stehen hier, weil ein Nutzer

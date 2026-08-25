@@ -6,6 +6,9 @@
 # darstellbar ist.
 
 # --- Menu bar ---------------------------------------------------------------
+menu.mirabelle           = 
+menu.mirabelle.about     = About mirabelle
+
 menu.file                = File
 menu.file.new            = New
 menu.file.open           = Open
@@ -26,9 +29,6 @@ menu.view.calendar       = Calendar
 menu.view.contacts       = Contacts
 menu.view.notes          = Notes
 
-menu.special             = Special
-menu.special.search      = Find
-menu.special.about       = About PDA
 
 # --- Buttons ----------------------------------------------------------------
 button.ok                = OK
@@ -39,7 +39,7 @@ button.discard           = Discard
 # --- Dialogs ----------------------------------------------------------------
 dialog.discard.title     = Discard changes?
 dialog.discard.body      = “{0}” has been changed. Discard the changes?
-dialog.about.body        = A PIM suite in the style of Macintosh System 1.
+dialog.about.body        = mirabelle 0.1 – a pocket computer in the style of Macintosh System 1. Free software under the GNU GPL, version 3 or later.
 
 # --- Licence ----------------------------------------------------------------
 # Two sentences from the output of --version. They live here because a user

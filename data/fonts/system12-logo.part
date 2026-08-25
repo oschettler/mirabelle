@@ -1,0 +1,24 @@
+# Das Zeichen der Mirabelle.
+#
+# Es liegt im privaten Bereich von Unicode (U+E000), weil es kein Zeichen einer
+# Schrift ist, sondern ein Bild: das Logo in der Menüleiste. Genauso hat es
+# System 1 gemacht - der Apfel dort war ein Zeichen im Systemzeichensatz und
+# kein Sonderfall im Zeichencode. Die Menüleiste zeichnet damit Text, so wie
+# bei jedem anderen Titel auch.
+#
+# Der Schlüssel dazu steht als `menu.mirabelle` im Textkatalog. Wer eine eigene
+# Schrift baut, braucht dieses Zeichen: es steht in required.set.
+
+glyph U+E000 width 9        # Mirabelle
+  ....#....
+  ....###..
+  ..##.##..
+  .#######.
+  .#######.
+  .#######.
+  .#######.
+  .#######.
+  ..#####..
+  .........
+  .........
+  .........

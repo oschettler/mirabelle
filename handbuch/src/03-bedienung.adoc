@@ -1,6 +1,6 @@
 == Die Oberfläche bedienen
 
-Starte `./build/pda` und du siehst zwei Fenster über einem grauen,
+Starte `./build/mirabelle` und du siehst zwei Fenster über einem grauen,
 schachbrettgemusterten Schreibtisch, dazu eine Menüleiste ganz oben. Dieses
 Kapitel erklärt, wie du damit umgehst — mit der Maus und ganz ohne sie.
 
@@ -104,6 +104,25 @@ Adress-Sanitizer auf — deshalb läuft `make asan` bei jedem Durchgang mit.
 ====
 
 === Menüs
+
+Ganz links in der Menüleiste steht kein Wort, sondern eine kleine Frucht: die
+Mirabelle. Sie ist der Namensgeber des Systems und sitzt an der Stelle, an der
+System 1 seinen Apfel hatte. Darunter steht genau ein Eintrag, „Über
+mirabelle“, und der sagt, was dieses Programm ist.
+
+.Ein Logo ist hier ein Buchstabe
+[NOTE]
+====
+Die Menüleiste kennt kein Logo. Sie zeichnet Titel, und ein Titel ist Text aus
+dem Katalog — auch dieser. Die Mirabelle ist ein Zeichen im Systemzeichensatz,
+gezeichnet in `data/fonts/system12-logo.part`, und liegt auf `U+E000` im
+privaten Bereich von Unicode. Im Katalog steht unter `menu.mirabelle` genau
+dieses eine Zeichen.
+
+Genauso hat System 1 es gemacht. Der Apfel dort war kein Sonderfall im
+Zeichencode, sondern ein Zeichen unter anderen — und deshalb brauchte die
+Menüleiste nie zu wissen, dass sie ein Logo zeigt.
+====
 
 Klick auf „Ablage“ in der Menüleiste, und darunter klappt ein Menü auf. Dafür
 gibt es zwei verschiedene Handbewegungen, und beide funktionieren

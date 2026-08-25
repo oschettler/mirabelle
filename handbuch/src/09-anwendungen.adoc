@@ -208,7 +208,7 @@ ist.
 
 . Lege eine Kopie von `data/schema/note.lua` unter einem anderen Namen an,
   ändere darin `type`, `folder` und `label` und starte neu. Erscheint deine
-  Anwendung im Menü? Prüfe zuerst mit `./build/pda --apps`.
+  Anwendung im Menü? Prüfe zuerst mit `./build/mirabelle --apps`.
 
 . Trage in deiner neuen Schemadatei bei `columns` einen Feldnamen ein, den es
   nicht gibt. Starte neu und lies die Statuszeile — steht der Tippfehler

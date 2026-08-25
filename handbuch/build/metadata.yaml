@@ -1,0 +1,57 @@
+---
+# Metadaten für das PDA-Handbuch
+
+title: "PDA: Ein Taschencomputer zum Selberbauen"
+subtitle: "Ein PIM-Paket im Stil von Macintosh System 1, in C und Lua"
+author: "Olav Schettler"
+date: "2026"
+lang: de
+language: de-DE
+
+publisher: "Selbstverlag"
+rights: "CC BY-SA 4.0, Olav Schettler"
+
+subject:
+  - "C"
+  - "Lua"
+  - "SDL3"
+  - "ESP32"
+  - "Programmieren lernen"
+
+keywords:
+  - "Bitmapgrafik"
+  - "Fenstersystem"
+  - "Macintosh System 1"
+  - "Gemtext"
+  - "Zeichensatz"
+
+description: |
+  Handbuch und Lehrbuch zugleich: wie man ein kleines Betriebssystem für
+  persönliche Daten baut, von der ersten Bitmap über Schriften, Fenster und
+  Menüs bis zum eigenen Gerät. Mit einer Einführung in Lua und einer
+  vollständigen API-Referenz. Für alle ab etwa dreizehn, die wissen wollen,
+  wie die Dinge darunter funktionieren.
+
+epub-version: 3
+pdf-theme: "build/theme.yml"
+documentclass: book
+papersize: a4
+fontsize: 11pt
+
+toc: true
+toc-depth: 2
+number-sections: true
+
+attributes:
+  icons: font
+  source-highlighter: rouge
+  rouge-style: github
+  sectanchors: true
+  sectlinks: true
+  linkattrs: true
+  experimental: true
+
+version: "0.1.0"
+author-email: "olav@schettler.net"
+license: "CC BY-SA 4.0"
+license-url: "https://creativecommons.org/licenses/by-sa/4.0/"

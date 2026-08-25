@@ -224,7 +224,7 @@ jedem Bauen geprüft.
 
 . Leg unter `data/apps/` eine Datei mit einer eigenen Anwendung an: `app{}` mit
   `title` aus dem Katalog und einem `draw`, das ein Rechteck und einen Text
-  zeichnet. Starte `./build/pda --apps` — erscheint sie?
+  zeichnet. Starte `./build/mirabelle --apps` — erscheint sie?
 
 . Lass `title` weg und starte neu. Was meldet das Programm, und wo kommt die
   Meldung her?

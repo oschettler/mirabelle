@@ -31,9 +31,9 @@ Das Programm trägt sieben Anwendungen: **Aufgaben, Kontakte, Notizen, Termine**
 aus je einer Schemadatei und **SPARTAN, Gliederung, Agenda** aus je einer
 Lua-Datei. Keine davon wird im C-Code namentlich genannt.
 
-    ./build/pda              starten, Vault unter ~/PDA
-    ./build/pda --apps       auflisten, was gefunden wurde
-    ./build/pda --version    Fassung und Lizenz nennen und beenden
+    ./build/mirabelle              starten, Vault unter ~/PDA
+    ./build/mirabelle --apps       auflisten, was gefunden wurde
+    ./build/mirabelle --version    Fassung und Lizenz nennen und beenden
     --vault <verzeichnis>    anderer Ort (oder PDA_VAULT)
     --lang en                andere Sprache
     --shot <datei.pbm>       ein Bild schreiben und beenden
@@ -108,6 +108,15 @@ Gebraucht werden ein C11-Compiler, CMake 3.18, SDL 3 und **Lua 5.4**; SQLite
 ist wahlfrei. Lua ist Pflicht, weil die Schemadateien Lua-Tabellen sind (D-16)
 - ohne sie gäbe es keine Anwendung.
 
+Das System heißt **mirabelle**. Das Programm heißt `mirabelle`, das Zeichen in
+der Menüleiste ist eine Mirabelle (`data/fonts/system12-logo.part`, U+E000),
+und das Logo liegt als `docs/mirabelle.svg`.
+
+Nicht umbenannt sind der Vault unter `~/PDA`, die Variable `PDA_VAULT` und die
+Namen im Quelltext (`pda_ui`, `PDA_DATA_DIR`). Die ersten beiden zeigen auf ein
+Verzeichnis mit fremden Notizen darin; sie umzubenennen ließe es verwaist
+zurück. Die dritten sind Bezeichner, kein Produktname.
+
 Das Projekt steht unter der **GPL, Version 3 oder neuer** (`LICENSE`). Jede
 Quelldatei trägt eine Zeile `SPDX-License-Identifier: GPL-3.0-or-later`; wer
 eine neue anlegt, setzt sie mit dazu - `tests/license_headers.sh` zählt nach.
@@ -117,8 +126,8 @@ make            übersetzen
 make test       Tests
 make test ACCEPT=1   abweichende Sollbilder übernehmen (erst hinsehen!)
 make asan       Tests unter Address- und UB-Sanitizer
-./build/pda     das Programm
-./build/pda --shot bild.pbm    Bildspeicher schreiben und beenden
+./build/mirabelle     das Programm
+./build/mirabelle --shot bild.pbm    Bildspeicher schreiben und beenden
 ```
 
 Handbuch: `cd handbuch/build && make html` (oder `pdf`, `epub`, `diagrams`).

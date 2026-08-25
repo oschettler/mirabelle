@@ -124,7 +124,7 @@ von seinem Ende erfahren.
 
 [source,bash]
 ----
-./build/pda
+./build/mirabelle
 ----
 
 Es öffnet sich ein Fenster mit 800 mal 480 Pixeln — oder ein Vielfaches davon,
@@ -141,7 +141,7 @@ Wer sich das ansehen will, ohne ein Fenster zu öffnen:
 
 [source,bash]
 ----
-./build/pda --apps
+./build/mirabelle --apps
 ----
 
 Das zählt auf, was gefunden wurde, und beendet sich. Praktisch, wenn du später
@@ -160,7 +160,7 @@ bequemer:
 
 [source,bash]
 ----
-./build/pda --vault /tmp/probe-vault
+./build/mirabelle --vault /tmp/probe-vault
 ----
 
 Dann bleibt dein richtiger Vault unangetastet. `--lang en` schaltet die
@@ -171,7 +171,7 @@ Sprache um.
 
 [source,bash]
 ----
-./build/pda --version
+./build/mirabelle --version
 ----
 
 Nennt die Fassung, den Urheber und die Lizenz — und beendet sich, ohne ein
@@ -182,7 +182,7 @@ erwartet, und sie funktioniert auch dort, wo es gar keinen Bildschirm gibt.
 
 [source,bash]
 ----
-./build/pda --shot mein-bild.pbm
+./build/mirabelle --shot mein-bild.pbm
 ----
 
 Mit dieser Option zeichnet das Programm genau ein Bild, schreibt seinen
@@ -236,7 +236,7 @@ richtig.
 . Baue das Projekt mit `make` und miss mit `time make test`, wie lange die
   gesamte Testsuite braucht.
 
-. Erzeuge mit `./build/pda --shot eigenes.pbm` dein eigenes Bild und prüfe mit
+. Erzeuge mit `./build/mirabelle --shot eigenes.pbm` dein eigenes Bild und prüfe mit
   `file eigenes.pbm`, dass es sich um ein binäres P4-Bild mit 800 mal 480
   Pixeln handelt.
 
