@@ -1,5 +1,16 @@
 """Mutationstest fuer src/app/monthview.c. Direkt uebersetzt, mit Sanitizer.
-Der Sollbildtest bleibt aussen vor - er braucht das Bausystem."""
+Der Sollbildtest bleibt aussen vor - er braucht das Bausystem.
+
+Eine Mutation ueberlebt, und sie ist gleichwertig:
+
+  "Zellenhoehe ohne Schutz" - cell_h() gibt null zurueck, wenn der Rahmen
+  nicht einmal die Kopfzeile fasst. Ohne diesen Schutz kaeme eine negative
+  Zahl heraus. Beobachtbar ist der Unterschied nicht: jede Aufrufstelle prueft
+  auf "hoechstens null", und bei den Hoehen, die vorkommen, teilt die
+  ganzzahlige Division ohnehin zu null ab. Der Schutz bleibt trotzdem stehen -
+  eine negative Zellenhoehe waere eine Zahl, die nichts bedeutet, und die
+  naechste Aufrufstelle prueft vielleicht nur auf null.
+"""
 import subprocess, pathlib, tempfile, os
 
 SRC  = pathlib.Path("src/app/monthview.c")

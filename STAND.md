@@ -91,6 +91,15 @@ den ESP32-S3; siehe ROADMAP.md). M17 ist vorgezogen und fertig.
 - Eine überlebende Mutation ist noch kein Befund. Erst nachrechnen, ob sie
   überhaupt etwas ändert. Ist sie gleichwertig, weil der geänderte Zweig nie
   erreicht wird, gehört nicht ein Test hinzu, sondern der tote Code weg.
+- **Wer eine Mutation überleben lässt, schreibt dazu, warum.** In den
+  Prüfständen steht die Begründung oben im Kopf, damit ein Lauf sich selbst
+  erklärt. Eine Liste von Überlebenden ohne Erklärung sieht nach einer Lücke
+  aus, und beim nächsten Mal glaubt sie jemand.
+
+  Zurzeit überleben vier, alle gleichwertig: eine Wache gegen eine negative
+  Zellenhöhe (`monthview`), zwei Wachen im Bildlaufmodell (`scroll`), und die
+  Schemaprüfung in `spartan`, die dasselbe abweist wie die Portprüfung eine
+  Zeile später - nur mit der besseren Meldung.
 
 ## Bauen
 

@@ -1,4 +1,12 @@
-"""Mutationstest fuer src/net/spartan.c. Direkt uebersetzt, mit Sanitizer."""
+"""Mutationstest fuer src/net/spartan.c. Direkt uebersetzt, mit Sanitizer.
+
+Eine Mutation ueberlebt: "fremdes Schema erlaubt". Sie ist gleichwertig, und
+der Quelltext sagt selbst warum: bei "https://x" steht hinter dem Doppelpunkt
+"//x", und das sind keine Ziffern - die Portpruefung weiter unten faengt die
+Adresse also ohnehin. Die Pruefung bleibt trotzdem stehen, weil ein fremdes
+Schema aus dem richtigen Grund abgelehnt gehoert und nicht aus Versehen. Wer
+die Portpruefung einmal lockert, haette sonst ploetzlich einen http-Client.
+"""
 import subprocess, pathlib, tempfile, os
 
 SRC  = pathlib.Path("src/net/spartan.c")

@@ -522,10 +522,28 @@ TEST(a_schema_is_checked_strictly)
     bad = write_lua("kaputt", "return {");
     CHECK(!pdalua_schema(L, bad, &s, err, sizeof err));
 
-    /* Der Zustand ist danach immer noch brauchbar, und der Stapel leer
-     * geblieben - ein Lader, der etwas liegen lässt, verschiebt jeden
-     * folgenden Index. */
+    /* Der Zustand ist danach immer noch brauchbar. */
     CHECK(truth(L, "1 == 1"));
+
+    /* Und der Stapel ist so hoch wie vorher - nach jedem Aufruf, ob er
+     * gelungen ist oder nicht. Ein Lader, der etwas liegen lässt, verschiebt
+     * jeden folgenden Index; nach genug Aufrufen läuft der Stapel über. Der
+     * Fehler wäre dann weit weg von seiner Ursache. */
+    char kaputt[512];
+    snprintf(kaputt, sizeof kaputt, "%s", write_lua("stapel_kaputt", "return {"));
+
+    const char *heil = write_lua("stapel_heil",
+        "return { type='x', folder='X', label='l',"
+        " columns={'t'}, form={'t'},"
+        " fields={ {name='t', kind='text', label='lt'} } }");
+    REQUIRE(heil != NULL);
+
+    int vorher = lua_gettop(L);
+    for (int i = 0; i < 200; i++) {
+        CHECK(pdalua_schema(L, heil, &s, err, sizeof err));
+        CHECK(!pdalua_schema(L, kaputt, &s, err, sizeof err));
+    }
+    CHECK_EQ(lua_gettop(L), vorher);
 
     pdalua_close(L);
     i18n_free(cat);

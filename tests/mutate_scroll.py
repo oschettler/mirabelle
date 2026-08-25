@@ -7,6 +7,16 @@ Mutation sieht aus, als haette sie ueberlebt. Das Ergebnis war von Lauf zu
 Lauf verschieden - der Beweis, dass der Pruefstand falsch war, nicht die
 Tests. Zwei Dateien uebersetzen sich in Sekundenbruchteilen; dafuer braucht
 es kein Bausystem.
+
+Zwei Mutationen ueberleben, und beide sind gleichwertig:
+
+  "reveal: obere Grenze verschoben" - aus "index < m->value" wird "<=". Bei
+  Gleichheit setzt der Zweig m->value auf genau den Wert, den es schon hat.
+
+  "thumb: negative Rinne" - aus "track <= 0" wird "track < -1". Bei track = 0
+  rechnet der Code danach ebenfalls (0, 0) aus: min_len wird auf track
+  geklemmt, und die Laenge faellt auf null. Negative Rinnen gibt es nicht.
+  Beide Wachen bleiben stehen; sie kosten nichts und sagen, was gilt.
 """
 import subprocess, pathlib, tempfile, os
 
