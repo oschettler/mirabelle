@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das SPARTAN://-Protokoll.
  *
  * Ein Protokoll, das auf eine Seite passt: eine Anfragezeile hin, eine

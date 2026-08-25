@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe theme.h für den Vertrag. Der Parser folgt dem Vorbild aus
  * src/core/keymap.c: "datei:zeile: meldung", niemals ein halbfertiges
  * Ergebnis.

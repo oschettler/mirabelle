@@ -5,7 +5,7 @@ Fahrplan in [ROADMAP.md](ROADMAP.md).
 
 ## Wo wir stehen
 
-**Fertig: M1 bis M13 und M17.** 41 Testsuiten, warnungsfrei unter
+**Fertig: M1 bis M13 und M17.** 42 Testsuiten, warnungsfrei unter
 `-Wall -Wextra -Wpedantic`, ebenso unter Address- und UB-Sanitizer. Alle
 Mutationsprüfstände laufen ohne unerklärte Überlebende.
 
@@ -33,6 +33,7 @@ Lua-Datei. Keine davon wird im C-Code namentlich genannt.
 
     ./build/pda              starten, Vault unter ~/PDA
     ./build/pda --apps       auflisten, was gefunden wurde
+    ./build/pda --version    Fassung und Lizenz nennen und beenden
     --vault <verzeichnis>    anderer Ort (oder PDA_VAULT)
     --lang en                andere Sprache
     --shot <datei.pbm>       ein Bild schreiben und beenden
@@ -106,6 +107,10 @@ den ESP32-S3; siehe ROADMAP.md). M17 ist vorgezogen und fertig.
 Gebraucht werden ein C11-Compiler, CMake 3.18, SDL 3 und **Lua 5.4**; SQLite
 ist wahlfrei. Lua ist Pflicht, weil die Schemadateien Lua-Tabellen sind (D-16)
 - ohne sie gäbe es keine Anwendung.
+
+Das Projekt steht unter der **GPL, Version 3 oder neuer** (`LICENSE`). Jede
+Quelldatei trägt eine Zeile `SPDX-License-Identifier: GPL-3.0-or-later`; wer
+eine neue anlegt, setzt sie mit dazu - `tests/license_headers.sh` zählt nach.
 
 ```
 make            übersetzen

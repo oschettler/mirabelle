@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe dialog.h für den Vertrag.
  *
  * Thema und Bildschirmgröße holt der Dialog über wm_theme() und

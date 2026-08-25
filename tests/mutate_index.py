@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Mutationstest fuer src/store/index_sqlite.c. Direkt uebersetzt, mit
 Sanitizer - warum, steht in tests/mutate_scroll.py."""
 import subprocess, pathlib, tempfile, os

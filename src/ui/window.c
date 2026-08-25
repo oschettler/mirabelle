@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe window.h für den Vertrag. Die Optik folgt dem Rahmen, den demo.c bis
  * M5 von Hand gezeichnet hat - hier nur mit den Maßen aus einem theme statt
  * fest verdrahteten Zahlen.

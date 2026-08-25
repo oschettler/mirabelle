@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Plattformschicht auf SDL3.
  *
  * Zwei Dinge überlässt diese Umsetzung bewusst SDL, statt sie selbst zu

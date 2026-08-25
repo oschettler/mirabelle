@@ -41,6 +41,13 @@ dialog.discard.title     = Discard changes?
 dialog.discard.body      = “{0}” has been changed. Discard the changes?
 dialog.about.body        = A PIM suite in the style of Macintosh System 1.
 
+# --- Licence ----------------------------------------------------------------
+# Two sentences from the output of --version. They live here because a user
+# reads them; name, year and address are not a translation.
+app.license.terms        = License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+app.license.free         = This is free software: you are free to change and redistribute it.
+app.license.warranty     = There is NO WARRANTY, to the extent permitted by law.
+
 # --- Windows ----------------------------------------------------------------
 window.desk              = Desktop
 window.keys              = Shortcuts

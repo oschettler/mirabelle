@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Ein Schema aus einer Lua-Tabelle, siehe pdalua.h.
  *
  * Das ist die Einlösung von D-15: der Vertrag ist die C-Struktur `schema` aus

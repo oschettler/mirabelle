@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Ein Schema beschreibt eine Sammlung: welche Felder sie hat, wie sie in einer
  * Liste aussieht und in welcher Reihenfolge sie im Formular stehen.
  *

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Menüleiste aus M7: Geometrie, Maus- und Tastaturbedienung, ein Sollbild.
  *
  * Die Testmenüs bestehen aus echten Schlüsseln aus data/lang/de.strings und

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Feldtyp-Registratur, siehe app/fieldkind.h.
  *
  * Zwei Dinge stehen hier auf dem Prüfstand: dass jeder Feldtyp vollständig

@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Kein sichtbarer Text im Quelltext.
 #
 # Geprüft wird eng und dafür verlässlich: an gfx_text und wm_open darf kein

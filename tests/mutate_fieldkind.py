@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Mutationstest fuer src/app/fieldkind.c. Direkt uebersetzt, mit Sanitizer."""
 import subprocess, pathlib, tempfile, os
 

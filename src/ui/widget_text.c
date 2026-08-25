@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Textfelder, siehe widget.h für den Vertrag.
  *
  * Zwei Klassen, ein gemeinsamer Zustand: beide setzen auf textbuf auf und

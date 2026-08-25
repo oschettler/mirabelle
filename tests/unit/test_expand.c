@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das Ausklappen nach RGB565.
  *
  * Dieser Code läuft später auf dem ESP32 im heißesten Pfad überhaupt. Dass er

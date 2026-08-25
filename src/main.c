@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Hauptschleife.
  *
  * Mehr ist es nicht: Ereignisse abholen, zeichnen, ausgeben. Alles
@@ -30,6 +31,11 @@
 #ifndef PDA_DATA_DIR
 #define PDA_DATA_DIR "data"
 #endif
+
+#define PDA_NAME    "PDA"
+#define PDA_VERSION "0.1"
+#define PDA_YEAR    "2026"
+#define PDA_AUTHOR  "Olav Schettler"
 
 /* Alles, was das Programm besitzt. In einer Struktur, damit das Aufräumen an
  * einer Stelle steht und nicht an jedem Rücksprung wiederholt wird. */
@@ -117,11 +123,37 @@ static const char *data_path(const char *rel)
     return path;
 }
 
+/* "--version" nennt Fassung und Lizenz und beendet sich, ohne den Bildschirm
+ * anzufassen. Zwei Sätze davon stehen im Katalog, weil ein Nutzer sie liest;
+ * Name, Jahr und Adresse sind keine Übersetzung, sondern Angaben.
+ *
+ * Der Katalog wird dafür eigens geladen: die Ausgabe soll auch dann kommen,
+ * wenn weder Bildschirm noch Vault zu haben sind. */
+static int print_version(const char *lang)
+{
+    char     path[512], err[256] = "";
+    catalog *cat = NULL;
+
+    snprintf(path, sizeof path, "%s/lang/%s.strings", PDA_DATA_DIR, lang);
+    cat = i18n_load(path, err, sizeof err);
+
+    printf("%s %s\n", PDA_NAME, PDA_VERSION);
+    printf("Copyright (C) %s %s\n", PDA_YEAR, PDA_AUTHOR);
+    printf("%s\n", T(cat, "app.license.terms"));
+    printf("%s\n", T(cat, "app.license.free"));
+    printf("%s\n", T(cat, "app.license.warranty"));
+
+    i18n_free(cat);
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     const char *shot = arg_after(argc, argv, "--shot");
     const char *lang = arg_after(argc, argv, "--lang");
     if (!lang) lang = "de";
+
+    if (has_flag(argc, argv, "--version")) return print_version(lang);
 
     plat_config cfg = { .width = 800, .height = 480, .scale = 0, .title = "PDA" };
     if (!plat_init(&cfg)) {

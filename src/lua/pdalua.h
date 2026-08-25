@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Lua für dieses Projekt: ein Zustand, eine flache API, keine Zeiger nach
  * außen.
  *

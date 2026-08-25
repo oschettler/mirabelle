@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Rollbalken, siehe widget.h für den Vertrag.
  *
  * Der Balken rechnet nichts selbst - alle Zahlen kommen aus scroll.h. Hier

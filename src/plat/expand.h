@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Klappt ein 1-Bit-Bild nach RGB565 aus.
  *
  * Beide Plattformen brauchen das: der ESP32 schreibt damit in den PSRAM, und

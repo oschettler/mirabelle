@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Übersetzt eine .fnt-Textdatei (siehe docs/fnt-format.md) in C-Quelltext,
  * der die Datenstrukturen aus gfx/font.h füllt.
  *

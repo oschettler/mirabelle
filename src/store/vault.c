@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe vault.h für den Vertrag.
  *
  * Der Vault kennt nur Pfade und Byte-Ströme, keine Anwendungslogik. Er baut

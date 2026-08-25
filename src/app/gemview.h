@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Gemtext anzeigen: Überschriften, Absätze, Aufzählungen, Verweise.
  *
  * Dasselbe Widget zeigt eine Notiz aus dem Vault und eine abgerufene Seite -

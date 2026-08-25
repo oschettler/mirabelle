@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Bitmap-Zeichensätze.
  *
  * Eine Schrift ist ein Feld von Glyphen, nach Codepunkt sortiert, plus ein

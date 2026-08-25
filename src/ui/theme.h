@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Maße und Trefferflächen der Fensterrahmen, aus einer Datei.
  *
  * Nichts hiervon steht als Zahl im Zeichencode. Der Grund ist M15: dort

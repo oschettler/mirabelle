@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 cmake_minimum_required(VERSION 3.18)
 project(pda C)
 
@@ -283,6 +284,13 @@ add_test(NAME plat_count
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/plat_count.sh
                  ${CMAKE_CURRENT_SOURCE_DIR})
 set_tests_properties(plat_count PROPERTIES TIMEOUT 30)
+
+# Die Lizenzzeile je Quelldatei. Sie ersetzt fünfzehn Zeilen Rechtstext - aber
+# nur, solange sie überall steht.
+add_test(NAME license_headers
+         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/license_headers.sh
+                 ${CMAKE_CURRENT_SOURCE_DIR})
+set_tests_properties(license_headers PROPERTIES TIMEOUT 30)
 
 # Der Indextest läuft nur, wenn es SQLite gibt.
 if(TARGET pda_index)

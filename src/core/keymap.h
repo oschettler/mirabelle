@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Tastenbelegung aus einer Datendatei.
  *
  * Kürzel stehen nicht im Quelltext, sondern in data/keys/default.keys. Das hat

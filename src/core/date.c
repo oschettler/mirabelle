@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe date.h für den Vertrag.
  *
  * Gerechnet wird über die Tageszahl seit einem festen Nullpunkt: einmal

@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Ein SPARTAN://-Browser, ganz in Lua.
 --
 -- Er ist der Beweis, dass die Anwendungsschnittstelle für etwas taugt, das

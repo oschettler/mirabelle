@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Sortieren und Suchen mit Umlauten.
  *
  * Zwei verschiedene Probleme, und es lohnt sich, sie auseinanderzuhalten:

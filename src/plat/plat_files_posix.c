@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Dateifunktionen der Plattformschicht für alles, was ein POSIX-artiges
  * Dateisystem hat - also für plat_sdl3 und plat_headless gleichermaßen.
  *

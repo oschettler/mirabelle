@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Gemtext: das Format der gespeicherten Datensätze.
  *
  * Drei Kernzeilentypen und drei optionale, keine Auszeichnung im Fließtext,

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Monatskalender: ein Raster aus sieben Spalten.
  *
  * ## Warum das hier kein Schema ist

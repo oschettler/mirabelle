@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Panel: Feld, Layout und Fokusverwaltung aus M8.
  *
  * Die Geometrie wird nicht gegen feste Pixelwerte geprüft, sondern gegen

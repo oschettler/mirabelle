@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Eine Bitmap mit einem Bit je Pixel.
  *
  * Bitreihenfolge: das linkeste Pixel einer Zeile sitzt im höchstwertigen Bit

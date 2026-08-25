@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe query.h für den Vertrag.
  *
  * Zwei Dinge macht diese Datei und sonst nichts: eine Abfrage aufbauen und

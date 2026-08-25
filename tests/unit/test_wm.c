@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Fensterverwaltung aus M6: Themadatei, z-Ordnung, Trefferprüfung,
  * Ziehen und das Zusammenspiel als Bild.
  *

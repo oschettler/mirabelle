@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Netzfunktionen aus plat.h für alles mit BSD-Sockets.
  *
  * Wie plat_files_posix.c eine eigene Datei: der ESP32 bekommt später seine

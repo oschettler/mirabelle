@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Ein Leser für zeilenweise Datendateien.
  *
  * Drei Formate im Projekt haben dieselbe Gestalt: eine Zeile, mehrere durch

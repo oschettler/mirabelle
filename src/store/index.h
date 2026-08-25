@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Index: eine SQLite-Datenbank, die man jederzeit wegwerfen kann.
  *
  * Alles, was hier drinsteht, steht auch in den Dateien des Vaults (D-3). Der

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Takt der Schreibmarke.
  *
  * Eine blinkende Schreibmarke sagt zweierlei: hier landet, was du tippst -

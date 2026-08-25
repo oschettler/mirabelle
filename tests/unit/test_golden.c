@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Prüft den Sollbild-Mechanismus selbst: die beiden Formate und die Größenregel.
  * Ab M2 benutzen ihn die Zeichentests, hier steht er selbst auf dem Prüfstand. */
 

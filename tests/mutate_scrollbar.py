@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Mutationstest fuer src/ui/widget_scroll.c.
 
 Direkt uebersetzt, nicht ueber CMake - warum, steht in tests/mutate_scroll.py.

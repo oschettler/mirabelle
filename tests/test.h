@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Testläufer des Projekts. Bewusst klein und ohne Magie:
  * Ein Test ist eine Funktion, main() zählt sie auf. Mehr braucht es nicht.
  *

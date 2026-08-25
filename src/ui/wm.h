@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Fensterverwaltung.
  *
  * Eine z-sortierte Liste, mehr ist es nicht: von hinten nach vorn zeichnen,

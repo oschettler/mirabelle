@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe menu.h für den Vertrag. Die Optik folgt window.c: Maße aus dem
  * theme, kein Text im Quelltext, Grundlinie statt Oberkante beim Zeichnen.
  */

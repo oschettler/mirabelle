@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Eine Anwendung, die es nur in Lua gibt.
 --
 -- Sie liest Datensätze, ändert sie, schreibt sie zurück und zeichnet. Kein

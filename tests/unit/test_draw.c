@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Tests für die Zeichenprimitive aus gfx/draw.c und gfx/pattern.c. */
 
 #include "test.h"

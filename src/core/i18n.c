@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe i18n.h für den Vertrag und data/lang/de.strings für das Format und die
  * echten Texte.
  *

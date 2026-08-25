@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Mutationstest fuer src/net/spartan.c. Direkt uebersetzt, mit Sanitizer.
 
 Eine Mutation ueberlebt: "fremdes Schema erlaubt". Sie ist gleichwertig, und

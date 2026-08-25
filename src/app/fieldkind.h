@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Feldtyp-Registratur: alles, was ein Feldtyp können muss, an einer Stelle.
  *
  * Ein Datum wird anders angezeigt als gespeichert, ein Wahrheitswert braucht

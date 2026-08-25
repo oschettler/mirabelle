@@ -372,10 +372,13 @@ falschen Code erkennt. Er muss auch *richtigen* Code in Ruhe lassen. Ein
 Wächter, der einen korrekten Aufruf meldet, verliert das Vertrauen aller — und
 wird danach ignoriert, auch wenn er einmal recht hat.
 
-Denselben Dienst tut `tests/plat_count.sh`: es zählt die Deklarationen in
-`src/plat/plat.h` und vergleicht sie mit der Zahl, die Header, `DESIGN.md` und
-dieses Buch nennen. Wo eine Angabe im Text von etwas Zählbarem abhängt, ist ein
-Test billiger als Aufmerksamkeit.
+Denselben Dienst tun zwei weitere Skripte. `tests/plat_count.sh` zählt die
+Deklarationen in `src/plat/plat.h` und vergleicht sie mit der Zahl, die Header,
+`DESIGN.md` und dieses Buch nennen. `tests/license_headers.sh` prüft, dass jede
+Quelldatei ihre Lizenzzeile trägt.
+
+Beide folgen derselben Regel: wo eine Angabe im Text von etwas Zählbarem
+abhängt, ist ein Test billiger als Aufmerksamkeit.
 
 === Zum Ausprobieren
 

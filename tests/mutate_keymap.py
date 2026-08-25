@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Mutationstest fuer src/core/keymap.c.
 
 Uebersetzt bewusst DIREKT, nicht ueber CMake - warum, steht in

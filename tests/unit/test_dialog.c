@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Modale Dialoge aus M7: Öffnen, Zeichnen, Tastatur- und Mausbedienung.
  *
  * Trefferpunkte für die Knöpfe werden aus den Themamaßen und der im

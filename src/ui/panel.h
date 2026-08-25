@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Ein Panel: eine Sammlung von Bedienelementen mit Layout und Fokus.
  *
  * Das Layout ist bewusst ein Stapel und kein Constraint-Solver. Formulare sind

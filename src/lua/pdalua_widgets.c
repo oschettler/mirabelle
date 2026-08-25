@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Bedienelemente für Lua, siehe pdalua.h.
  *
  * Bisher gab es für ein Skript nur die Zeichenfunktionen. Wer einen Rollbalken

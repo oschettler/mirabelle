@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe fontc.h und docs/fnt-format.md für das Format.
  *
  * Der Übersetzer ist das Sicherheitsnetz für handgeschriebene Zeichensätze:

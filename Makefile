@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Bequeme Hülle um CMake, damit "make test" das tut, was die Dokumentation sagt.
 #
 #   make            übersetzen

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Schale, siehe app/shell.h.
  *
  * Hier wird geprüft, was erst im Zusammenspiel entsteht: dass aus Dateien

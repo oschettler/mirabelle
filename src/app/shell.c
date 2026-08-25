@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe shell.h für den Vertrag.
  *
  * Die Datei ist lang, aber sie enthält keine Entscheidung über eine bestimmte

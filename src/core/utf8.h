@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* UTF-8.
  *
  * Zeichenketten sind im ganzen System UTF-8. Niemals wird ein Byte als Zeichen

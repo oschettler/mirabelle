@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Ein Outliner über den Notizen.
 --
 -- Er zeigt jede Notiz als Zeile und klappt sie auf: darunter erscheinen ihre

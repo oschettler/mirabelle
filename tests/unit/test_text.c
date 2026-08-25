@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Textsatz und der Zeichenvorrat-Vertrag.
  *
  * Der Test gegen required.set ist der wichtigste hier: er ist die Stelle, an

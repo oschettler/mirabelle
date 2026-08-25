@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe fieldkind.h für den Vertrag.
  *
  * Jeder Feldtyp ist eine Struktur mit fünf Funktionen. Fehlt einem Typ eine

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Vault: ein Verzeichnis voller Datensätze, sortiert nach Sammlung.
  *
  *     ~/PDA/

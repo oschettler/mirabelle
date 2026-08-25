@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das Modell hinter einer Bildlaufleiste.
  *
  * Drei Zahlen, mehr ist Bildlauf nicht: wie viele Einheiten es insgesamt gibt,

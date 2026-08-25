@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe keymap.h für den Vertrag und data/keys/default.keys für das Format
  * und die echte Belegung.
  *

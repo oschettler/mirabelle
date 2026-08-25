@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Takt der Schreibmarke.
  *
  * Reine Arithmetik über der Uhr, deshalb kein Bild in dieser Datei. Geprüft

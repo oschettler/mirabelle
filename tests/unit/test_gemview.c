@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Gemtext-Ansicht, siehe app/gemview.h.
  *
  * Dasselbe Widget zeigt eine Notiz und eine abgerufene Seite. Geprüft wird

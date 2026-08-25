@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Sollbild-Vergleich.
  *
  * golden_check()      für Ausschnitte, speichert P1 (Text, im Diff lesbar).

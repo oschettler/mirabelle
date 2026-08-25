@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Eine Abfrage ist eine Datenstruktur, keine Zeichenkette.
  *
  * Anwendungen bauen nie SQL zusammen. Sie füllen eine `query` und geben sie

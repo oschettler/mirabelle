@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe index.h für den Vertrag.
  *
  * Das Schema ist absichtlich schmal: eine Zeile je Feldwert, dazu eine

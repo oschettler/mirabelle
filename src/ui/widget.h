@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Bedienelemente.
  *
  * Ein Widget ist wenig: eine Klasse mit vier Funktionen und ein Rechteck.

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Netz und Gemtext für Lua, siehe pdalua.h.
  *
  * Zwei kleine Tische, die zusammen einen Browser möglich machen:

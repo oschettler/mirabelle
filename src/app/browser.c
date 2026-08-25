@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe browser.h für den Vertrag.
  *
  * Die Datei ist länger als die anderen, aber sie enthält keine einzige

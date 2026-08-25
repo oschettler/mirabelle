@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe monthview.h für den Vertrag.
  *
  * Das Raster ist sieben Spalten breit und höchstens sechs Wochen hoch. Sechs,

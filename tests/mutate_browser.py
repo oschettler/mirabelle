@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Mutationstest fuer src/app/browser.c. Direkt uebersetzt, mit Sanitizer.
 Der Sollbildtest bleibt aussen vor - er braucht das Bausystem."""
 import subprocess, pathlib, tempfile, os

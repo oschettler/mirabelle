@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Ein Datensatz: Front Matter plus Gemtext-Körper, in einer Datei.
  *
  * Der Datensatz ist die kleinste Einheit, mit der Anwendungen umgehen. Er

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Lua-Anbindung, siehe lua/pdalua.h.
  *
  * Drei Dinge stehen auf dem Prüfstand: dass die API tut, was sie sagt; dass

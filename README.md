@@ -30,11 +30,12 @@ files are Lua tables, so without Lua there would be no applications at all
 (decision D-16). SQLite is optional: without it every query is answered by
 walking the files.
 
-    make                # build
-    make test           # 41 suites
-    make asan           # the same under the sanitizers
-    ./build/pda         # run it; the vault defaults to ~/PDA
-    ./build/pda --apps  # list what was found, then exit
+    make                   # build
+    make test              # 42 suites
+    make asan              # the same under the sanitizers
+    ./build/pda            # run it; the vault defaults to ~/PDA
+    ./build/pda --apps     # list what was found, then exit
+    ./build/pda --version  # version and licence, then exit
 
 `--vault <dir>` or `PDA_VAULT` points somewhere else, `--lang en` switches the
 catalogue, and `--shot <file.pbm>` writes one frame and exits.
@@ -60,3 +61,24 @@ bit per pixel** — patterns take the place of colour, and that is why an
 overdue task gets a bar rather than a shade of red. And the **index is
 derived**: deleting `index.db` costs nothing, because every query can also be
 answered by walking the files, and a test insists on it.
+
+## License
+
+Copyright (C) 2026 Olav Schettler.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE) for the full text, or
+<https://www.gnu.org/licenses/>.
+
+It is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE.
+
+Every source file carries an `SPDX-License-Identifier: GPL-3.0-or-later` line;
+the data files under [data/](data/) and the handbook under [handbuch/](handbuch/)
+are covered by the same licence.
+
+The libraries this program uses are not bundled and keep their own terms — Lua
+(MIT), SQLite (public domain) and SDL 3 (zlib), all compatible with the GPL.

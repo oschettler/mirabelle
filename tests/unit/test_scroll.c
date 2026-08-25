@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das Bildlaufmodell aus M8.
  *
  * Reine Arithmetik, deshalb keine Bitmap und kein Sollbild in dieser Datei.

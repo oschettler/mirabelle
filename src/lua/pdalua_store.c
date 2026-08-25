@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Zugang zu den Daten aus Lua, siehe pdalua.h.
  *
  * Ein Datensatz ist in Lua eine Tabelle: die Felder unter ihren Namen, der

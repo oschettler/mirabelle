@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe panel.h für den Vertrag.
  *
  * Das Feld der Widgetzeiger wächst wie die z-Liste in wm.c: verdoppeln statt

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* 8 x 8 Füllmuster.
  *
  * Muster ersetzen in einem System mit einem Bit je Pixel die Farbe: der

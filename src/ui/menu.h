@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Menüleiste und Aufklappmenüs im Stil von Macintosh System 1.
  *
  * Menüs sind Daten. Ein Eintrag nennt einen Schlüssel für seinen Text und den

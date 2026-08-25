@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Liste, siehe widget.h für den Vertrag.
  *
  * Baut genauso wie widget.c: struct widget als erstes Feld, eine einzige

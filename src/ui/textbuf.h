@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das Textmodell hinter Textfeldern.
  *
  * Bewusst getrennt vom Widget: Puffer, Schreibmarke, Auswahl und Widerrufen

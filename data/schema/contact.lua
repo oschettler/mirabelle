@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Kontakte. Dieselbe Anwendung wie Aufgaben, andere Felder.
 --
 -- Es gibt keinen Programmcode für Kontakte. Der Browser liest diese Tabelle

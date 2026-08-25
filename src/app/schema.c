@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe schema.h für den Vertrag und data/schema/ für echte Schemata.
  *
  * Der Parser folgt keymap.c, i18n.c und collate.c: jeder Fehler bekommt eine

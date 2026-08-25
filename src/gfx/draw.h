@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Ein kleines QuickDraw.
  *
  * Alle Zeichenoperationen bekommen einen Zeichenzustand (gc) übergeben, statt

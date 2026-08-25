@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Die Zahl im Kommentar von plat.h muss stimmen.
 #
 # Der Kommentar nennt die Zahl der Plattformfunktionen, und dieselbe Zahl steht

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das Listen-Widget aus M8.
  *
  * Panel und Layout gibt es noch nicht (M8 baut sie parallel); die Tests hier

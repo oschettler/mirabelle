@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das Textmodell aus M8: Puffer, Schreibmarke, Auswahl, Bewegen, Widerrufen.
  *
  * Der wichtigste Teil ist nicht, dass Text ankommt, sondern dass die

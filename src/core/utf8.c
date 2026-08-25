@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "utf8.h"
 
 uint32_t utf8_next(const char **p)

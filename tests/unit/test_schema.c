@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Schlussprüfung eines Schemas, siehe app/schema.h.
  *
  * Gelesen werden Schemata aus Lua-Dateien (D-15); dass das Lesen stimmt, steht

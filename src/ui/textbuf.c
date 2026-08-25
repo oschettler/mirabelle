@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe textbuf.h für den Vertrag.
  *
  * Der Puffer ist ein einziges char-Feld, das per realloc wächst und per

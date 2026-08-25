@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Ein Fenster.
  *
  * Der Inhalt ist eine eigene Bitmap mit eigenem Ursprung. Die

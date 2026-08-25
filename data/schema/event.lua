@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Termine. Dieselbe Anwendung wie Aufgaben und Kontakte - mit einer Ausnahme:
 -- die Übersicht ist ein Monatsraster und keine Liste.
 --

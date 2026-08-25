@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe gemview.h für den Vertrag.
  *
  * Der Umbruch entsteht in einer eigenen Liste von Anzeigezeilen, genau wie im

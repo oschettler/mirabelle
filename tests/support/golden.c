@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "support/golden.h"
 
 #include <stdio.h>

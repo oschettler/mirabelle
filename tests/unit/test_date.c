@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Datumsrechnung, siehe core/date.h.
  *
  * Datumscode ist berüchtigt dafür, an genau den Tagen zu versagen, die man

@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Notizen. Am wenigsten Felder von allen - und trotzdem dieselbe Anwendung.
 
 return {

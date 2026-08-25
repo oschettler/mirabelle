@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Modale Dialoge.
  *
  * Ein Dialog ist ein gewöhnliches Fenster mit der Flagge WIN_MODAL; die

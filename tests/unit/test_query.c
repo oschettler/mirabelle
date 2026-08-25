@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Abfragen als Datenstruktur, siehe store/query.h.
  *
  * Hier läuft keine Datenbank. Das ist der Punkt: dieselbe Abfrage, die später

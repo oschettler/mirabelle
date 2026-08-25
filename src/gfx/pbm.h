@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Lesen und Schreiben von PBM-Dateien (Portable Bitmap).
  *
  * Zwei Varianten, mit einer Größenregel dahinter:

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das Bildlaufmodell, siehe scroll.h für den Vertrag.
  *
  * Eine Datei ohne jede Abhängigkeit außer scroll.h: kein Zeichnen, kein

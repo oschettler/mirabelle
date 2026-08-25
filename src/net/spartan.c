@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe spartan.h für den Vertrag.
  *
  * Nichts hier ruft ins Netz. Das Protokoll ist Rechnung auf Bytes; wer sie

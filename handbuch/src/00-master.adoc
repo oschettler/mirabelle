@@ -16,6 +16,7 @@ Olav Schettler
 :revremark: Entwurf, entsteht mit dem Projekt
 :description: Handbuch und Lehrbuch zum PDA-Projekt: ein PIM-Paket im Stil von Macintosh System 1, gebaut in C und Lua, von der ersten Bitmap bis zum eigenen Gerät.
 :keywords: C, Lua, SDL3, ESP32, Bitmapgrafik, Macintosh System 1, Gemtext
+:copyright: Copyright (C) 2026 Olav Schettler. GNU GPL Version 3 oder neuer.
 
 [preface]
 == Vorwort
@@ -105,6 +106,31 @@ eines, das eine Lücke zugibt.
 Alles andere in diesem Buch kannst du nachbauen, ausprobieren und ändern. Wo
 eine Datei genannt wird, gibt es sie.
 ====
+
+=== Die Lizenz
+
+Programm und Buch stehen unter der **GNU General Public License, Version 3
+oder neuer**. Der volle Text liegt als `LICENSE` im Repository, und
+`./build/pda --version` nennt sie dir auch ohne Nachschlagen.
+
+Das heißt in aller Kürze: du darfst das Ganze benutzen, weitergeben und
+verändern — und wenn du eine veränderte Fassung weitergibst, gibst du auch
+deren Quelltext unter denselben Bedingungen weiter. Was du daheim für dich
+änderst, geht niemanden etwas an.
+
+Jede Quelldatei trägt dafür eine Zeile:
+
+[source,c]
+----
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+----
+
+Eine Zeile statt fünfzehn Zeilen Rechtstext je Datei. Sie ist maschinenlesbar,
+und sie sagt dasselbe.
+
+Die Bibliotheken, die das Programm benutzt, liegen nicht im Repository und
+behalten ihre eigenen Bedingungen: Lua (MIT), SQLite (gemeinfrei) und SDL 3
+(zlib). Alle drei vertragen sich mit der GPL.
 
 include::01-einleitung.adoc[leveloffset=+1]
 

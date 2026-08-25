@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das SPARTAN-Protokoll, siehe net/spartan.h.
  *
  * Kein Test hier braucht ein Netz. Der Transport ist ein Rückruf, und der

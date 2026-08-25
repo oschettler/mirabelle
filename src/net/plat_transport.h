@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Transport, der über plat.h geht - die Brücke zwischen dem Protokoll und
  * der Plattformschicht.
  *

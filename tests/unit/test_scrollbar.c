@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Das Rollbalken-Widget.
  *
  * Die Rechnung dahinter ist in test_scroll.c geprüft; hier geht es nur noch um

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Mutationstest fuer src/ui/caret.c.
 
 Uebersetzt bewusst DIREKT, nicht ueber CMake. Ein inkrementelles Bausystem

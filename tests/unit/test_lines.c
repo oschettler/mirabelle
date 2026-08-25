@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der gemeinsame Zeilenleser, siehe core/lines.h.
  *
  * Er trägt drei Dateiformate. Was hier stimmt, stimmt für Thema,

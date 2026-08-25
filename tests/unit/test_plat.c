@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Plattformschicht in ihrer Headless-Umsetzung. */
 
 #include "test.h"

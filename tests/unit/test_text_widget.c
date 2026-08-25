@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Textfelder aus M8, Abschluss des Meilensteins.
  *
  * Panel und Layout gibt es noch nicht flächendeckend; wie in test_list.c wird

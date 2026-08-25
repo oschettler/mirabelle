@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die einfachen Bedienelemente aus M8: label, button, checkbox.
  *
  * Panel und Layout gibt es noch nicht (M8 baut sie parallel); die Tests hier

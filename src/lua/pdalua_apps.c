@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Anwendungen in Lua, siehe pdalua.h.
  *
  * Eine Lua-Anwendung ist eine Tabelle, die sich mit app{} anmeldet:

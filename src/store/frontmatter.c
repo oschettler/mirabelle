@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe frontmatter.h für den Vertrag und das Format.
  *
  * Der Parser folgt i18n.c: jeder Fehler bekommt eine Meldung

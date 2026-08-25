@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe lines.h für den Vertrag. */
 #include "core/lines.h"
 

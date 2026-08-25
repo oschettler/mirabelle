@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Plattformschicht: die gesamte Schnittstelle zur Außenwelt.
  *
  * Neunzehn Funktionen. Wer auf ein neues Gerät portiert, implementiert genau

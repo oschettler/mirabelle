@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Textkatalog.
  *
  * Kein sichtbarer Text steht im Quelltext. Das ist keine Vorratshaltung für

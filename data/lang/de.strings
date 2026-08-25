@@ -41,6 +41,13 @@ dialog.discard.title     = Änderungen verwerfen?
 dialog.discard.body      = „{0}“ wurde geändert. Sollen die Änderungen verworfen werden?
 dialog.about.body        = Ein PIM-Paket im Stil von Macintosh System 1.
 
+# --- Lizenz -----------------------------------------------------------------
+# Zwei Sätze aus der Ausgabe von --version. Sie stehen hier, weil ein Nutzer
+# sie liest; Name, Jahr und Adresse sind keine Übersetzung.
+app.license.terms        = Lizenz GPLv3+: GNU GPL Version 3 oder neuer <https://gnu.org/licenses/gpl.html>
+app.license.free         = Dies ist freie Software: Du darfst sie verändern und weitergeben.
+app.license.warranty     = Es gibt KEINE GARANTIE, soweit das Gesetz es zulässt.
+
 # --- Fenster ----------------------------------------------------------------
 window.desk              = Schreibtisch
 window.keys              = Kürzel

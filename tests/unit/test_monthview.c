@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der Monatskalender, siehe app/monthview.h.
  *
  * Ein Monatsraster hat wenige, aber unangenehme Randfälle: der Monat, der am

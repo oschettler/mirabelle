@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der generische Browser, siehe app/browser.h.
  *
  * Die Beweisführung dieser Datei: dieselben Aufrufe, drei verschiedene

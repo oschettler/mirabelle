@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe wm.h für den Vertrag. */
 #include "ui/wm.h"
 #include "ui/wm_internal.h"

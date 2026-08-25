@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der generische Browser: eine Anwendung, die aus einem Schema entsteht.
  *
  * Aufgaben, Kontakte und Notizen sind derselbe Code (D-7). Was sie

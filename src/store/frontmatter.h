@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Front Matter: die typisierten Felder eines Datensatzes.
  *
  * Gemtext kennt keine Metadaten und keine Kommentare, deshalb steht am Anfang

@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Aufgaben.
 --
 -- Diese Datei ist die Anwendung. Es gibt keinen Programmcode für Aufgaben -

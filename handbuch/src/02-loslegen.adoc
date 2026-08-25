@@ -72,7 +72,7 @@ Test  #4: golden ........... Passed
 Test  #6: utf8 ............. Passed
 Test #13: wm ............... Passed
 ...
-100% tests passed out of 41
+100% tests passed out of 42
 ----
 
 Ein Teil dieser Testsuiten vergleicht gezeichnete Bilder mit
@@ -166,6 +166,17 @@ bequemer:
 Dann bleibt dein richtiger Vault unangetastet. `--lang en` schaltet die
 Sprache um.
 ====
+
+=== --version: Fassung und Lizenz
+
+[source,bash]
+----
+./build/pda --version
+----
+
+Nennt die Fassung, den Urheber und die Lizenz — und beendet sich, ohne ein
+Fenster zu öffnen. Das ist die Ausgabe, die man von einem GNU-Programm
+erwartet, und sie funktioniert auch dort, wo es gar keinen Bildschirm gibt.
 
 === --shot: der eigene Bildspeicher als Datei
 

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe pdalua.h für den Vertrag.
  *
  * Der Zustand hält seine C-Seite in der Registry, nicht in Dateiglobalen: so

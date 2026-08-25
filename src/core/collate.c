@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe collate.h für den Vertrag und data/lang/de.sort für eine Tabelle.
  *
  * Der Parser folgt keymap.c und i18n.c: jeder Fehler bekommt eine Meldung

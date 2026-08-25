@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Gemeinsamer, nicht öffentlicher Zustand von window.c und wm.c.
  *
  * Kein Aufrufer außerhalb dieser beiden Dateien darf diese Datei einbinden -

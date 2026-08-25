@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Headless-Umsetzung der Plattformschicht.
  *
  * Sie ist keine Notlösung, sondern der Grund, warum sich fast alles ohne

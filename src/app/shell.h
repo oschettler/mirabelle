@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Die Schale: das Programm, das aus den Bausteinen eine Anwendung macht.
  *
  * Bis hierher gab es Fenster, Widgets, Schemata, einen Browser, einen

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Datumsrechnung auf dem bürgerlichen Kalender.
  *
  * Ein Datum ist hier drei Zahlen, und im Speicher ist es die Zeichenkette

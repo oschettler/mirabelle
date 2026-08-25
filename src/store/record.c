@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Siehe record.h für den Vertrag.
  *
  * Ein Datensatz ist nur ein Front-Matter-Block (siehe frontmatter.c) und ein

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Sortieren und Suchen, siehe core/collate.h.
  *
  * Die Tabellen kommen aus data/, nicht aus dem Test: was hier geprüft wird,

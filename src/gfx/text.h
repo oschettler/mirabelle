@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Textsatz.
  *
  * Text ist UTF-8. Die Glyphensuche geht über den Codepunkt, nie über ein Byte.

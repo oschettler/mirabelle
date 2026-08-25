@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Der SQLite-Index, siehe store/index.h.
  *
  * Der wichtigste Test dieser Datei ist der letzte: Index wegwerfen, neu

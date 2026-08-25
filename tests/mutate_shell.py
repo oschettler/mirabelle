@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Mutationstest fuer src/app/shell.c. Direkt uebersetzt, mit Sanitizer.
 
 Drei Mutationen ueberleben, und alle drei aus gutem Grund:
