@@ -149,6 +149,13 @@ Der Versatz geht von der *Größe* ab, nicht nur von der Lage. Sonst hinge das
 sechste Fenster unten aus dem Bildschirm heraus, und seine untere Kante samt
 Größenfeld wäre nicht mehr zu greifen.
 
+Der Rollbalken endet über dem Größenfeld, nicht darunter. Beide sind gleich
+breit — 16 Pixel im Thema —, und das Größenfeld wird über den Inhalt gezeichnet:
+eine Leiste, die bis zum unteren Rand liefe, verlöre genau ihren unteren Pfeil.
+In System 1 war das keine Kollision, sondern die Anordnung. Wo diese Ecke
+liegt, sagt `window_grow_box_in_content()`; die Fensterverwaltung ist die
+einzige Stelle, die es weiß, und alle anderen fragen sie.
+
 Beim Kalender gibt es keinen Rollbalken. Er blättert monatsweise, nicht
 zeilenweise — und ein Balken, der nichts zu rollen hat, wäre eine Bedienung,
 die keine ist.

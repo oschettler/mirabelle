@@ -115,23 +115,25 @@ einfrieren.
 
 === Der Browser ist ein Skript
 
-`data/apps/spartan.lua` ist knapp dreihundert Zeilen Lua, die Hälfte davon
-Kommentar. Es benutzt aus C wenige Dinge:
+`data/apps/spartan.lua` ist gut zweihundert Zeilen Lua, die Hälfte davon
+Kommentar. Es benutzt aus C:
 
 [source,lua]
 ----
 net.fetch(adresse)           -- holt eine Seite
 net.resolve(basis, verweis)  -- löst einen Verweis auf
-gemtext.parse(text)          -- zerlegt eine Seite in Zeilen
-scrollbar()                  -- der Rollbalken des Programms
+gemview()                    -- die Gemtext-Anzeige des Programms
+scrollbar(ansicht)           -- der Rollbalken, an diese Anzeige gehängt
 caret()                      -- der Takt der Schreibmarke
 ----
 
-Alles andere macht es selbst: den Umbruch, die Nummerierung der Verweise, die
-Auswahl, den Verlauf, die Tastatur.
+Was das Skript selbst macht, ist genau das, was den Browser zum Browser macht:
+die Adresszeile, den Verlauf und die Frage, was kbd:[Return] gerade bedeutet —
+die gezeigte Adresse holen oder dem gewählten Verweis folgen.
 
-Der Rollbalken und die Schreibmarke stehen bewusst in dieser Liste, obwohl das
-Skript beide auch selbst zeichnen könnte.
+Alles andere kann es nicht besser als das Programm, nur anders: umbrechen,
+Verweise durchzählen, sie mit Ziffern auswählen, blättern. Deshalb steht die
+Anzeige in der Liste oben und nicht im Skript.
 
 [NOTE]
 ====
@@ -140,13 +142,21 @@ sobald sich das Original ändert, und niemand merkt es: der Nachbau hat eigene
 Tests oder gar keine, und ein fehlender Pfeil fällt erst auf, wenn jemand ein
 Bild davon ansieht. Wenn ein Skript etwas nachbaut, das es im Programm schon
 gibt, ist das ein Loch in der Schnittstelle, kein Fleiß.
+
+Das ist Entscheidung D-17, und sie hat eine Kehrseite, die man mitdenken muss:
+die Schnittstelle muss dann auch hergeben, was ein Skript braucht. Der
+Rollbalken hängt deshalb wahlweise *an* einer Anzeige — beide teilen sich ein
+Bildlaufmodell, und es gibt keine zweite Zahl, die jemand abgleichen müsste.
 ====
 
-Verweise werden nummeriert und als `[3] Name` gezeigt. Das ist die Darstellung
-textbasierter Gemini-Browser, und sie hat hier einen handfesten Grund: bei
-einem Bit je Pixel gibt es keine Farbe, an der ein Verweis zu erkennen wäre,
-und Unterstreichen macht Text schlechter lesbar. Die Nummer sagt außerdem, was
-man tippen kann.
+Verweise werden nummeriert und als `[3] Name` gezeigt — das macht die Anzeige,
+nicht das Skript (`src/app/gemview.c`). Es ist die Darstellung textbasierter
+Gemini-Browser, und sie hat hier einen handfesten Grund: bei einem Bit je Pixel
+gibt es keine Farbe, an der ein Verweis zu erkennen wäre, und Unterstreichen
+macht Text schlechter lesbar. Die Nummer sagt außerdem, was man tippen kann.
+
+Dieselbe Anzeige zeigt eine Notiz aus dem Vault und eine abgerufene Seite. Das
+ist keine Sparsamkeit, sondern folgt daraus, dass beides Gemtext ist (D-12).
 
 === Warum das Abrufen die Oberfläche anhält
 

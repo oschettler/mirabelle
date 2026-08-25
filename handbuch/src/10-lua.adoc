@@ -274,24 +274,27 @@ print(zaehler.wert)      -- 1
 anderen Sprachen kennt: das ist alles, was Lua dazu mitbringt — den Rest baut
 man sich bei Bedarf aus Tabellen.
 
-Genau in dieser Form sind die Widgets dieses Projekts gedacht: eine Tabelle mit
-vier Funktionen.
+Genau so werden die Bedienelemente des Programms von Lua aus bedient. Sie sind
+keine Tabellen, sondern Benutzerdaten — Lua hält einen Zeiger auf das echte
+Widget aus C —, aber der Doppelpunkt funktioniert gleich:
 
 [source,lua]
 ----
-local knopf = {
-    beschriftung = "OK",
+local ansicht = gemview()
+local balken  = scrollbar(ansicht)
 
-    mess = function(self)
-        return text_width(self.beschriftung) + 12, 18
-    end,
+ansicht:place(2, oben, breite, hoehe)
+ansicht:set_text(seite)
+ansicht:draw()
 
-    zeichne = function(self, g, r)
-        rect(r.x, r.y, r.w, r.h)
-        print(self.beschriftung, r.x + 6, r.y + 4)
-    end,
-}
+if ansicht:event(e) then
+    if ansicht:was_opened() then folge(ansicht:selected()) end
+end
 ----
+
+Dass es die echten Widgets sind und keine nachgebauten, ist Absicht und in
+Kapitel 12 begründet. Für dich heißt es: was du hier bedienst, sieht genauso
+aus und verhält sich genauso wie in Aufgaben, Kontakten und Notizen.
 
 === Module
 
