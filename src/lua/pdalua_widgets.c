@@ -108,6 +108,8 @@ void pdalua_set_theme(lua_State *L, const theme *th)
         { "button_gap",   th->button_gap },
         { "dialog_pad",   th->dialog_pad },
         { "scrollbar_w",  th->scrollbar_w },
+        { "grow_box",     th->grow_box },
+        { "box_margin",   th->box_margin },
     };
 
     for (size_t i = 0; i < sizeof n / sizeof n[0]; i++) {

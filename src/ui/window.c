@@ -115,6 +115,18 @@ bool window_is_active(const window *w)
     return w->active;
 }
 
+rect window_grow_box_in_content(const window *w)
+{
+    rect cr = window_content_rect(w);
+
+    /* Ohne Größenfeld das leere Rechteck in der Ecke - nicht bei (0,0). Wer
+     * Platz dafür lässt, lässt dann keinen, und braucht keinen Sonderfall. */
+    if (!(w->flags & WIN_RESIZABLE)) return rect_make(cr.w, cr.h, 0, 0);
+
+    rect box = window_grow_box_rect(w);
+    return rect_make(box.x - cr.x, box.y - cr.y, box.w, box.h);
+}
+
 rect window_content_rect(const window *w)
 {
     const theme *th = w->th;

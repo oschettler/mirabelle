@@ -834,11 +834,20 @@ TEST(the_scrollbar_next_to_the_list_works)
     REQUIRE(scroll_max(m) > 0);
     CHECK_EQ(m->value, 0);
 
-    /* Auf das untere Pfeilfeld des Rollbalkens: ganz rechts im Inhalt, ganz
-     * unten. */
-    rect cr = window_content_rect(shell_app_window(s, tasks));
-    click_in(s, tasks, cr.w - g_theme.scrollbar_w / 2, cr.h - 4, 1);
+    /* Auf das untere Pfeilfeld des Rollbalkens: ganz rechts im Inhalt, und
+     * unten - aber über dem Größenfeld. Die Leiste endet davor, weil beide
+     * gleich breit sind und der Pfeil sonst darunter läge. */
+    window *win = shell_app_window(s, tasks);
+    rect    cr  = window_content_rect(win);
+    rect    gb  = window_grow_box_in_content(win);
+    REQUIRE(!rect_empty(gb));
 
+    click_in(s, tasks, cr.w - g_theme.scrollbar_w / 2, gb.y - 4, 1);
+    CHECK_EQ(m->value, 1);
+
+    /* Und in der Ecke darunter sitzt das Größenfeld, nicht mehr die Leiste.
+     * Genau dort hat vorher ein Klick nichts getan: der Pfeil war verdeckt. */
+    click_in(s, tasks, cr.w - g_theme.scrollbar_w / 2, gb.y + gb.h / 2, 1);
     CHECK_EQ(m->value, 1);
 
     /* Und die Auswahl hat sich dabei NICHT bewegt - ein Rollbalken verschiebt

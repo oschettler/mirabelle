@@ -42,6 +42,17 @@ bool        window_is_active(const window *w);
 /* Der Inhaltsbereich in Bildschirmkoordinaten. */
 rect window_content_rect(const window *w);
 
+/* Das Größenfeld, in Koordinaten des Inhalts. Ohne Größenfeld das leere
+ * Rechteck in der unteren rechten Ecke: wer Platz dafür lässt, lässt dann
+ * keinen, und braucht keinen Sonderfall.
+ *
+ * Gebraucht wird das, weil das Größenfeld ÜBER den Inhalt gezeichnet wird und
+ * genauso breit ist wie eine Bildlaufleiste: eine Leiste, die bis zum unteren
+ * Rand reicht, verschwindet mit ihrem unteren Pfeil darunter. In System 1 war
+ * das keine Kollision, sondern die Anordnung - das Größenfeld saß in der Ecke,
+ * in der die Leisten enden, und die Leisten hörten davor auf. */
+rect window_grow_box_in_content(const window *w);
+
 /* Zeichenziel für den Inhalt. Der Ursprung liegt bei (0,0) des Inhalts. */
 void window_gc(window *w, gc *g);
 

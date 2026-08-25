@@ -131,28 +131,38 @@ app{
       mode("copy")
     end
 
-    -- Solange nichts geholt wurde, steht hier, was zu tun ist. Ein leeres
-    -- Fenster, in dem man raten muss, ist keine Bedienoberfläche.
+    -- Die Zeile unten: der Inhaltstyp der geholten Seite, eine Meldung, oder
+    -- - solange nichts geholt wurde - was zu tun ist. Ein leeres Fenster, in
+    -- dem man raten muss, ist keine Bedienoberfläche.
+    --
+    -- Sie steht unten und nicht oben, weil dort die Antwort hingehört: oben
+    -- die Frage, in der Mitte die Seite, unten was daraus geworden ist.
     local status = browser.status
     if status == "" and view:link_count() == 0 then status = T("spartan.hint") end
 
-    local y = lh + 10
+    -- Das Größenfeld wird über den Inhalt gezeichnet und sitzt in der unteren
+    -- rechten Ecke. Anzeige, Balken und Meldung hören davor auf - sonst läge
+    -- der untere Pfeil des Balkens darunter, und ein Klick darauf täte nichts.
+    local foot = h - lh - 2
+    local y    = lh + 10
+
     if status ~= "" then
-      print(status, 6, y)
-      y = y + lh
+      clip(4, foot, w - 8 - theme.grow_box, lh)
+      print(status, 6, foot + 1)
+      clip()
     end
 
     -- Anzeige und Balken stehen nebeneinander im selben Rahmen wie die
-    -- Adresszeile darüber. Einen Trennstrich braucht es nicht mehr: die
-    -- Anzeige zeichnet ihren eigenen Rand, und zwei Striche übereinander
-    -- sähen aus wie ein Fehler.
+    -- Adresszeile darüber. Einen Trennstrich braucht es nicht: die Anzeige
+    -- zeichnet ihren eigenen Rand, und zwei Striche übereinander sähen aus wie
+    -- ein Fehler.
     --
     -- Erst die Anzeige, dann der Balken: die Anzeige bricht beim Zeichnen um
     -- und stellt dabei das gemeinsame Modell auf ihre neue Zeilenzahl ein.
-    view:place(2, y, w - 4 - BAR, h - y - 2)
+    view:place(2, y, w - 4 - BAR, foot - y - 2)
     view:draw()
 
-    bar:place(w - 2 - BAR, y, BAR, h - y - 2)
+    bar:place(w - 2 - BAR, y, BAR, foot - y - 2)
     bar:draw()
   end,
 

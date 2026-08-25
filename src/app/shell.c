@@ -570,8 +570,14 @@ static void layout_app(shell *s, app_entry *a)
     rect area = rect_make(0, 0, cr.w - bw + (bw ? 1 : 0), cr.h);
     browser_layout(a->br, area);
 
-    if (a->bar)
-        a->bar->frame = rect_make(area.w - 1, 0, bw, cr.h);
+    if (!a->bar) return;
+
+    /* Die Leiste endet über dem Größenfeld, statt darunter zu verschwinden.
+     * Beide sind gleich breit (window.h), also läge sonst genau der untere
+     * Pfeil darunter - und der Nutzer klickte auf einen Pfeil, der nichts
+     * tut, weil er gar nicht da ist. */
+    rect gb = window_grow_box_in_content(a->win);
+    a->bar->frame = rect_make(area.w - 1, 0, bw, gb.y);
 }
 
 /* Wertet einen beantworteten Dialog aus und räumt ihn weg.

@@ -148,9 +148,20 @@ static int l_rrectfill(lua_State *L)
     return 0;
 }
 
+/* clip(x, y, w, h) schränkt ein, clip() hebt die Einschränkung wieder auf.
+ *
+ * Ohne die zweite Form müsste sich ein Skript merken, wie groß sein Fenster
+ * ist, nur um eine Einschränkung zurückzunehmen - und hätte die Zahl dann
+ * zweimal. */
 static int l_clip(lua_State *L)
 {
     GC_OR_RETURN(L);
+
+    if (lua_isnoneornil(L, 1)) {
+        gc_clip(g, rect_make(0, 0, g->dst->w, g->dst->h));
+        return 0;
+    }
+
     gc_clip(g, rect_args(L));
     return 0;
 }

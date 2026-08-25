@@ -719,6 +719,46 @@ TEST(golden_wm_drag_outline)
     wm_destroy(m);
 }
 
+TEST(the_grow_box_says_how_much_room_to_leave)
+{
+    /* Das Größenfeld wird ÜBER den Inhalt gezeichnet und ist genauso breit wie
+     * eine Bildlaufleiste. Wer eine Leiste an den rechten Rand legt, muss also
+     * wissen, wo sie aufzuhören hat - sonst liegt ihr unterer Pfeil darunter,
+     * und ein Klick darauf tut nichts. */
+    theme th = load_test_theme();
+    wm   *m  = wm_create(&th, 400, 300);
+    REQUIRE(m);
+
+    window *w = wm_open(m, rect_make(10, 10, 200, 120), "A", WIN_NORMAL);
+    REQUIRE(w);
+
+    rect cr = window_content_rect(w);
+    rect gb = window_grow_box_in_content(w);
+
+    CHECK_EQ(gb.w, th.grow_box);
+    CHECK_EQ(gb.h, th.grow_box);
+
+    /* Es sitzt in der unteren rechten Ecke des Inhalts, nicht daneben. */
+    CHECK(gb.y > 0);
+    CHECK(gb.y < cr.h);
+    CHECK(gb.x + gb.w >= cr.w);
+    CHECK(gb.y + gb.h >= cr.h);
+
+    /* Ein Fenster ohne Größenfeld gibt das leere Rechteck in der Ecke zurück.
+     * Wer daran Platz lässt, lässt keinen - und braucht keinen Sonderfall. */
+    window *p = wm_open(m, rect_make(10, 150, 200, 120), "B", WIN_PLAIN);
+    REQUIRE(p);
+
+    rect pcr = window_content_rect(p);
+    rect pgb = window_grow_box_in_content(p);
+
+    CHECK(rect_empty(pgb));
+    CHECK_EQ(pgb.y, pcr.h);
+    CHECK_EQ(pgb.x, pcr.w);
+
+    wm_destroy(m);
+}
+
 int main(void)
 {
     RUN(theme_load_reads_real_file);
@@ -726,6 +766,7 @@ int main(void)
     RUN(theme_load_rejects_unreadable_number);
 
     RUN(wm_open_activates_and_orders);
+    RUN(the_grow_box_says_how_much_room_to_leave);
     RUN(click_on_back_window_raises_it);
 
     RUN(close_notifies_the_owner);

@@ -43,6 +43,9 @@ DEPS = ["src/app/schema.c", "src/app/fieldkind.c", "src/app/browser.c",
 orig = SRC.read_text(encoding="utf-8")
 
 MUTS = [
+ ("Leiste reicht unter das Groessenfeld",
+  "    a->bar->frame = rect_make(area.w - 1, 0, bw, gb.y);",
+  "    a->bar->frame = rect_make(area.w - 1, 0, bw, cr.h);"),
  ("nur die erste Schemadatei", "    for (int i = 0; i < n && s->app_count < APPS_MAX; i++) {\n        if (entries[i].is_dir) continue;", "    for (int i = 0; i < 1; i++) {\n        if (entries[i].is_dir) continue;"),
  ("auch Verzeichnisse als Schema", "        if (entries[i].is_dir) continue;", "        (void)0;"),
  ("jede Datei als Schema",      "        if (!ends_with(entries[i].name, s->cfg.schemas->suffix)) continue;", "        (void)0;"),
