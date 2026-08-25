@@ -114,7 +114,7 @@ Die Zahl selbst verdient eine Anmerkung. Beim Entwurf standen hier zwölf.
 `plat_mkdir` kam dazu, weil der Vault Verzeichnisse anlegen muss;
 `plat_rename` und `plat_remove` für sicheres Speichern — erst vollständig in
 eine Nebendatei schreiben, dann darüberlegen; die vier Netzfunktionen mit dem
-SPARTAN-Browser. `DESIGN.md` kommentiert das selbst:
+Spartan-Browser. `DESIGN.md` kommentiert das selbst:
 
 [quote, DESIGN.md, Abschnitt 3]
 ____

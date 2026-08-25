@@ -135,5 +135,17 @@ bool schema_check(const schema *s, const char *path, char *err, size_t err_size)
         return fail(err, err_size, path, 0,
                     "sort nennt „%s“, aber es gibt kein solches Feld", s->sort);
 
+    if (s->title_field[0]) {
+        const schema_field *f = schema_field_by_name(s, s->title_field);
+        if (!f)
+            return fail(err, err_size, path, 0,
+                        "title_field nennt „%s“, aber es gibt kein solches Feld",
+                        s->title_field);
+        if (f->kind != FIELD_TEXT)
+            return fail(err, err_size, path, 0,
+                        "title_field braucht ein Feld vom Typ text; „%s“ ist %s",
+                        s->title_field, schema_kind_name(f->kind));
+    }
+
     return true;
 }

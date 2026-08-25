@@ -156,6 +156,58 @@ Der Versatz geht von der *Größe* ab, nicht nur von der Lage. Sonst hinge das
 sechste Fenster unten aus dem Bildschirm heraus, und seine untere Kante samt
 Größenfeld wäre nicht mehr zu greifen.
 
+=== Der Titel sagt, was zu sehen ist
+
+Ein Fenstertitel, der immer dasselbe Wort zeigt, sagt nichts. Deshalb ändert er
+sich mit der Ansicht:
+
+[cols="1,2", options="header"]
+|===
+|Ansicht |Titel
+
+|Übersicht
+|Die Sammlung — „Aufgaben"
+
+|Kalender
+|Der gezeigte Monat — „2026-03"
+
+|Einzelansicht
+|Der Datensatz, dahinter sein Typ — „Milch kaufen (Aufgabe)"
+
+|Skript
+|Was das Skript meldet, dahinter sein Name — „Die Hauptseite (Spartan)"
+|===
+
+Drei Angaben stecken dahinter, und alle drei stehen in Dateien:
+
+Welches Feld einen Datensatz benennt, sagt das Schema mit `title_field`. Es ist
+wahlfrei; fehlt es, nennt der Titel nur den Typ. Geraten wird nichts — „das
+erste Textfeld im Formular" wäre eine Regel, die bei der fünften Anwendung
+zufällig danebengeht.
+
+Den Typ in der Einzahl holt der Katalog über den Schlüssel `<label>.one`, also
+`app.tasks.one = Aufgabe`. Das ist derselbe Weg, auf dem `Tn()` seine
+Pluralformen findet. Fehlt der Schlüssel, entfällt die Klammer — lieber weniger
+sagen als einen Schlüssel anzeigen.
+
+Ein Skript sagt seinen Titel selbst, über `window_title` in seiner
+Anwendungstabelle. Es liefert nur den Text; die Klammer mit dem Namen der
+Anwendung setzt die Schale, damit kein Skript sie nachbauen muss.
+
+[source,lua]
+----
+window_title = function()
+  return browser.heading or browser.address
+end,
+----
+
+Gerechnet wird der Titel beim Zeichnen, nicht bei jeder Änderung. Das ist
+billiger als es klingt — es sind zwei Katalogzugriffe je Bild — und es kann
+nicht veralten: es gibt keine Stelle, an der jemand vergessen könnte, ihn
+nachzuziehen.
+
+=== Der Rollbalken und das Größenfeld
+
 Der Rollbalken endet über dem Größenfeld, nicht darunter. Beide sind gleich
 breit — 16 Pixel im Thema —, und das Größenfeld wird über den Inhalt gezeichnet:
 eine Leiste, die bis zum unteren Rand liefe, verlöre genau ihren unteren Pfeil.

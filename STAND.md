@@ -28,7 +28,7 @@ Mutationsprüfstände laufen ohne unerklärte Überlebende.
 | — | Die Schale: Fenster, Menüs, Rollbalken, Dialoge, Skriptanwendungen |
 
 Das Programm trägt sieben Anwendungen: **Aufgaben, Kontakte, Notizen, Termine**
-aus je einer Schemadatei und **SPARTAN, Gliederung, Agenda** aus je einer
+aus je einer Schemadatei und **Spartan, Gliederung, Agenda** aus je einer
 Lua-Datei. Keine davon wird im C-Code namentlich genannt.
 
     ./build/mirabelle              starten, Vault unter ~/PDA

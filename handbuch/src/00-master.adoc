@@ -102,7 +102,7 @@ lesen.
 ====
 Das Projekt entsteht in siebzehn Schritten, die im Fahrplan `ROADMAP.md`
 stehen. Gebaut sind **M1 bis M13** und **M17**: von der Bitmap bis zu den
-Anwendungen, der Skriptanbindung und dem SPARTAN-Browser.
+Anwendungen, der Skriptanbindung und dem Spartan-Browser.
 
 Offen sind drei: M14 (aufgezeichnete Bedienabläufe), M15 (Touch und
 Bildschirmtastatur) und M16 (der Port auf das Gerät). Die Kapitel darüber

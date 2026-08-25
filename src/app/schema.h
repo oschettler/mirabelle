@@ -120,6 +120,16 @@ typedef struct {
      * jemand ihn öffnet. */
     schema_view view;
     char        view_field[SCHEMA_NAME_MAX];
+
+    /* Das Feld, das einen einzelnen Datensatz benennt - der Titel einer
+     * Notiz, der Name eines Kontakts. Es steht im Fenstertitel, sobald der
+     * Datensatz allein zu sehen ist.
+     *
+     * Wahlfrei. Fehlt es, nennt der Fenstertitel nur den Typ; geraten wird
+     * nichts. Es muss vom Typ text sein, und schema_check besteht darauf -
+     * ein Datum als Fenstertitel wäre in der Rohform zu lesen, in der es im
+     * Datensatz steht, und das ist keine Überschrift. */
+    char title_field[SCHEMA_NAME_MAX];
 } schema;
 
 /* Prüft ein fertig gefülltes Schema: Kopf vollständig, jedes Feld brauchbar,

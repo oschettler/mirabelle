@@ -30,7 +30,7 @@ seven applications:
 | Application | Comes from |
 |---|---|
 | Tasks, Contacts, Notes, Events | one schema file each, no code |
-| SPARTAN browser, Outline, Agenda | one Lua file each, no code |
+| Spartan browser, Outline, Agenda | one Lua file each, no code |
 
 Building needs a C11 compiler, CMake 3.18, SDL 3 and **Lua 5.4** — the schema
 files are Lua tables, so without Lua there would be no applications at all
@@ -63,7 +63,7 @@ Nothing that a user can change is compiled in. Screen layout, key bindings,
 every visible string, the sort order, the glyphs and the applications
 themselves are files under [data/](data/); a fifth application is a fifth file.
 
-A script gets the program's own widgets, not copies of them: the SPARTAN
+A script gets the program's own widgets, not copies of them: the Spartan
 browser scrolls with the same scrollbar and lays out gemtext with the same view
 as the built-in applications (D-17). A rebuilt widget is a second truth, and it
 drifts the moment the original changes.

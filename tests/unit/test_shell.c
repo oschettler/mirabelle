@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "app/monthview.h"
 #include "app/shell.h"
 #include "lua/pdalua.h"
 #include "core/collate.h"
@@ -605,6 +606,97 @@ static void pick_menu_item(shell *s, int x, int item)
     shell_event(s, &esc);
 }
 
+/* --- Der Fenstertitel ------------------------------------------------------- */
+
+/* Zeichnet einmal - der Titel entsteht beim Zeichnen, weil dort ohnehin
+ * feststeht, welche Ansicht gerade offen ist. */
+static void draw_once(shell *s)
+{
+    bitmap bm;
+    if (!bitmap_init(&bm, SCREEN_W, SCREEN_H)) return;
+
+    gc g;
+    gc_init(&g, &bm);
+    shell_draw(s, &g);
+    bitmap_free(&bm);
+}
+
+TEST(the_title_says_which_view_is_open)
+{
+    /* Übersicht: die Sammlung. Einzelansicht: der Datensatz, dahinter sein Typ
+     * in der Einzahl. Beides steht im Katalog, keines im Code. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    char err[256] = "";
+    int  tasks = app_by_label(s, "app.tasks");
+    REQUIRE(shell_open_app(s, tasks, err, sizeof err));
+
+    window  *win = shell_app_window(s, tasks);
+    browser *br  = shell_app_browser(s, tasks);
+    REQUIRE(win != NULL);
+    REQUIRE(br != NULL);
+
+    draw_once(s);
+    CHECK_STR(window_title(win), T(g_cat, "app.tasks"));
+
+    /* Einen Datensatz öffnen. Welcher es ist, entscheidet die Sortierung; der
+     * Test liest den Titel aus dem Datensatz selbst, statt ihn zu erraten. */
+    browser_select(br, 0);
+    REQUIRE(browser_open_selected(br, err, sizeof err));
+    CHECK_EQ(browser_view_of(br), BROWSE_FORM);
+
+    widget *feld = browser_form_widget(br, "title");
+    REQUIRE(feld != NULL);
+
+    char erwartet[128];
+    snprintf(erwartet, sizeof erwartet, "%s (%s)",
+             text_widget_value(feld), "Aufgabe");
+
+    draw_once(s);
+    CHECK_STR(window_title(win), erwartet);
+
+    /* Und zurück in die Übersicht. */
+    browser_cancel(br);
+    draw_once(s);
+    CHECK_STR(window_title(win), T(g_cat, "app.tasks"));
+
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(a_calendar_shows_its_month)
+{
+    /* Die Übersicht eines Kalenders ist ein Monat, keine Liste - also steht im
+     * Titel, welcher Monat zu sehen ist. */
+    REQUIRE(setup());
+
+    shell *s = open_shell();
+    REQUIRE(s != NULL);
+
+    char err[256] = "";
+    int  events = app_by_label(s, "app.events");
+    REQUIRE(shell_open_app(s, events, err, sizeof err));
+
+    window  *win = shell_app_window(s, events);
+    browser *br  = shell_app_browser(s, events);
+    REQUIRE(win != NULL);
+    REQUIRE(browser_month(br) != NULL);
+
+    REQUIRE(monthview_select(browser_month(br), (date){ 2026, 3, 9 }));
+    draw_once(s);
+    CHECK_STR(window_title(win), "2026-03");
+
+    REQUIRE(monthview_select(browser_month(br), (date){ 2026, 12, 1 }));
+    draw_once(s);
+    CHECK_STR(window_title(win), "2026-12");
+
+    shell_destroy(s);
+    teardown();
+}
+
 TEST(the_mirabelle_menu_says_what_this_is)
 {
     /* Das erste Menü hat genau einen Eintrag, und der sagt, was das Programm
@@ -1024,16 +1116,25 @@ TEST(a_dialog_takes_everything_while_it_is_open)
  */
 
 typedef struct {
-    int  count;
-    int  updated, drawn, evented;
-    bool consume;
+    int         count;
+    int         updated, drawn, evented;
+    bool        consume;
+    const char *window_title;   /* NULL: die Schale nimmt den Namen der Anwendung */
+
+    /* Der Katalogschlüssel, unter dem die Anwendung läuft. NULL nimmt die
+     * eingebauten. Ein Test, dem es auf Einzahl und Mehrzahl ankommt, setzt
+     * hier einen Schlüssel, bei dem sich beide unterscheiden - bei „Agenda"
+     * und „Gliederung" tun sie das nicht. */
+    const char *label;
 } fake_scripts;
 
 static int fs_count(void *user) { return ((fake_scripts *)user)->count; }
 
 static const char *fs_title(void *user, int index)
 {
-    (void)user;
+    const fake_scripts *f = user;
+    if (f->label) return f->label;
+
     static const char *titles[] = { "app.agenda", "app.outline" };
     if (index < 0 || index >= 2) return NULL;
     return titles[index];
@@ -1056,6 +1157,15 @@ static void fs_draw(void *user, int index, gc *g, int w, int h)
     gfx_frame_rect(g, rect_make(0, 0, w, h));
 }
 
+/* Ein Skript, das seinen Fenstertitel selbst bestimmt. NULL heißt: der Name
+ * der Anwendung soll stehenbleiben. */
+static const char *fs_window_title(void *user, int index)
+{
+    (void)index;
+    fake_scripts *f = user;
+    return f->window_title;
+}
+
 static bool fs_event(void *user, int index, const event *e)
 {
     (void)index; (void)e;
@@ -1068,7 +1178,8 @@ static bool fs_event(void *user, int index, const event *e)
 static shell *open_shell_with_keys(fake_scripts *f, shell_scripting *sc,
                                    keymap *km)
 {
-    *sc = (shell_scripting){ f, fs_count, fs_title, fs_update, fs_draw, fs_event };
+    *sc = (shell_scripting){ f, fs_count, fs_title, fs_update, fs_draw, fs_event,
+                             fs_window_title };
 
     shell_config cfg = {
         .data_dir = PDA_DATA_DIR, .vault = g_vault, .theme = &g_theme,
@@ -1086,6 +1197,100 @@ static shell *open_shell_with_keys(fake_scripts *f, shell_scripting *sc,
 static shell *open_shell_with(fake_scripts *f, shell_scripting *sc)
 {
     return open_shell_with_keys(f, sc, g_km);
+}
+
+TEST(a_script_can_name_its_own_window)
+{
+    /* Ein Skript zeigt, was es gerade anzeigt - eine abgerufene Seite etwa.
+     * Den Namen der Anwendung setzt die Schale dahinter, damit ein Skript ihn
+     * nicht selbst zusammenbauen muss. */
+    REQUIRE(setup());
+
+    fake_scripts    f  = { .count = 1 };
+    shell_scripting sc;
+    shell          *s = open_shell_with(&f, &sc);
+    REQUIRE(s != NULL);
+
+    char err[256] = "";
+    int  app = app_by_label(s, "app.agenda");
+    REQUIRE(shell_open_app(s, app, err, sizeof err));
+
+    window *win = shell_app_window(s, app);
+    REQUIRE(win != NULL);
+
+    /* Ohne Angabe bleibt der Name der Anwendung stehen. */
+    draw_once(s);
+    CHECK_STR(window_title(win), T(g_cat, "app.agenda"));
+
+    f.window_title = "Die Hauptseite";
+    draw_once(s);
+    CHECK_STR(window_title(win), "Die Hauptseite (Agenda)");
+
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(an_empty_script_title_leaves_the_application_name)
+{
+    /* Ein leerer Titel ist wie keiner: dann steht dort der Name der Anwendung
+     * in der Mehrzahl, so wie er im Menü steht - nicht die Einzahl, die sonst
+     * in der Klammer stünde. Der Unterschied ist nur zu sehen, wenn sich beide
+     * unterscheiden, deshalb läuft dieses Skript unter „app.tasks". */
+    REQUIRE(setup());
+
+    fake_scripts    f  = { .count = 1, .label = "app.tasks" };
+    shell_scripting sc;
+    shell          *s = open_shell_with(&f, &sc);
+    REQUIRE(s != NULL);
+
+    /* Die Skripte kommen hinter den Anwendungen aus den Schemadateien; der
+     * Schlüssel taugt hier also nicht zum Suchen. */
+    int app = shell_app_count(s) - 1;
+    REQUIRE(app >= 0);
+
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, app, err, sizeof err));
+
+    window *win = shell_app_window(s, app);
+    REQUIRE(win != NULL);
+
+    f.window_title = "";
+    draw_once(s);
+    CHECK_STR(window_title(win), "Aufgaben");
+
+    f.window_title = "Etwas";
+    draw_once(s);
+    CHECK_STR(window_title(win), "Etwas (Aufgabe)");
+
+    shell_destroy(s);
+    teardown();
+}
+
+TEST(without_a_singular_the_bracket_stays_empty)
+{
+    /* Fehlt der Schlüssel „<label>.one", entfällt die Klammer. Der Schlüssel
+     * selbst darf dort niemals stehen - er sähe aus wie ein Fehler, weil er
+     * einer wäre. */
+    REQUIRE(setup());
+
+    fake_scripts    f  = { .count = 1, .label = "menu.file" };
+    shell_scripting sc;
+    shell          *s = open_shell_with(&f, &sc);
+    REQUIRE(s != NULL);
+
+    int  app = shell_app_count(s) - 1;
+    char err[256] = "";
+    REQUIRE(shell_open_app(s, app, err, sizeof err));
+
+    window *win = shell_app_window(s, app);
+    REQUIRE(win != NULL);
+
+    f.window_title = "Etwas";
+    draw_once(s);
+    CHECK_STR(window_title(win), "Etwas");
+
+    shell_destroy(s);
+    teardown();
 }
 
 TEST(scripts_become_applications_too)
@@ -1383,6 +1588,11 @@ int main(void)
     RUN(a_shortcut_and_the_menu_do_the_same_thing);
     RUN(a_click_reaches_the_list_in_the_active_window);
 
+    RUN(the_title_says_which_view_is_open);
+    RUN(a_calendar_shows_its_month);
+    RUN(a_script_can_name_its_own_window);
+    RUN(an_empty_script_title_leaves_the_application_name);
+    RUN(without_a_singular_the_bracket_stays_empty);
     RUN(the_mirabelle_menu_says_what_this_is);
     RUN(the_menu_bar_opens_an_application);
     RUN(return_opens_a_record_and_escape_closes_it_again);

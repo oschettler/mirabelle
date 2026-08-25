@@ -15,6 +15,8 @@ return {
   view       = "month",
   view_field = "date",
 
+  title_field = "title",   -- steht im Fenstertitel, wenn der Datensatz allein zu sehen ist
+
   sort    = "date",
   columns = { "date", "title" },
   form    = { "title", "date", "time", "body" },

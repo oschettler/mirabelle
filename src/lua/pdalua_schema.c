@@ -188,6 +188,10 @@ static bool read_schema(lua_State *L, int tbl, schema *s, char *err, size_t err_
                   &s->form_count, err, err_size))
         return false;
 
+    if (!get_string(L, tbl, "title_field", s->title_field,
+                    sizeof s->title_field, err, err_size))
+        return false;
+
     char view[SCHEMA_NAME_MAX];
     if (!get_string(L, tbl, "view", view, sizeof view, err, err_size)) return false;
 

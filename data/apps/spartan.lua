@@ -40,12 +40,22 @@ browser = {
   editing = false,   -- steht die Schreibmarke in der Adresszeile?
   status  = "",
   history = {},
+  heading = nil,     -- die erste Überschrift der Seite, für den Fenstertitel
 
   -- Nach außen sichtbar, damit ein Test dorthin klicken kann, wo ein Nutzer
   -- klickt, und von der Konsole aus sehen kann, was angezeigt wird.
   view      = view,
   scrollbar = bar,
 }
+
+-- Die erste Überschrift einer Seite. Sie ist das, was ein Browser als Titel
+-- zeigt; hat die Seite keine, bleibt die Adresse übrig.
+local function first_heading(body)
+  for _, line in ipairs(gemtext.parse(body)) do
+    if line.kind == "heading" and line.text ~= "" then return line.text end
+  end
+  return nil
+end
 
 function browser.go(url, remember)
   browser.status = T("spartan.loading")
@@ -55,6 +65,8 @@ function browser.go(url, remember)
     browser.status = why or T("spartan.failed")
     return false
   end
+
+  browser.heading = nil
 
   if page.status == 3 then
     -- Umleitungen werden gezeigt, nicht verfolgt. Wer ihnen von selbst folgt,
@@ -77,6 +89,7 @@ function browser.go(url, remember)
 
   browser.address = page.url or url
   browser.status  = page.meta
+  browser.heading = first_heading(page.body)
   view:set_text(page.body)
   return true
 end
@@ -113,6 +126,12 @@ end
 app{
   name  = "spartan",
   title = "app.spartan",
+
+  -- Was im Fenstertitel steht: die Überschrift der Seite, sonst die Adresse.
+  -- Den Namen der Anwendung setzt die Schale selbst dahinter.
+  window_title = function()
+    return browser.heading or browser.address
+  end,
 
   draw = function(w, h)
     cls()

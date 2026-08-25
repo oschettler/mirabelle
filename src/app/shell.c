@@ -14,6 +14,7 @@
 #include "app/browser.h"
 #include "gfx/font.h"
 #include "gfx/text.h"
+#include "app/monthview.h"
 #include "app/schema.h"
 #include "ui/dialog.h"
 #include "ui/menu.h"
@@ -590,6 +591,88 @@ void shell_run_action(shell *s, const char *action)
 /* Verteilt den Inhalt eines Fensters: die Übersicht bekommt alles außer dem
  * Streifen rechts, auf dem der Rollbalken sitzt. Ein Pixel Überlappung, damit
  * beide sich die Randlinie teilen - dieselbe Regel wie überall. */
+/* --- Der Fenstertitel ----------------------------------------------------------
+ *
+ * Er sagt, was man gerade vor sich hat, und ändert sich deshalb mit der
+ * Ansicht:
+ *
+ *   Übersicht        die Sammlung - „Aufgaben"
+ *   Kalender         der gezeigte Monat - „2026-08"
+ *   Einzelansicht    der Datensatz, dahinter sein Typ - „Milch kaufen (Aufgabe)"
+ *   Skript           was das Skript meldet, dahinter sein Name
+ *
+ * Den Singular holt Tn() über den Schlüssel `<label>.one`. Fehlt er im
+ * Katalog, entfällt die Klammer - lieber weniger sagen als den Schlüssel
+ * anzeigen.
+ */
+static void singular(const shell *s, const char *label, char *out, size_t n)
+{
+    char key[160];
+    snprintf(key, sizeof key, "%s.one", label);
+
+    if (i18n_has(s->cfg.catalog, key)) Tn(s->cfg.catalog, label, 1, out, n);
+    else if (n)                        out[0] = '\0';
+}
+
+static void compose_title(const char *what, const char *type,
+                          char *out, size_t n)
+{
+    if (what && *what && type && *type) snprintf(out, n, "%s (%s)", what, type);
+    else if (what && *what)             snprintf(out, n, "%s", what);
+    else                                snprintf(out, n, "%s", type ? type : "");
+}
+
+static void update_title(shell *s, app_entry *a)
+{
+    if (!a->win) return;
+
+    char type[128] = "";
+    singular(s, a->label, type, sizeof type);
+
+    char title[128] = "";
+
+    if (a->kind == APP_SCRIPT) {
+        const char *what = NULL;
+
+        if (s->cfg.scripts && s->cfg.scripts->window_title)
+            what = s->cfg.scripts->window_title(s->cfg.scripts->user, a->script);
+
+        if (what && *what) compose_title(what, type, title, sizeof title);
+        else               snprintf(title, sizeof title, "%s",
+                                    T(s->cfg.catalog, a->label));
+
+        window_set_title(a->win, title);
+        return;
+    }
+
+    if (!a->br) return;
+
+    if (browser_view_of(a->br) == BROWSE_FORM) {
+        const char *what = NULL;
+
+        if (a->sch.title_field[0]) {
+            widget *f = browser_form_widget(a->br, a->sch.title_field);
+            if (f) what = text_widget_value(f);
+        }
+
+        compose_title(what, type, title, sizeof title);
+        window_set_title(a->win, title);
+        return;
+    }
+
+    /* Die Übersicht eines Kalenders zeigt einen Monat, keine Sammlung. Welchen,
+     * steht im Raster selbst - die Schale rechnet ihn nicht nach. */
+    widget *cal = browser_month(a->br);
+    if (cal) {
+        date m = monthview_month(cal);
+        snprintf(title, sizeof title, "%04d-%02d", m.year, m.month);
+    } else {
+        snprintf(title, sizeof title, "%s", T(s->cfg.catalog, a->label));
+    }
+
+    window_set_title(a->win, title);
+}
+
 static void layout_app(shell *s, app_entry *a)
 {
     rect cr = window_content_rect(a->win);
@@ -692,12 +775,14 @@ void shell_draw(shell *s, gc *g)
             rect cr = window_content_rect(a->win);
 
             if (s->cfg.scripts->update) s->cfg.scripts->update(s->cfg.scripts->user, a->script);
+            update_title(s, a);
             if (s->cfg.scripts->draw)   s->cfg.scripts->draw(s->cfg.scripts->user, a->script,
                                                              &wg, cr.w, cr.h);
             continue;
         }
 
         layout_app(s, a);
+        update_title(s, a);
         browser_draw(a->br, &wg);
         if (a->bar) widget_draw(a->bar, &wg);
     }

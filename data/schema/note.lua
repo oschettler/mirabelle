@@ -6,6 +6,8 @@ return {
   folder = "Notizen",
   label  = "app.notes",
 
+  title_field = "title",   -- steht im Fenstertitel, wenn der Datensatz allein zu sehen ist
+
   sort    = "title",
   columns = { "title" },
   form    = { "title", "body" },

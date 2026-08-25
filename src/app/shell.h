@@ -78,6 +78,17 @@ typedef struct {
     void (*update)(void *user, int index);
     void (*draw)(void *user, int index, gc *g, int w, int h);
     bool (*event)(void *user, int index, const event *e);
+
+    /* Was gerade im Fenstertitel stehen soll, oder NULL.
+     *
+     * Fertiger Text, kein Katalogschlüssel: was ein Skript dort zeigt, ist der
+     * Titel einer abgerufenen Seite oder der Name einer geöffneten Datei, und
+     * beides steht in keinem Katalog. Den Namen der Anwendung setzt die Schale
+     * selbst dahinter.
+     *
+     * Darf NULL sein, und darf NULL liefern: dann steht dort wie bisher der
+     * Name der Anwendung. */
+    const char *(*window_title)(void *user, int index);
 } shell_scripting;
 
 typedef struct {

@@ -1453,6 +1453,37 @@ TEST(a_long_page_gets_a_working_scrollbar)
     i18n_free(cat);
 }
 
+TEST(the_browser_names_its_window_after_the_page)
+{
+    /* Ein Browser zeigt im Fenstertitel, was er anzeigt: die erste Überschrift
+     * der Seite. Hat sie keine, bleibt die Adresse übrig - eine Seite ohne
+     * Titel ist immer noch irgendwo her. */
+    catalog *cat = load_cat();
+    REQUIRE(cat != NULL);
+
+    lua_State *L = with_browser(cat);
+    REQUIRE(L != NULL);
+
+    shell_scripting sc = pdalua_scripting(L);
+    REQUIRE(sc.window_title != NULL);
+
+    /* Vor dem ersten Abruf steht dort die Startadresse. */
+    const char *t = sc.window_title(sc.user, 0);
+    REQUIRE(t != NULL);
+    CHECK(strstr(t, "spartan://") != NULL);
+
+    CHECK(run(L, "browser.heading = 'Die Hauptseite'"));
+    CHECK_STR(sc.window_title(sc.user, 0), "Die Hauptseite");
+
+    /* Ohne Überschrift die Adresse. */
+    CHECK(run(L, "browser.heading = nil\n"
+                 "browser.address = 'spartan://x.org/ohne'"));
+    CHECK_STR(sc.window_title(sc.user, 0), "spartan://x.org/ohne");
+
+    pdalua_close(L);
+    i18n_free(cat);
+}
+
 TEST(the_browser_draws_a_page)
 {
     catalog *cat = load_cat();
@@ -1659,6 +1690,7 @@ int main(void)
     RUN(typing_a_digit_selects_a_link_and_two_digits_select_a_later_one);
     RUN(a_letter_starts_a_new_address_and_backspace_shortens_it);
     RUN(a_long_page_gets_a_working_scrollbar);
+    RUN(the_browser_names_its_window_after_the_page);
     RUN(the_browser_draws_a_page);
     RUN(the_address_line_blinks_in_the_same_beat_as_every_text_field);
 

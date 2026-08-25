@@ -134,7 +134,7 @@ ist es leer; deine Daten liegen unter `~/PDA`, und dort ist noch nichts.
 
 Im Menü „Anwendungen“ stehen sieben Einträge. Vier davon — Aufgaben, Kontakte,
 Notizen, Termine — entstehen aus je einer Datei in `data/schema/`. Die anderen
-drei — SPARTAN, Gliederung, Agenda — sind Lua-Skripte in `data/apps/`. Keine
+drei — Spartan, Gliederung, Agenda — sind Lua-Skripte in `data/apps/`. Keine
 davon steht namentlich im C-Quelltext.
 
 Wer sich das ansehen will, ohne ein Fenster zu öffnen:

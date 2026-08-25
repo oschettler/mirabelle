@@ -299,6 +299,42 @@ TEST(the_calendar_field_is_not_the_sort_field)
     CHECK(strstr(err, "sort") != NULL);
 }
 
+/* --- Der Name eines Datensatzes ---------------------------------------------- */
+
+TEST(a_title_field_must_exist_and_be_text)
+{
+    /* title_field sagt, welches Feld einen einzelnen Datensatz benennt. Es
+     * steht im Fenstertitel; ein Datum stünde dort in der Rohform, in der es
+     * im Datensatz steht, und das ist keine Überschrift. */
+    schema s;
+    char   err[256] = "";
+
+    good(&s);
+    snprintf(s.title_field, sizeof s.title_field, "title");
+    CHECK(ok(&s, err, sizeof err));
+
+    snprintf(s.title_field, sizeof s.title_field, "gibtsnicht");
+    CHECK(!ok(&s, err, sizeof err));
+    CHECK(strstr(err, "gibtsnicht") != NULL);
+
+    snprintf(s.title_field, sizeof s.title_field, "due");   /* ein Datum */
+    CHECK(!ok(&s, err, sizeof err));
+    CHECK(strstr(err, "date") != NULL);
+}
+
+TEST(no_title_field_is_allowed)
+{
+    /* Ohne Angabe nennt der Fenstertitel nur den Typ. Geraten wird nichts -
+     * „das erste Textfeld im Formular" ginge bei der fünften Anwendung
+     * zufällig daneben. */
+    schema s;
+    char   err[256] = "";
+
+    good(&s);
+    s.title_field[0] = '\0';
+    CHECK(ok(&s, err, sizeof err));
+}
+
 /* --- Die Meldung ------------------------------------------------------------------- */
 
 TEST(the_message_names_the_file)
@@ -346,6 +382,9 @@ int main(void)
     RUN(a_list_view_needs_nothing_else);
     RUN(a_calendar_needs_a_date_field_that_exists);
     RUN(the_calendar_field_is_not_the_sort_field);
+
+    RUN(a_title_field_must_exist_and_be_text);
+    RUN(no_title_field_is_allowed);
 
     RUN(the_message_names_the_file);
     RUN(a_check_without_an_error_buffer_does_not_crash);

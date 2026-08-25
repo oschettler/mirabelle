@@ -79,8 +79,11 @@ bool.no                  = Nein
 
 # --- Die Anwendungen aus data/schema/ ---------------------------------------
 app.tasks                = Aufgaben
+app.tasks.one            = Aufgabe
 app.contacts             = Kontakte
+app.contacts.one         = Kontakt
 app.notes                = Notizen
+app.notes.one            = Notiz
 
 field.title              = Titel
 field.due                = Fällig
@@ -99,6 +102,7 @@ value.privat             = Privat
 value.arbeit             = Arbeit
 value.einkauf            = Einkauf
 app.events               = Termine
+app.events.one           = Termin
 field.date               = Datum
 field.time               = Uhrzeit
 
@@ -109,9 +113,12 @@ gemtext.bullet           = *
 menu.apps                = Anwendungen
 menu.file.delete         = Löschen
 app.agenda               = Agenda
+app.agenda.one           = Agenda
 app.outline              = Gliederung
+app.outline.one          = Gliederung
 outline.empty            = Noch keine Notizen.
-app.spartan              = SPARTAN
+app.spartan              = Spartan
+app.spartan.one          = Spartan
 spartan.loading          = wird geholt ...
 spartan.failed           = Fehlgeschlagen.
 spartan.redirect         = Weiterleitung nach

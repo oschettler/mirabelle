@@ -278,7 +278,7 @@ schreiben. Du hast zwei Wege, und beide brauchen keinen Übersetzer:
   Texten aus dem Katalog und demselben Thema wie jede andere Anwendung.
 
 * Ein **Lua-Skript** in `data/apps/` zeichnet selbst. Das ist der Weg für
-  alles, was keine Liste von Datensätzen ist — der SPARTAN-Browser etwa.
+  alles, was keine Liste von Datensätzen ist — der Spartan-Browser etwa.
 
 Wie beides geht, steht im Kapitel über Lua und in dem darauf folgenden über
 die API.

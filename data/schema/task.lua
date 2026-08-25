@@ -16,6 +16,8 @@ return {
   folder = "Aufgaben",
   label  = "app.tasks",
 
+  title_field = "title",   -- steht im Fenstertitel, wenn der Datensatz allein zu sehen ist
+
   sort    = "due",
   columns = { "done", "title", "due" },
   form    = { "title", "due", "priority", "category", "done", "body" },

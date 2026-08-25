@@ -9,6 +9,8 @@ return {
   folder = "Kontakte",
   label  = "app.contacts",
 
+  title_field = "name",   -- steht im Fenstertitel, wenn der Datensatz allein zu sehen ist
+
   sort    = "name",
   columns = { "name", "city", "phone" },
   form    = { "name", "city", "phone", "email", "body" },

@@ -118,6 +118,9 @@ einfrieren.
 
 === Der Browser ist ein Skript
 
+Die Anwendung heißt *Spartan*, das Protokoll *SPARTAN* - der eine Name steht im
+Menü, der andere in der Adresszeile.
+
 `data/apps/spartan.lua` ist gut zweihundert Zeilen Lua, die Hälfte davon
 Kommentar. Es benutzt aus C:
 
@@ -190,7 +193,7 @@ Dateien löschen können, auch nicht versehentlich.
 
 === Zum Ausprobieren
 
-. Starte das Programm, öffne SPARTAN im Menü und drücke kbd:[Return], ohne
+. Starte das Programm, öffne Spartan im Menü und drücke kbd:[Return], ohne
   etwas zu tippen. Was passiert, und warum steht in der Statuszeile etwas
   anderes als vorher?
 

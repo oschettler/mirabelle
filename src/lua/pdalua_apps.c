@@ -324,9 +324,37 @@ static bool sc_event(void *user, int index, const event *e)
     return used;
 }
 
+/* Was das Skript gerade im Fenstertitel sehen will.
+ *
+ * Anders als sc_title() ist das kein Katalogschlüssel, sondern fertiger Text -
+ * der Titel einer abgerufenen Seite etwa. Er entsteht bei jedem Aufruf neu,
+ * und sobald er vom Lua-Stapel verschwindet, gehört er niemandem mehr. Deshalb
+ * die Kopie: der Zeiger gilt bis zum nächsten Aufruf, wie shell.h es zusagt. */
+static const char *sc_window_title(void *user, int index)
+{
+    static char buf[128];
+
+    lua_State *L = user;
+    if (!push_method(L, index, "window_title")) return NULL;
+
+    lua_remove(L, -2);
+
+    if (lua_pcall(L, 0, 1, 0) != LUA_OK) {
+        report(L, "window_title");
+        return NULL;
+    }
+
+    const char *title = lua_tostring(L, -1);
+    if (title) snprintf(buf, sizeof buf, "%s", title);
+    lua_pop(L, 1);
+
+    return title ? buf : NULL;
+}
+
 shell_scripting pdalua_scripting(lua_State *L)
 {
-    shell_scripting sc = { L, sc_count, sc_title, sc_update, sc_draw, sc_event };
+    shell_scripting sc = { L, sc_count, sc_title, sc_update, sc_draw, sc_event,
+                           sc_window_title };
     return sc;
 }
 

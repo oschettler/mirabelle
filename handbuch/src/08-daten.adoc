@@ -273,6 +273,8 @@ return {
   folder = "Aufgaben",
   label  = "app.tasks",              -- Schlüssel im Textkatalog
 
+  title_field = "title",             -- benennt einen einzelnen Datensatz
+
   sort    = "due",
   columns = { "done", "title", "due" },
   form    = { "title", "due", "priority", "category", "done", "body" },
@@ -295,7 +297,9 @@ Lies das Zeile für Zeile: `folder` sagt, wo die Dateien dieses Typs liegen —
 Front-Matter-Feld mit seiner Art (`kind`) auf: Text, Datum, eine Auswahl aus
 festen Werten, ein Wahrheitswert. `columns` sind die Spalten der Liste, `form`
 die Felder des Formulars in der Reihenfolge, in der man sie eingibt, und `sort`
-das Feld, nach dem sortiert wird.
+das Feld, nach dem sortiert wird. `title_field` sagt, welches Feld einen
+einzelnen Datensatz benennt — es steht im Fenstertitel, sobald der Datensatz
+allein zu sehen ist.
 
 Genau ein Feld darf `gemtext` sein. Es ist kein Feld im Front Matter, sondern
 der Körper des Datensatzes — und einen Körper hat ein Datensatz nur einmal.

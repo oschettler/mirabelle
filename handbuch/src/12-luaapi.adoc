@@ -23,11 +23,18 @@ app{
   draw  = function(w, h) end, -- Pflicht; w und h sind der Inhaltsbereich
   event = function(e) end,    -- true zurückgeben heißt: verbraucht
   update = function() end,    -- einmal je Bild, vor draw
+
+  window_title = function() return "..." end,   -- was im Fenstertitel steht
 }
 ----
 
 `title` und `draw` sind Pflicht; fehlt eines, meldet das Laden einen Fehler und
 die Anwendung erscheint nicht. Alles andere ist wahlfrei.
+
+`title` ist ein Katalogschlüssel und steht im Menü. `window_title` dagegen
+liefert fertigen Text — den Titel einer abgerufenen Seite etwa, der in keinem
+Katalog steht. Die Klammer mit dem Namen der Anwendung setzt die Schale
+dahinter; ein Skript baut sie nicht selbst.
 
 === Ereignisse
 
@@ -230,7 +237,7 @@ jedem Bauen geprüft.
   Meldung her?
 
 . Zeichne in deiner Anwendung eine Schreibmarke, die im richtigen Takt blinkt.
-  Vergleiche sie mit der Adresszeile im SPARTAN-Browser: sieht sie gleich aus?
+  Vergleiche sie mit der Adresszeile im Spartan-Browser: sieht sie gleich aus?
 
 . Häng einen `scrollbar()` an einen `gemview()` und lass dir mit
   `balken:value()` und `ansicht:link_count()` anzeigen, was passiert, wenn du

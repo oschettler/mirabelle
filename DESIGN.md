@@ -184,7 +184,7 @@ Verzeichnisse anlegen muss, `plat_rename` und `plat_remove` für sicheres
 Speichern: erst vollständig in eine Nebendatei schreiben, dann darüberlegen.
 Bricht das Programm mittendrin ab, steht die alte Fassung noch da statt einer
 halben neuen — bei Nutzerdaten ist das kein Luxus. Die vier Netzfunktionen
-kamen mit dem SPARTAN-Browser.
+kamen mit dem Spartan-Browser.
 
 Die Zahl ist keine Zusage, wohl aber die Größenordnung: diese Schicht bleibt
 klein genug, dass eine Portierung überschaubar ist.
@@ -690,7 +690,7 @@ ist der eigentliche:
 2. **Es ist zeilenorientiert.** Jede Zeile steht für sich, Umbruch macht der
    Darsteller. Das passt genau zu einem Bildschirm, dessen Breite sich zwischen
    Arbeitsplatz und Gerät nicht ändert, aber dessen Fenster der Nutzer zieht.
-3. **Der Notizen-Darsteller und der SPARTAN-Browser aus M17 sind dieselbe
+3. **Der Notizen-Darsteller und der Spartan-Browser aus M17 sind dieselbe
    Funktion.** Eine Notiz anzeigen und eine abgerufene Seite anzeigen ist
    derselbe Vorgang. Mit Markdown hätten wir zwei Darsteller gebraucht und
    irgendwann zwei verschiedene Vorstellungen davon, was eine Überschrift ist.
@@ -778,6 +778,8 @@ return {
   type   = "task",
   folder = "Aufgaben",
   label  = "app.tasks",              -- Schlüssel im Textkatalog
+
+  title_field = "title",             -- benennt einen einzelnen Datensatz
 
   sort    = "due",
   columns = { "done", "title", "due" },
@@ -1156,7 +1158,7 @@ Zeichenkette im Quelltext.
 | D-9 | 800 × 480 auf beiden Zielen, Vergrößerung nur in der Anzeige | Was du entwickelst, ist pixelgenau was das Gerät zeigt; Sollbilder gelten für beide Seiten. Auf derselben Platine unabhängig bestätigt (12.2) |
 | D-10 | Touch ist ein Zeiger ohne Hover, Trefferflächen kommen aus dem Thema | Die Plattformschicht wächst dadurch nicht |
 | D-11 | Bildschirmtastatur ist ein gewöhnliches Fenster | Erzeugt normale Ereignisse; der Rest des Systems merkt nichts. Eine externe Tastatur über USB oder BLE ist damit kein Sonderfall, sondern derselbe Weg (12.5) |
-| D-12 | Textkörper in Gemtext statt Markdown | Ein Parser mit einem Bit Zustand; Notizendarsteller und SPARTAN-Browser werden dieselbe Funktion |
+| D-12 | Textkörper in Gemtext statt Markdown | Ein Parser mit einem Bit Zustand; Notizendarsteller und Spartan-Browser werden dieselbe Funktion |
 | D-13 | Textmodell getrennt vom Textwidget | Der schwierigste Teil eines Editors ist die Schreibmarke, nicht das Zeichnen — getrennt ist er ohne Bildschirm prüfbar |
 | D-14 | Elementmaße nach dem Style Guide, Auflösung und Schrift nicht | Ein Style Guide beschreibt das Aussehen; womit man es erreicht, bleibt Sache des Projekts |
 | D-15 | Der Schemavertrag ist die C-Struktur, nicht die Lua-Tabelle | Lesen und Prüfen bleiben getrennt: der Leser prüft die Gestalt der Datei, `schema_check` die Anwendung dahinter. Ein zweiter Lader bräuchte keine zweite Prüfung |
