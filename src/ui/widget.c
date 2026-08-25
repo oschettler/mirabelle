@@ -254,10 +254,14 @@ const char *button_action(const widget *w)
 
 /* --- Kontrollkästchen ---------------------------------------------------------
  *
- * Kantenlänge wie das Schließfeld (theme.close_box) - passt optisch und
- * spart ein eigenes Themafeld, genau wie im Meilenstein verlangt. Aus
- * demselben Grund dient theme.menu_pad als Abstand zwischen Quadrat und
- * Text: dieselbe Zahl polstert schon den Text in Knöpfen und Menüs.
+ * Kantenlänge aus theme.check_box, zwölf Pixel nach dem Style Guide.
+ *
+ * Früher borgte sich das Kästchen dafür theme.close_box - beide waren zwölf,
+ * und ein Feld weniger im Thema schien ein Gewinn. Es war keiner: das
+ * Schließfeld ist inzwischen elf Pixel hoch, weil die sechs Linien der
+ * Titelleiste genau auf seiner Ober- und Unterkante enden sollen. Damit
+ * schrumpften auf einmal alle Kästchen mit. Zwei Maße, die dieselbe Zahl
+ * haben, aber verschiedene Fragen beantworten, gehören getrennt.
  */
 
 typedef struct {
@@ -269,7 +273,7 @@ typedef struct {
 static void checkbox_measure(widget *w, int *pw, int *ph)
 {
     const checkbox_widget *cw  = (const checkbox_widget *)w;
-    int                     box = w->th->close_box;
+    int                     box = w->th->check_box;
     int                     tw  = text_width(&system12, T(w->cat, cw->key));
 
     if (pw) *pw = box + w->th->check_gap + tw;
@@ -279,7 +283,7 @@ static void checkbox_measure(widget *w, int *pw, int *ph)
 static void checkbox_draw(const widget *w, gc *g)
 {
     const checkbox_widget *cw  = (const checkbox_widget *)w;
-    int                     box = w->th->close_box;
+    int                     box = w->th->check_box;
     rect r = rect_make(w->frame.x, w->frame.y + (w->frame.h - box) / 2, box, box);
 
     g->pat  = PAT_WHITE;

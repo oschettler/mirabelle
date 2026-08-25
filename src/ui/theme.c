@@ -21,6 +21,7 @@ void theme_defaults(theme *th)
     th->close_box_left  = 7;
     th->box_margin      = 0;
     th->stripe_gap      = 2;
+    th->stripe_inset    = 3;
     th->title_pad       = 6;
     th->hit_slop        = 0;
     th->min_w           = 96;
@@ -41,6 +42,7 @@ void theme_defaults(theme *th)
     th->button_pad      = 6;
     th->default_ring    = 3;
     th->default_gap     = 1;
+    th->check_box       = 12;
     th->check_gap       = 6;
     th->scrollbar_w     = 16;
     snprintf(th->font, sizeof th->font, "%s", "system12");
@@ -70,6 +72,7 @@ bool theme_load(theme *th, const char *path, char *err, size_t err_size)
         { "close_box_left", &th->close_box_left },
         { "box_margin", &th->box_margin },
         { "stripe_gap", &th->stripe_gap },
+        { "stripe_inset", &th->stripe_inset },
         { "title_pad", &th->title_pad },
         { "hit_slop", &th->hit_slop },
         { "min_w", &th->min_w },
@@ -90,6 +93,7 @@ bool theme_load(theme *th, const char *path, char *err, size_t err_size)
         { "button_pad", &th->button_pad },
         { "default_ring", &th->default_ring },
         { "default_gap", &th->default_gap },
+        { "check_box", &th->check_box },
         { "check_gap", &th->check_gap },
         { "scrollbar_w", &th->scrollbar_w },
     };

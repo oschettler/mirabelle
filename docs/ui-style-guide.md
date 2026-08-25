@@ -28,12 +28,12 @@ Fenster bestehen aus vordefinierten funktionalen Komponenten:
 | Komponente | Pixel-Maß | Beschreibung / Stil |
 |---|---|---|
 | Titelzeile (Title Bar) | 20 px Höhe | Beinhaltet den Fenstertitel (Chicago 12pt, zentriert). |
-| Titelzeilen-Textur | 6 Linien | Wenn das Fenster aktiv ist, wird der Titel von je 6 horizontalen, schwarzen 1-Pixel-Linien flankiert (mit 1 Pixel Abstand zueinander). |
+| Titelzeilen-Textur | 6 Linien | Wenn das Fenster aktiv ist, wird der Titel von je 6 horizontalen, schwarzen 1-Pixel-Linien flankiert (mit 1 Pixel Abstand zueinander). Die Linien enden 3 px vor dem Rahmen, nicht an ihm. |
 | Rahmen (Border) | 1 px | Umlaufender, tiefschwarzer Rahmen um das gesamte Fenster. |
-| Schließfeld (Go-Away Box) | 12 × 12 px | Sitzt oben links in der Titelzeile. Abstand: 4 px von oben, 7 px von links. |
+| Schließfeld (Go-Away Box) | 11 × 11 px | Sitzt oben links in der Titelzeile. Abstand: 5 px von oben, 7 px von links. Ober- und Unterkante liegen genau auf der ersten und der letzten der sechs Linien — sechs Linien im Abstand von 2 px überspannen 11 Pixel, ein 12 px hohes Feld endete eine Zeile darunter. |
 | Scrollbars (Bildlaufleisten) | 16 px Breite | Sitzen rechts/unten. Nutzen das klassische graue 50%-Schachbrettmuster (0xAA/0x55) als Hintergrund. |
 | Scroll-Pfeile | 16 × 16 px | Quadratische Quadrate an den Enden der Scrollbars mit zentrierten Pfeil-Bitmaps. |
-| Größenfeld (Size Box / Grow Window) | 16 × 16 px | Ganz unten rechts in der Ecke der Scrollbar-Kreuzung. |
+| Größenfeld (Size Box / Grow Window) | 16 × 16 px | Ganz unten rechts in der Ecke der Scrollbar-Kreuzung. Darin zwei ineinandergeschobene Quadrate: das kleinere hinten links oben, das größere davor rechts unten. |
 
 ------------------------------
 ## 4. UI-Elemente: Buttons, Checkboxen & Paddings

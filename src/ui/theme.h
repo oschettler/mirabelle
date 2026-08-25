@@ -27,6 +27,7 @@ typedef struct {
     int close_box_left;
     int box_margin;      /* Abstand des Größenfelds vom Rand */
     int stripe_gap;    /* Abstand der Streifen in der aktiven Titelleiste */
+    int stripe_inset;  /* so weit enden die Streifen vor dem Rahmen */
     int title_pad;     /* Luft links und rechts vom Titel */
     int hit_slop;      /* Trefferfläche wächst um so viel über das Gezeichnete */
     int min_w, min_h;  /* kleinste Fenstergröße */
@@ -50,6 +51,7 @@ typedef struct {
     int default_ring;    /* Strichstärke des Rahmens um den Voreinstellungsknopf */
     int default_gap;     /* Weißraum zwischen Knopf und diesem Rahmen */
 
+    int check_box;       /* Kantenlänge eines Kontrollkästchens */
     int check_gap;       /* Abstand zwischen Kästchen und Beschriftung */
     int scrollbar_w;     /* Breite einer Bildlaufleiste */
 

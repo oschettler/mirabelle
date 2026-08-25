@@ -183,11 +183,22 @@ void window_draw(const window *w, gc *g)
 
     gfx_hline(g, r.x, r.y + th->titlebar_h, r.w);
 
+    /* Die Streifen laufen genau von der Ober- zur Unterkante des Schließfelds.
+     * Das ist keine Zahl, die zufällig passt: sie kommt aus dem Feld selbst,
+     * damit beide nicht auseinanderlaufen können, wenn jemand am Thema dreht.
+     * So sah es in System 1 aus - das Quadrat endet oben und unten auf einer
+     * Linie, nicht dazwischen.
+     *
+     * Waagerecht enden sie vor dem Rahmen. Liefen sie bis an ihn heran, sähe
+     * die Leiste aus wie ein gefülltes Kästchen statt wie ein Griff. */
     if (w->active) {
-        int top    = r.y + th->border + 2;
-        int bottom = r.y + th->titlebar_h - 2;
-        for (int y = top; y < bottom; y += th->stripe_gap)
-            gfx_hline(g, r.x + th->border, y, r.w - 2 * th->border);
+        rect box    = window_close_box_rect(w);
+        int  x      = r.x + th->border + th->stripe_inset;
+        int  width  = r.w - 2 * (th->border + th->stripe_inset);
+        int  bottom = box.y + box.h - 1;
+
+        for (int y = box.y; y <= bottom; y += th->stripe_gap)
+            gfx_hline(g, x, y, width);
     }
 
     int tw = text_width(&system12, w->title);
@@ -208,11 +219,37 @@ void window_draw(const window *w, gc *g)
         gfx_frame_rect(g, box);
     }
 
+    /* Das Größenfeld trägt zwei ineinandergeschobene Quadrate: das kleinere
+     * hinten links oben, das größere davor rechts unten. Das ist das Bild aus
+     * System 1, und es sagt ohne Worte, worum es geht - aus klein wird groß.
+     *
+     * Die Reihenfolge ist wichtig: das große wird zuletzt weiß gefüllt und
+     * deckt damit die Ecke des kleinen ab. Andersherum überlagerten sich zwei
+     * Rahmen zu einem Gitter. */
     if (w->active && (w->flags & WIN_RESIZABLE)) {
         rect box = window_grow_box_rect(w);
+
         g->pat = PAT_WHITE;
         gfx_fill_rect(g, box);
         g->pat = PAT_BLACK;
         gfx_frame_rect(g, box);
+
+        int gap   = 2;
+        int small = box.w / 2 - 1;
+        int large = box.w / 2 + 1;
+
+        rect back  = rect_make(box.x + gap, box.y + gap, small, small);
+        rect front = rect_make(box.x + box.w - gap - large,
+                               box.y + box.h - gap - large, large, large);
+
+        g->pat = PAT_WHITE;
+        gfx_fill_rect(g, back);
+        g->pat = PAT_BLACK;
+        gfx_frame_rect(g, back);
+
+        g->pat = PAT_WHITE;
+        gfx_fill_rect(g, front);
+        g->pat = PAT_BLACK;
+        gfx_frame_rect(g, front);
     }
 }
