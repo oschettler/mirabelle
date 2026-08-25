@@ -128,7 +128,7 @@ app{
   title = "app.spartan",
 
   -- Was im Fenstertitel steht: die Überschrift der Seite, sonst die Adresse.
-  -- Den Namen der Anwendung setzt die Schale selbst dahinter.
+  -- Den Namen der Anwendung setzt die Shell selbst dahinter.
   window_title = function()
     return browser.heading or browser.address
   end,

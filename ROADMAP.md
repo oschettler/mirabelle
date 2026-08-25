@@ -17,7 +17,7 @@ etwas, das beim Entwurf nicht auf dem Tisch lag? Die Antwort steht in
 `data/apps/spartan.lua` — der Browser ist ein Skript, und kein C-Code weiß von
 ihm.
 
-Dazwischen ist etwas entstanden, das im Fahrplan nicht steht: **die Schale**
+Dazwischen ist etwas entstanden, das im Fahrplan nicht steht: **die Shell**
 (`src/app/shell.c`). Sie liest die Schemadateien, macht aus jeder eine
 Anwendung, gibt ihr ein Fenster und baut die Menüleiste daraus. Sie gehört
 sachlich zu M11, wurde aber erst gebraucht, als es mehr als eine Anwendung

@@ -107,7 +107,7 @@ MUTS = [
  ("Widgettasten werden geschluckt",
   "bool mine = action && (shell_handles(action) || is_app_label(s, action));",
   "bool mine = action != NULL;"),
- ("Schalenaktionen werden durchgereicht",
+ ("Shell-Aktionen werden durchgereicht",
   "bool mine = action && (shell_handles(action) || is_app_label(s, action));",
   "bool mine = false;"),
  ("Skript sieht seine Taste nicht",

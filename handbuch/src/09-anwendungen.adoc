@@ -3,7 +3,7 @@
 Das vorige Kapitel hat gezeigt, wo die Daten liegen und wie eine Schemadatei
 eine Sammlung beschreibt. Dieses zeigt, was daraus wird: ein Fenster mit einer
 Liste, ein Formular, ein Eintrag im Menü, ein Tastenkürzel. Und es zeigt die
-Stelle, an der beides zusammenkommt — `src/app/shell.c`, die *Schale*.
+Stelle, an der beides zusammenkommt — `src/app/shell.c`, die *Shell*.
 
 Der Anspruch daran ist nachprüfbar, und du kannst es selbst tun:
 
@@ -21,9 +21,9 @@ Ordner im Vault, die Feldnamen, die Spalten — kommt aus dem Schema.
 Auch nicht als Zahl: es gibt keine Stelle, an der „die dritte Anwendung" etwas
 Besonderes wäre.
 
-=== Die Schale zählt Dateien, nicht Anwendungen
+=== Die Shell zählt Dateien, nicht Anwendungen
 
-Beim Start liest die Schale das Verzeichnis `data/schema` und macht aus jeder
+Beim Start liest die Shell das Verzeichnis `data/schema` und macht aus jeder
 Schemadatei eine Anwendung:
 
 [source,c]
@@ -45,16 +45,16 @@ fehlt eben, und der Nutzer erfährt in der Statuszeile, warum. Nur wenn *gar
 keine* gefunden wird, bricht der Start ab: dann gäbe es nichts zu tun, und ein
 Programm ohne Anwendungen wäre ein leeres Fenster ohne Erklärung.
 
-.Warum die Schale die Endung nicht kennt
+.Warum die Shell die Endung nicht kennt
 [NOTE]
 ====
-`suffix` und `load` kommen von außen: die Schale bekommt einen Lader übergeben
+`suffix` und `load` kommen von außen: die Shell bekommt einen Lader übergeben
 (`shell_schemas` in `src/app/shell.h`), so wie sie für Skriptanwendungen eine
 Handvoll Funktionszeiger bekommt. Dass Schemadateien Lua-Tabellen sind, weiß
 sie nicht.
 
 Das ist keine Ziererei. Es hält zwei Dinge auseinander, die verschieden kaputt
-gehen: ein Schema, das falsch geschrieben ist, und eine Schale, die falsch
+gehen: ein Schema, das falsch geschrieben ist, und eine Shell, die falsch
 sucht. Im Test setzt man einen eigenen Lader ein und sieht sofort, welches von
 beidem gerade schiefging.
 
@@ -99,7 +99,7 @@ for (int i = 0; i < s->app_count; i++) {
 === Welche Taste wem gehört
 
 Die Tastenbelegung kennt Bereiche: `global` gilt überall, `app` in einer
-Anwendung, `list` in einer Liste, `form` in einem Formular. Die Schale schlägt
+Anwendung, `list` in einer Liste, `form` in einem Formular. Die Shell schlägt
 in dieser Reihenfolge nach — erst der Bereich dessen, was den Fokus hat, dann
 `app`, und `keymap_lookup` fällt selbst auf `global` zurück.
 
@@ -117,16 +117,16 @@ Taste?* `list.next` bewegt die Auswahl und gehört der Liste; `list.open`
 öffnet einen Datensatz und gehört der Anwendung. Beide stehen nebeneinander in
 derselben Datei.
 
-Die Schale unterscheidet sie an einer kurzen Liste dessen, was sie selbst
+Die Shell unterscheidet sie an einer kurzen Liste dessen, was sie selbst
 kann. Was nicht darin steht, reicht sie an das Bedienelement weiter — es kennt
-seine Tasten selbst, und die Schale hat dazu nichts zu sagen.
+seine Tasten selbst, und die Shell hat dazu nichts zu sagen.
 
 .Die Regel, die man beim ersten Mal falsch macht
 [WARNING]
 ====
 Eine Aktion, die einen Datensatz anfasst, darf nur verbraucht werden, wenn es
 einen Datensatz gibt. In einer Skriptanwendung gibt es keinen Browser — und
-wenn die Schale kbd:[Return] trotzdem als `list.open` annimmt und dann
+wenn die Shell kbd:[Return] trotzdem als `list.open` annimmt und dann
 feststellt, dass sie damit nichts anfangen kann, ist die Taste weg, bevor das
 Skript sie sieht.
 
@@ -138,7 +138,7 @@ einfache Taste nicht —, sucht nicht im Skript, sondern in der Schicht darüber
 
 === Was ein Fenster bekommt
 
-Öffnet die Schale eine Anwendung, legt sie ein Fenster an und darin einen
+Öffnet die Shell eine Anwendung, legt sie ein Fenster an und darin einen
 Browser (`src/app/browser.h`) und einen Rollbalken daneben. Die Fenster
 stehen versetzt, wie auf einem Schreibtisch:
 
@@ -192,7 +192,7 @@ sagen als einen Schlüssel anzeigen.
 
 Ein Skript sagt seinen Titel selbst, über `window_title` in seiner
 Anwendungstabelle. Es liefert nur den Text; die Klammer mit dem Namen der
-Anwendung setzt die Schale, damit kein Skript sie nachbauen muss.
+Anwendung setzt die Shell, damit kein Skript sie nachbauen muss.
 
 [source,lua]
 ----

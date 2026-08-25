@@ -82,8 +82,8 @@ void pdalua_set_vault(lua_State *L, vault *v,
 bool pdalua_schema(lua_State *L, const char *path, schema *out,
                    char *err, size_t err_size);
 
-/* Dasselbe als Lader für die Schale: sie sucht Dateien mit der genannten
- * Endung und reicht jede hierher. Die Schale kennt Lua damit weiterhin nicht,
+/* Dasselbe als Lader für die Shell: sie sucht Dateien mit der genannten
+ * Endung und reicht jede hierher. Die Shell kennt Lua damit weiterhin nicht,
  * sie kennt nur einen Funktionszeiger. */
 shell_schemas pdalua_schema_loader(lua_State *L);
 
@@ -125,7 +125,7 @@ void pdalua_open_net(lua_State *L);
  * keine Anwendungen anmelden können muss. */
 void pdalua_open_apps(lua_State *L);
 
-/* Die Brücke zur Schale: eine Handvoll Funktionszeiger, mit denen shell.c die
+/* Die Brücke zur Shell: eine Handvoll Funktionszeiger, mit denen shell.c die
  * angemeldeten Anwendungen aufruft, ohne Lua zu kennen. */
 shell_scripting pdalua_scripting(lua_State *L);
 

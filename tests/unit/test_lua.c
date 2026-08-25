@@ -305,7 +305,7 @@ TEST(a_script_really_draws)
 TEST(the_shipped_applications_are_four_files)
 {
     /* Es gibt keinen Programmcode für Aufgaben, Kontakte, Notizen und Termine
-     * - es gibt vier Dateien. Dieser Test liest sie so, wie die Schale es tut,
+     * - es gibt vier Dateien. Dieser Test liest sie so, wie die Shell es tut,
      * und prüft, dass daraus vier brauchbare Schemata werden. */
     catalog *cat = load_cat();
     REQUIRE(cat != NULL);
@@ -815,7 +815,7 @@ TEST(an_application_written_only_in_lua_runs)
     if (!loaded) printf("  agenda: %s\n", err);
     REQUIRE(loaded);
 
-    /* Sie hat sich angemeldet - die Schale findet sie über diese Brücke, ohne
+    /* Sie hat sich angemeldet - die Shell findet sie über diese Brücke, ohne
      * Lua zu kennen. */
     shell_scripting sc = pdalua_scripting(L);
     CHECK_EQ(sc.count(sc.user), 1);
@@ -834,7 +834,7 @@ TEST(an_application_written_only_in_lua_runs)
 
     CHECK(truth(L, "agenda.finish('gibtesnicht') == false"));
 
-    /* Und sie zeichnet - über die Brücke, so wie die Schale es täte. */
+    /* Und sie zeichnet - über die Brücke, so wie die Shell es täte. */
     bitmap bm;
     REQUIRE(bitmap_init(&bm, 220, 80));
     gc g;
@@ -1569,9 +1569,9 @@ TEST(the_address_line_blinks_in_the_same_beat_as_every_text_field)
     caret_reset();
 }
 
-/* --- Durch die ganze Schale hindurch ---------------------------------------------
+/* --- Durch die ganze Shell hindurch ---------------------------------------------
  *
- * Der Weg, den eine Taste wirklich nimmt: Fenster, Tastenbelegung, Schale,
+ * Der Weg, den eine Taste wirklich nimmt: Fenster, Tastenbelegung, Shell,
  * Skript. Jede Station für sich ist geprüft; hier geht es darum, dass die
  * Kette nirgends reisst.
  */
@@ -1579,7 +1579,7 @@ TEST(the_address_line_blinks_in_the_same_beat_as_every_text_field)
 TEST(a_key_the_shell_cannot_use_reaches_the_script)
 {
     /* Der Fehler, um den es geht: Return ist in data/keys/default.keys mit
-     * `list.open` belegt. Die Schale nahm die Aktion an, fand in einer
+     * `list.open` belegt. Die Shell nahm die Aktion an, fand in einer
      * Skriptanwendung keinen Browser und verwarf sie - im SPARTAN-Browser
      * liess sich die Adresse eintippen, aber Return tat nichts. */
     catalog *cat = load_cat();

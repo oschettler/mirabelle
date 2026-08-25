@@ -834,7 +834,7 @@ TEST(a_click_reaches_a_widget_inside_a_nested_panel)
 
     /* Erst zeichnen: das innere Panel wird ausgelegt, wenn es an der Reihe
      * ist, und vorher hat der Knopf darin noch keinen Rahmen. Dasselbe gilt
-     * im Programm - deshalb zeichnet die Schale, bevor sie klicken lässt. */
+     * im Programm - deshalb zeichnet die Shell, bevor sie klicken lässt. */
     bitmap bm;
     REQUIRE(bitmap_init(&bm, 200, 100));
     gc g;

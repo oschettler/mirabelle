@@ -7,7 +7,7 @@
  *
  * Diese Datei ist auch die einzige, die entscheidet, WAS es gibt: sie lädt die
  * Tabellen, öffnet den Vault, richtet - falls vorhanden - Lua ein und übergibt
- * das alles an die Schale. Die Schale selbst kennt weder Lua noch SQLite; sie
+ * das alles an die Shell. Die Shell selbst kennt weder Lua noch SQLite; sie
  * bekommt, was da ist.
  */
 #include <stdio.h>
@@ -33,7 +33,6 @@
 #endif
 
 #define PDA_NAME    "mirabelle"
-#define PDA_VERSION "0.1"
 #define PDA_YEAR    "2026"
 #define PDA_AUTHOR  "Olav Schettler"
 
@@ -66,7 +65,7 @@ static void program_free(program *p)
 
 /* Setzt eine führende Tilde in den Heimatpfad um.
  *
- * Die Tilde ist eine Erfindung der Kommandozeile: die Schale ersetzt sie,
+ * Die Tilde ist eine Erfindung der Kommandozeile: die Shell ersetzt sie,
  * bevor ein Programm sie zu sehen bekommt. Wer den Pfad dagegen in eine
  * Konfigurationsdatei schreibt oder als Voreinstellung im Programm hat, muss
  * es selbst tun - sonst sucht das Programm ein Verzeichnis, das wörtlich „~"
@@ -269,7 +268,7 @@ int main(int argc, char **argv)
 
     p.sh = shell_create(&sc, err, sizeof err);
     if (!p.sh) {
-        fprintf(stderr, "Schale: %s\n", err);
+        fprintf(stderr, "Shell: %s\n", err);
         program_free(&p);
         plat_shutdown();
         return 1;
