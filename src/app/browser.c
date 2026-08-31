@@ -371,8 +371,10 @@ static bool form_build(browser *b, record *rec, char *err, size_t err_size)
             if (row && bar) {
                 panel_set_layout(row, LAYOUT_HSTACK_FILL, 0, 0);
 
-                if (panel_add(row, w) && panel_add(row, bar))
+                if (panel_add(row, w) && panel_add(row, bar)) {
                     wrapped = panel_as_widget(row);
+                    text_widget_set_focus_extra(w, bar);
+                }
             }
 
             if (!wrapped) {

@@ -61,6 +61,11 @@ typedef struct {
     scrollmodel    sc;          /* value ist die erste sichtbare Anzeigezeile */
     bool           wrap_valid;
     int            wrap_w;      /* Breite, für die zuletzt umgebrochen wurde */
+
+    /* Ein Geschwister-Widget (etwa ein Rollbalken daneben), dessen Rechteck
+     * der Fokusrahmen mit umfassen soll - siehe text_draw(). NULL, wenn es
+     * keins gibt. */
+    const widget *focus_extra;
 } text_widget;
 
 /* --- Geometrie -------------------------------------------------------------- */
@@ -473,7 +478,16 @@ static void text_draw(const widget *w, gc *g)
         gfx_frame_rect(g, rect_make(r.x + i, r.y + i, r.w - 2 * i, r.h - 2 * i));
 
     if (w->focused) {
-        rect outer = rect_make(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
+        rect u = r;
+        if (tw->focus_extra) {
+            rect e  = tw->focus_extra->frame;
+            int  x0 = u.x < e.x ? u.x : e.x;
+            int  y0 = u.y < e.y ? u.y : e.y;
+            int  x1 = (u.x + u.w) > (e.x + e.w) ? (u.x + u.w) : (e.x + e.w);
+            int  y1 = (u.y + u.h) > (e.y + e.h) ? (u.y + u.h) : (e.y + e.h);
+            u = rect_make(x0, y0, x1 - x0, y1 - y0);
+        }
+        rect outer = rect_make(u.x - 2, u.y - 2, u.w + 4, u.h + 4);
         gfx_frame_rect(g, outer);
     }
 
@@ -494,6 +508,13 @@ static void text_draw(const widget *w, gc *g)
         gfx_fill_rect(g, r);
         g->mode = GFX_COPY;
     }
+}
+
+/* Bezieht das Rechteck von extra (etwa einen Rollbalken daneben) in den
+ * Fokusrahmen ein - siehe text_draw(). extra darf NULL sein. */
+void text_widget_set_focus_extra(widget *w, const widget *extra)
+{
+    ((text_widget *)w)->focus_extra = extra;
 }
 
 /* --- Ereignisse ------------------------------------------------------------------ */

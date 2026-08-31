@@ -238,4 +238,8 @@ int text_widget_top_line(const widget *w);
  * hat nichts, was ein Balken anzeigen könnte. */
 scrollmodel *text_widget_scroll(widget *w);
 
+/* Bezieht extra (etwa einen Rollbalken daneben) in den Fokusrahmen von w mit
+ * ein. extra darf NULL sein. */
+void text_widget_set_focus_extra(widget *w, const widget *extra);
+
 #endif /* PDA_UI_WIDGET_H */
