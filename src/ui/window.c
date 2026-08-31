@@ -83,7 +83,7 @@ rect window_titlebar_rect(const window *w)
 
 rect window_close_box_rect(const window *w)
 {
-    /* Nicht mittig: vier Pixel von oben, sieben von links, wie im Original. */
+    /* Nicht mittig: vier Pixel von oben, neun von links, wie im Original. */
     int cb = w->th->close_box;
     return rect_make(w->frame.x + w->th->close_box_left,
                      w->frame.y + w->th->close_box_top, cb, cb);
@@ -181,6 +181,14 @@ void window_draw(const window *w, gc *g)
     for (int i = 0; i < th->border; i++)
         gfx_frame_rect(g, rect_make(r.x + i, r.y + i, r.w - 2 * i, r.h - 2 * i));
 
+    /* Der Schatten: eine zweite Linie außerhalb des Rahmens, nur rechts und
+     * unten - System 1 gab dem Fenster damit etwas Tiefe, ohne dass oben oder
+     * links etwas davon zu sehen wäre. Die senkrechte Linie beginnt deshalb
+     * erst eine Zeile unter der Oberkante, die waagerechte reicht bis zur
+     * linken Kante durch - genau das Bild aus dem Vorbild. */
+    gfx_vline(g, r.x + r.w, r.y + 1, r.h);
+    gfx_hline(g, r.x, r.y + r.h, r.w + 1);
+
     gfx_hline(g, r.x, r.y + th->titlebar_h, r.w);
 
     /* Die Streifen laufen genau von der Ober- zur Unterkante des Schließfelds.
@@ -213,8 +221,14 @@ void window_draw(const window *w, gc *g)
 
     if (w->active && (w->flags & WIN_CLOSABLE)) {
         rect box = window_close_box_rect(w);
+        int  gap = th->close_box_gap;
+
+        /* Die Streifen reichen bis dorthin, wo der weiße Rand um das
+         * Schließfeld beginnt - links und rechts, wie im Original. Oben und
+         * unten braucht es ihn nicht: dort endet ohnehin schon eine
+         * Streifenlinie genau auf der Kante des Feldes. */
         g->pat = PAT_WHITE;
-        gfx_fill_rect(g, box);
+        gfx_fill_rect(g, rect_make(box.x - gap, box.y, box.w + 2 * gap, box.h));
         g->pat = PAT_BLACK;
         gfx_frame_rect(g, box);
     }

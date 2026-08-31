@@ -18,10 +18,11 @@ void theme_defaults(theme *th)
     th->close_box       = 12;
     th->grow_box        = 16;
     th->close_box_top   = 4;
-    th->close_box_left  = 7;
+    th->close_box_left  = 9;
+    th->close_box_gap   = 1;
     th->box_margin      = 0;
     th->stripe_gap      = 2;
-    th->stripe_inset    = 3;
+    th->stripe_inset    = 1;
     th->title_pad       = 6;
     th->hit_slop        = 0;
     th->min_w           = 96;
@@ -70,6 +71,7 @@ bool theme_load(theme *th, const char *path, char *err, size_t err_size)
         { "grow_box", &th->grow_box },
         { "close_box_top", &th->close_box_top },
         { "close_box_left", &th->close_box_left },
+        { "close_box_gap", &th->close_box_gap },
         { "box_margin", &th->box_margin },
         { "stripe_gap", &th->stripe_gap },
         { "stripe_inset", &th->stripe_inset },

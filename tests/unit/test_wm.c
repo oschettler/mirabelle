@@ -129,11 +129,12 @@ TEST(theme_load_reads_real_file)
     CHECK_EQ(th.border, 1);
     /* Die Maße stammen aus docs/ui-style-guide.md. */
     CHECK_EQ(th.close_box, 11);
-    CHECK_EQ(th.close_box_top, 5);
-    CHECK_EQ(th.close_box_left, 7);
+    CHECK_EQ(th.close_box_top, 4);
+    CHECK_EQ(th.close_box_left, 9);
+    CHECK_EQ(th.close_box_gap, 1);
     CHECK_EQ(th.grow_box, 16);
     CHECK_EQ(th.stripe_gap, 2);
-    CHECK_EQ(th.stripe_inset, 3);
+    CHECK_EQ(th.stripe_inset, 1);
     CHECK_EQ(th.hit_slop, 0);
     CHECK_EQ(th.menubar_h, 20);
     CHECK_EQ(th.menu_item_h, 16);
