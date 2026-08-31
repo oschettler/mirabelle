@@ -208,7 +208,7 @@ if(TARGET pda_plat_sdl3)
 
     if(UNIX AND NOT APPLE)
         target_link_libraries(mirabelle PRIVATE
-            "$<LINK_GROUP:RESCAN,pda_plat_sdl3,pda_store>")
+            "$<LINK_GROUP:RESCAN,pda_plat_sdl3,pda_store,pda_net>")
     else()
         target_link_libraries(mirabelle PRIVATE pda_plat_sdl3)
     endif()
@@ -429,7 +429,7 @@ if(UNIX AND NOT APPLE)
                        test_index test_lua)
         if(TARGET ${t})
             target_link_libraries(${t} PRIVATE
-                "$<LINK_GROUP:RESCAN,pda_plat_headless,pda_store>")
+                "$<LINK_GROUP:RESCAN,pda_plat_headless,pda_store,pda_net>")
         endif()
     endforeach()
 endif()
