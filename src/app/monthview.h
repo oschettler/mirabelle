@@ -74,4 +74,8 @@ bool monthview_is_marked(const widget *w, int day);
  * Merker zurück. Wie list_was_opened. */
 bool monthview_was_opened(widget *w);
 
+/* Wie monthview_was_opened, aber für einen Klick auf die Monats-/
+ * Jahresbeschriftung im Kopf - „gehe zu einem anderen Monat". */
+bool monthview_jump_requested(widget *w);
+
 #endif /* PDA_APP_MONTHVIEW_H */

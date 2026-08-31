@@ -30,6 +30,7 @@ typedef struct {
     int    selected_day;      /* 1 bis 31 */
     bool   marked[32];        /* nach Tagesnummer; Index 0 bleibt leer */
     bool   opened;
+    bool   jump_requested;    /* Klick auf die Monatsbeschriftung im Kopf */
 } monthview;
 
 /* --- Aus dem Katalog -------------------------------------------------------------- */
@@ -65,14 +66,69 @@ static void weekday_label(const catalog *cat, int weekday, char *out, size_t out
     }
 }
 
+/* Der lange Name des Monats (1 bis 12), aus demselben Listenformat wie
+ * weekday_label() - nur eben eins gezählt statt null. */
+static void month_label(const catalog *cat, int month, char *out, size_t out_size)
+{
+    const char *s = T(cat, "month.long");
+    out[0] = '\0';
+
+    for (int i = 1; *s; i++) {
+        while (*s == ' ') s++;
+        const char *start = s;
+        while (*s && *s != ' ') s++;
+
+        if (i == month) {
+            size_t n = (size_t)(s - start);
+            if (n >= out_size) n = out_size - 1;
+            memcpy(out, start, n);
+            out[n] = '\0';
+            return;
+        }
+    }
+}
+
 /* --- Geometrie ---------------------------------------------------------------------
  *
- * Die Kopfzeile mit den Wochentagen und darunter sechs Zeilen. Die Spalten
- * teilen die Breite; der Rest, der beim Teilen übrigbleibt, geht an die letzte
- * Spalte, damit das Raster rechts bündig abschließt.
+ * Zwei Kopfzeilen: oben Monat/Jahr mit den Pfeilen zum Blättern, darunter die
+ * Wochentage. Darunter sechs Zeilen mit den Tagen. Die Spalten teilen die
+ * Breite; der Rest, der beim Teilen übrigbleibt, geht an die letzte Spalte,
+ * damit das Raster rechts bündig abschließt.
  */
 
-static int header_h(const widget *w) { return w->th->menu_item_h; }
+/* Zwei Kopfzeilen: oben Monat/Jahr mit den Pfeilen zum Blättern, darunter die
+ * Wochentage. Getrennt in zwei Funktionen, weil beide Zeilen unterschiedliche
+ * Trefferflächen brauchen - eine gemeinsame Höhe würde das verschleiern. */
+static int nav_h(const widget *w)     { return w->th->menu_item_h; }
+static int weekday_h(const widget *w) { return w->th->menu_item_h; }
+static int header_h(const widget *w)  { return nav_h(w) + weekday_h(w); }
+
+static rect nav_rect(const widget *w)
+{
+    return rect_make(w->frame.x, w->frame.y, w->frame.w, nav_h(w));
+}
+
+/* Die Pfeile sind so breit wie die Zeile hoch ist - ein handliches Quadrat,
+ * keine Zahl, die irgendwo neu erfunden wird. */
+static rect prev_arrow_rect(const widget *w)
+{
+    rect n = nav_rect(w);
+    return rect_make(n.x, n.y, n.h, n.h);
+}
+
+static rect next_arrow_rect(const widget *w)
+{
+    rect n = nav_rect(w);
+    return rect_make(n.x + n.w - n.h, n.y, n.h, n.h);
+}
+
+/* Die Beschriftung dazwischen - der Rest der Zeile, nach Abzug beider
+ * Pfeile. */
+static rect month_label_rect(const widget *w)
+{
+    rect n = nav_rect(w);
+    return rect_make(n.x + n.h, n.y, n.w - 2 * n.h, n.h);
+}
 
 /* Null statt einer negativen Zahl, wenn der Rahmen nicht einmal die Kopfzeile
  * fasst. Beobachtbar ist der Unterschied nicht - jede Aufrufstelle prüft auf
@@ -202,6 +258,17 @@ bool monthview_was_opened(widget *w)
     return o;
 }
 
+/* Wie monthview_was_opened: true genau einmal, ausgelöst durch einen Klick
+ * auf die Monats-/Jahresbeschriftung im Kopf. Was daraus wird - ein Dialog,
+ * der ein anderes Datum abfragt - ist Sache des Aufrufers. */
+bool monthview_jump_requested(widget *w)
+{
+    monthview *mv = (monthview *)w;
+    bool       j  = mv->jump_requested;
+    mv->jump_requested = false;
+    return j;
+}
+
 /* --- Zeichnen ------------------------------------------------------------------- */
 
 static void draw_centered(gc *g, rect r, const char *text)
@@ -225,8 +292,24 @@ static void monthview_draw(const widget *w, gc *g)
 
     if (cell_h(w) <= 0) return;
 
-    /* Die Kopfzeile steht auf schwarzem Grund - so sieht man auf einen Blick,
-     * wo das Raster anfängt, ohne eine zweite Linienstärke einzuführen.
+    /* Die Monats-/Jahreszeile: Pfeile links und rechts, die Beschriftung
+     * dazwischen. Ein dünner Rahmen um die Beschriftung zeigt, dass sie sich
+     * anklicken lässt - genau wie ein Knopf. */
+    char month_name[32];
+    month_label(w->cat, mv->shown.month, month_name, sizeof month_name);
+    char nav_text[48];
+    snprintf(nav_text, sizeof nav_text, "%s %d", month_name, mv->shown.year);
+
+    draw_centered(g, prev_arrow_rect(w), "<");
+    draw_centered(g, next_arrow_rect(w), ">");
+
+    rect label_r = month_label_rect(w);
+    draw_centered(g, label_r, nav_text);
+    gfx_frame_rect(g, label_r);
+
+    /* Die Wochentagszeile steht auf schwarzem Grund - so sieht man auf einen
+     * Blick, wo das Raster anfängt, ohne eine zweite Linienstärke
+     * einzuführen.
      *
      * Geschrieben wird sie aber schwarz auf weiß und danach umgedreht. Der
      * Grund liegt in gfx_text: es kopiert die ganze Glyphenzelle, nicht nur
@@ -234,15 +317,15 @@ static void monthview_draw(const widget *w, gc *g)
      * Schrift, sondern einen weißen Kasten mit schwarzer Schrift darin.
      * Umdrehen ist derselbe Handgriff, mit dem die Liste ihre Auswahl
      * hervorhebt. */
-    rect head = rect_make(r.x, r.y, r.w, header_h(w));
+    rect head = rect_make(r.x, r.y + nav_h(w), r.w, weekday_h(w));
 
     int ws = week_start(w->cat);
     for (int col = 0; col < COLS; col++) {
         char label[16];
         weekday_label(w->cat, (ws + col) % 7, label, sizeof label);
 
-        rect cell = rect_make(col_x(w, col), r.y, col_x(w, col + 1) - col_x(w, col),
-                              header_h(w));
+        rect cell = rect_make(col_x(w, col), r.y + nav_h(w),
+                              col_x(w, col + 1) - col_x(w, col), weekday_h(w));
         draw_centered(g, cell, label);
     }
     gfx_invert_rect(g, head);
@@ -282,10 +365,11 @@ static void monthview_draw(const widget *w, gc *g)
 static void monthview_measure(widget *w, int *pw, int *ph)
 {
     /* Sieben Spalten, in denen eine zweistellige Zahl und eine
-     * Wochentagsabkürzung Platz haben, und die Zeilen des Themas. */
+     * Wochentagsabkürzung Platz haben, und die Zeilen des Themas. Plus zwei
+     * Kopfzeilen: Monat/Jahr mit Pfeilen, und die Wochentage. */
     int col = text_width(&system12, "88") + 2 * w->th->menu_pad;
     if (pw) *pw = col * COLS;
-    if (ph) *ph = w->th->menu_item_h * (ROWS + 1);
+    if (ph) *ph = w->th->menu_item_h * (ROWS + 2);
 }
 
 /* --- Ereignisse ------------------------------------------------------------------ */
@@ -312,6 +396,19 @@ static bool monthview_event(widget *w, const event *e)
 
     switch (e->kind) {
     case EV_MOUSE_DOWN: {
+        if (rect_contains(prev_arrow_rect(w), e->x, e->y)) {
+            monthview_show_month(w, -1);
+            return true;
+        }
+        if (rect_contains(next_arrow_rect(w), e->x, e->y)) {
+            monthview_show_month(w, +1);
+            return true;
+        }
+        if (rect_contains(month_label_rect(w), e->x, e->y)) {
+            mv->jump_requested = true;
+            return true;
+        }
+
         int col, row;
         if (!hit_cell(w, e->x, e->y, &col, &row)) {
             /* Ein Klick in den Kopf oder daneben gehört trotzdem dem

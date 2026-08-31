@@ -63,6 +63,7 @@ date.format              = %Y-%m-%d
 time.format              = %H:%M
 week.start               = 0
 weekday.short            = Mo Tu We Th Fr Sa Su
+month.long               = January February March April May June July August September October November December
 
 # --- Demo form --------------------------------------------------------------
 form.status              = Status

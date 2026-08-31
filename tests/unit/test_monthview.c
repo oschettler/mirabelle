@@ -246,7 +246,7 @@ static int column_of(widget *w, int day, const theme *th)
 
     for (int col = 0; col < 7; col++) {
         int x = w->frame.x + w->frame.w * col / 7 + 2;
-        int y = w->frame.y + th->menu_item_h + 2;
+        int y = w->frame.y + 2 * th->menu_item_h + 2;
 
         for (int row = 0; row < 6; row++) {
             date d = monthview_month(w);
@@ -254,7 +254,7 @@ static int column_of(widget *w, int day, const theme *th)
             monthview_select(w, d);
 
             event e = { .kind = EV_MOUSE_DOWN, .x = x,
-                        .y = y + row * ((w->frame.h - th->menu_item_h) / 6) };
+                        .y = y + row * ((w->frame.h - 2 * th->menu_item_h) / 6) };
             widget_event(w, &e);
             if (monthview_selected(w).day == day) return col;
         }
@@ -277,8 +277,8 @@ TEST(the_week_starts_where_the_catalog_says)
     widget *b = monthview_create(th, so, D(2026, 3, 1));
     REQUIRE(a && b);
 
-    a->frame = rect_make(0, 0, 210, th->menu_item_h * 7);
-    b->frame = rect_make(0, 0, 210, th->menu_item_h * 7);
+    a->frame = rect_make(0, 0, 210, th->menu_item_h * 8);
+    b->frame = rect_make(0, 0, 210, th->menu_item_h * 8);
 
     CHECK_EQ(date_weekday(D(2026, 3, 1)), 6);   /* Sonntag */
     CHECK_EQ(column_of(a, 1, th), 6);           /* Montag zuerst: ganz rechts */
@@ -317,7 +317,7 @@ TEST(a_short_month_has_no_days_past_its_end)
     const theme *th = test_theme();
     widget      *w  = monthview_create(th, cat, D(2026, 2, 10));
     REQUIRE(w != NULL);
-    w->frame = rect_make(0, 0, 210, th->menu_item_h * 7);
+    w->frame = rect_make(0, 0, 210, th->menu_item_h * 8);
 
     /* Der 1. Februar 2026 ist ein Sonntag und steht damit in der letzten
      * Spalte der ersten Zeile. Danach füllen sich die Zeilen von Montag an:
@@ -327,10 +327,10 @@ TEST(a_short_month_has_no_days_past_its_end)
     CHECK_EQ(date_weekday(D(2026, 2, 1)), 6);
     CHECK_EQ(column_of(w, 28, th), 5);
 
-    int   cell_h = (w->frame.h - th->menu_item_h) / 6;
+    int   cell_h = (w->frame.h - 2 * th->menu_item_h) / 6;
     event e = { .kind = EV_MOUSE_DOWN, .clicks = 1,
                 .x = w->frame.w * 6 / 7 + 2,
-                .y = th->menu_item_h + 4 * cell_h + cell_h / 2 };
+                .y = 2 * th->menu_item_h + 4 * cell_h + cell_h / 2 };
 
     CHECK(monthview_select(w, D(2026, 2, 10)));
     CHECK(widget_event(w, &e));
@@ -431,14 +431,14 @@ TEST(clicking_a_day_selects_it_and_double_click_opens)
     const theme *th = test_theme();
     widget      *w  = monthview_create(th, cat, D(2026, 3, 1));
     REQUIRE(w != NULL);
-    w->frame = rect_make(0, 0, 210, th->menu_item_h * 7);
+    w->frame = rect_make(0, 0, 210, th->menu_item_h * 8);
 
     /* Der 1. März 2026 ist ein Sonntag, steht bei Wochenbeginn Montag also in
      * der letzten Spalte der ersten Zeile. */
-    int  cell_h = (w->frame.h - th->menu_item_h) / 6;
+    int  cell_h = (w->frame.h - 2 * th->menu_item_h) / 6;
     event e = { .kind = EV_MOUSE_DOWN, .clicks = 1,
                 .x = w->frame.w * 6 / 7 + 2,
-                .y = th->menu_item_h + cell_h / 2 };
+                .y = 2 * th->menu_item_h + cell_h / 2 };
 
     CHECK(widget_event(w, &e));
     CHECK_EQ(monthview_selected(w).day, 1);
@@ -526,10 +526,10 @@ TEST(a_month_that_needs_six_rows_still_fits)
     monthview_mark(w, D(2026, 3, 17));
     monthview_mark(w, D(2026, 3, 31));
 
-    w->frame = rect_make(4, 4, 217, th->menu_item_h * 7);
+    w->frame = rect_make(4, 4, 217, th->menu_item_h * 8);
 
     bitmap bm;
-    REQUIRE(bitmap_init(&bm, 225, th->menu_item_h * 7 + 8));
+    REQUIRE(bitmap_init(&bm, 225, th->menu_item_h * 8 + 8));
     gc g;
     gc_init(&g, &bm);
     g.pat = PAT_WHITE;
