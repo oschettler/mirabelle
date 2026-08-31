@@ -83,7 +83,7 @@ rect window_titlebar_rect(const window *w)
 
 rect window_close_box_rect(const window *w)
 {
-    /* Nicht mittig: vier Pixel von oben, neun von links, wie im Original. */
+    /* Nicht mittig: fünf Pixel von oben, neun von links, wie im Original. */
     int cb = w->th->close_box;
     return rect_make(w->frame.x + w->th->close_box_left,
                      w->frame.y + w->th->close_box_top, cb, cb);

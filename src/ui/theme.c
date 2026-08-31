@@ -17,7 +17,7 @@ void theme_defaults(theme *th)
     th->border          = 1;
     th->close_box       = 12;
     th->grow_box        = 16;
-    th->close_box_top   = 4;
+    th->close_box_top   = 5;
     th->close_box_left  = 9;
     th->close_box_gap   = 1;
     th->box_margin      = 0;

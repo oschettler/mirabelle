@@ -21,7 +21,7 @@ typedef struct {
     int close_box;       /* Kantenlänge des Schließfelds */
     int grow_box;        /* Kantenlänge des Größenfelds unten rechts */
 
-    /* Das Schließfeld sitzt nicht symmetrisch: vier Pixel von oben, neun von
+    /* Das Schließfeld sitzt nicht symmetrisch: fünf Pixel von oben, neun von
      * links. Deshalb zwei Felder statt eines Randmaßes. */
     int close_box_top;
     int close_box_left;

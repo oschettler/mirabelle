@@ -12,7 +12,9 @@ titlebar_h      20    # Titelzeile, Style Guide 3
 border          1     # umlaufender Rahmen
 close_box       11    # Schließfeld 11 x 11; ungerade, damit die Streifen
                       # genau auf seiner Ober- und Unterkante liegen
-close_box_top   4     # 4 px von oben, damit es in der Leiste mittig sitzt
+close_box_top   5     # 5 px von oben, damit es in der Leiste mittig sitzt:
+                      # (titlebar_h - 1 - close_box) / 2 über der Mitte, siehe
+                      # window_close_box_rect()
 close_box_left  9     # 9 px von links
 close_box_gap   1     # weißer Rand links und rechts vom Schließfeld
 grow_box        16    # Größenfeld 16 x 16
