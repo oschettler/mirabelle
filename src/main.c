@@ -33,7 +33,7 @@
 #endif
 
 #define PDA_NAME    "mirabelle"
-#define PDA_VERSION "0.1"
+#define PDA_VERSION "1.1"
 #define PDA_YEAR    "2026"
 #define PDA_AUTHOR  "Olav Schettler"
 
