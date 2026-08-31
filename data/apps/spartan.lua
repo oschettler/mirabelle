@@ -26,6 +26,10 @@ local START = "spartan://mozz.us/"
 -- Die Breite des Rollbalkens kommt aus dem Thema, nicht aus dieser Datei.
 local BAR = theme.scrollbar_w
 
+-- Zeilenhöhe der Adresszeile - für Zeichnen UND Ereignisbehandlung dieselbe
+-- Zahl, damit ein Klick genau dort trifft, wo die Zeile gezeichnet wird.
+local ADDR_H = textheight() + 2
+
 -- Anzeige und Rollbalken sind die echten Widgets aus dem Programm.
 --
 -- Der Balken wird AN die Anzeige gehängt: beide teilen sich dann ein
@@ -36,11 +40,12 @@ local view = gemview()
 local bar  = scrollbar(view)
 
 browser = {
-  address = START,
-  editing = false,   -- steht die Schreibmarke in der Adresszeile?
-  status  = "",
-  history = {},
-  heading = nil,     -- die erste Überschrift der Seite, für den Fenstertitel
+  address  = START,
+  editing  = false,   -- steht die Schreibmarke in der Adresszeile?
+  selected = false,   -- ist die ganze Adresse markiert (nach einem Klick)?
+  status   = "",
+  history  = {},
+  heading  = nil,     -- die erste Überschrift der Seite, für den Fenstertitel
 
   -- Nach außen sichtbar, damit ein Test dorthin klicken kann, wo ein Nutzer
   -- klickt, und von der Konsole aus sehen kann, was angezeigt wird.
@@ -136,19 +141,26 @@ app{
   draw = function(w, h)
     cls()
 
-    local lh = textheight() + 2
-
     -- Die Adresszeile. Beim Tippen blinkt dahinter eine Schreibmarke - ein
     -- senkrechter Strich im selben Takt wie in jedem Textfeld des Programms,
     -- gezeichnet im Modus xor, damit derselbe Aufruf sie setzt und löscht.
-    rect(2, 2, w - 4, lh + 4)
+    rect(2, 2, w - 4, ADDR_H + 4)
     print(browser.address, 6, 5)
 
-    if browser.editing and caret() then
-      local cx = 6 + textwidth(browser.address)
-      mode("xor")
-      line(cx, 5, cx, 5 + textheight() - 1)
-      mode("copy")
+    if browser.editing then
+      if browser.selected then
+        -- Die ganze Adresse ist markiert, wie nach einem Klick ins Feld: ein
+        -- umgekehrtes Rechteck statt einer blinkenden Schreibmarke - genau wie
+        -- ein markiertes Textfeld sonst im Programm aussieht.
+        mode("xor")
+        rectfill(6, 4, textwidth(browser.address), ADDR_H - 2)
+        mode("copy")
+      elseif caret() then
+        local cx = 6 + textwidth(browser.address)
+        mode("xor")
+        line(cx, 5, cx, 5 + textheight() - 1)
+        mode("copy")
+      end
     end
 
     -- Die Zeile unten: der Inhaltstyp der geholten Seite, eine Meldung, oder
@@ -163,11 +175,11 @@ app{
     -- Das Größenfeld wird über den Inhalt gezeichnet und sitzt in der unteren
     -- rechten Ecke. Anzeige, Balken und Meldung hören davor auf - sonst läge
     -- der untere Pfeil des Balkens darunter, und ein Klick darauf täte nichts.
-    local foot = h - lh - 2
-    local y    = lh + 10
+    local foot = h - ADDR_H - 2
+    local y    = ADDR_H + 10
 
     if status ~= "" then
-      clip(4, foot, w - 8 - theme.grow_box, lh)
+      clip(4, foot, w - 8 - theme.grow_box, ADDR_H)
       print(status, 6, foot + 1)
       clip()
     end
@@ -197,6 +209,16 @@ app{
 
     if e.kind == "mouse_down" or e.kind == "mouse_move"
        or e.kind == "mouse_up" then
+      -- Ein Klick in die Adresszeile holt den Fokus dorthin, mit der ganzen
+      -- Adresse markiert - wie ein Textfeld, das man anklickt, statt es
+      -- blind zu übertippen.
+      if e.kind == "mouse_down" and e.y >= 2 and e.y < 2 + ADDR_H then
+        browser.editing  = true
+        browser.selected = true
+        caret_wake()
+        return true
+      end
+
       if bar:event(e) then return true end
 
       local used = view:event(e)
@@ -206,7 +228,14 @@ app{
 
     if e.kind == "text" then
       if browser.editing then
-        browser.address = browser.address .. e.text
+        if browser.selected then
+          -- Getippt wird über die Markierung hinweg: sie verschwindet, wie
+          -- bei jedem markierten Textfeld im Programm.
+          browser.address  = e.text
+          browser.selected = false
+        else
+          browser.address = browser.address .. e.text
+        end
         return true
       end
 
@@ -214,8 +243,9 @@ app{
       -- nimmt, ist der Anfang einer neuen Adresse.
       if view:event(e) then return true end
 
-      browser.editing = true
-      browser.address = e.text
+      browser.editing  = true
+      browser.selected = false
+      browser.address  = e.text
       return true
     end
 
@@ -230,21 +260,28 @@ app{
       else
         -- Auch ohne Tippen: Return holt, was in der Zeile steht. So kommt man
         -- beim ersten Öffnen weiter, ohne die Adresse abzuschreiben.
-        browser.editing = false
+        browser.editing  = false
+        browser.selected = false
         browser.go(browser.address)
       end
       return true
 
     elseif e.key == key.backspace then
       if browser.editing then
-        browser.address = browser.address:sub(1, -2)
+        if browser.selected then
+          browser.address  = ""
+          browser.selected = false
+        else
+          browser.address = browser.address:sub(1, -2)
+        end
       else
         browser.back()
       end
       return true
 
     elseif e.key == key.escape then
-      browser.editing = false
+      browser.editing  = false
+      browser.selected = false
       return true
     end
 

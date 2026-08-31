@@ -267,6 +267,17 @@ static int l_caret(lua_State *L)
     return 1;
 }
 
+/* Weckt den Takt der Schreibmarke - siehe ui/caret.h. Für ein Feld, das sein
+ * eigenes Zeichnen übernimmt (etwa die Adresszeile in spartan.lua) und beim
+ * Fokussieren denselben sofortigen, sichtbaren Anfang braucht wie jedes
+ * Textfeld des Programms. */
+static int l_caret_wake(lua_State *L)
+{
+    (void)L;
+    caret_wake();
+    return 0;
+}
+
 /* --- Texte aus dem Katalog --------------------------------------------------------- */
 
 static int l_T(lua_State *L)
@@ -326,6 +337,7 @@ static const luaL_Reg API[] = {
     { "textwidth",  l_textwidth },
     { "textheight", l_textheight },
     { "caret",      l_caret },
+    { "caret_wake", l_caret_wake },
     { "T",          l_T },
     { "Tn",         l_Tn },
     { NULL, NULL }
