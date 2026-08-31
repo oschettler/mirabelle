@@ -234,8 +234,13 @@ dialog *dialog_open_input(wm *m, const catalog *cat,
     if (DIALOG_WRAP_MAX_W > content_w) content_w = DIALOG_WRAP_MAX_W;
     content_w += 2 * d->th.dialog_pad;
 
-    int text_h  = d->line_count * system12.size;
-    int field_h = d->th.button_h;
+    int text_h = d->line_count * system12.size;
+
+    /* Die eigene Wunschhöhe des Feldes, nicht die Höhe eines Knopfs - beide
+     * setzen sich aus unterschiedlichen Rändern zusammen, und button_h reicht
+     * hier zu knapp: die Schrift stand darin abgeschnitten. */
+    int field_h = 0;
+    widget_measure(d->field, NULL, &field_h);
 
     int content_h = d->th.dialog_pad + text_h + d->th.dialog_pad + field_h +
                     d->th.dialog_pad + d->th.button_h + d->th.dialog_btn_pad;
