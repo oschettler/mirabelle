@@ -14,6 +14,7 @@
 #include "core/date.h"
 
 #include <stdio.h>
+#include <time.h>
 
 bool date_is_leap_year(int year)
 {
@@ -35,6 +36,16 @@ bool date_valid(date d)
     if (d.month < 1 || d.month > 12) return false;
     if (d.day < 1) return false;
     return d.day <= date_days_in_month(d.year, d.month);
+}
+
+date date_today(void)
+{
+    time_t     t   = time(NULL);
+    struct tm  tmv = {0};
+    struct tm *g   = gmtime(&t);
+    if (g) tmv = *g;
+
+    return (date){ tmv.tm_year + 1900, tmv.tm_mon + 1, tmv.tm_mday };
 }
 
 /* --- Tageszahl -------------------------------------------------------------------

@@ -30,6 +30,10 @@ typedef struct {
 /* true, wenn das Datum es wirklich gibt - der 30. Februar also nicht. */
 bool date_valid(date d);
 
+/* Das heutige Datum nach der Systemuhr, ohne Zeitzone - wie überall in dieser
+ * Datei gibt es keine Uhrzeit, nur den Tag. */
+date date_today(void);
+
 bool date_is_leap_year(int year);
 int  date_days_in_month(int year, int month);
 

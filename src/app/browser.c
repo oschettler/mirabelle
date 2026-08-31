@@ -87,7 +87,7 @@ browser *browser_create(const schema *s, vault *v, const theme *th,
     /* Welche Übersicht es wird, entscheidet das Schema - und diese eine
      * Verzweigung ist alles, was der Browser davon merkt. */
     if (s->view == VIEW_MONTH) {
-        date start = { 2026, 1, 1 };
+        date start = date_today();
         b->month = monthview_create(&b->th, cat, start);
     } else {
         b->list = list_create(&b->th, cat);
