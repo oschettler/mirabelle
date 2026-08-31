@@ -49,6 +49,11 @@ typedef struct {
     widget  *bar;            /* Rollbalken neben der Übersicht */
 } app_entry;
 
+/* Was gerade gefragt wird - finish_ask() muss es unterscheiden, weil ein
+ * Ergebnis wie „zweiter Knopf gedrückt" für „löschen" etwas anderes
+ * bedeutet als für „gehe zu einem anderen Monat". */
+typedef enum { ASK_NONE, ASK_ABOUT, ASK_DELETE, ASK_MONTH_JUMP } ask_kind;
+
 struct shell {
     shell_config cfg;
     theme        th;          /* eigene Kopie - siehe widget.h */
@@ -75,8 +80,9 @@ struct shell {
      * machen lässt - der Datensatz ist danach weg. Genau dafür sind modale
      * Dialoge da, und für nichts sonst: wer bei jeder Kleinigkeit fragt,
      * bekommt Nutzer, die wegklicken, ohne zu lesen. */
-    dialog *ask;
-    int     ask_app;
+    dialog   *ask;
+    int       ask_app;
+    ask_kind  ask_kind;
 };
 
 /* --- Schemata einlesen -------------------------------------------------------------
@@ -509,9 +515,10 @@ void shell_run_action(shell *s, const char *action)
 
         const char *btns[] = { "button.ok" };
 
-        s->ask_app = shell_active_app(s);
-        s->ask     = dialog_open(s->wm, s->cfg.catalog, "dialog.about.body",
-                                 NULL, 0, btns, 1);
+        s->ask_app  = shell_active_app(s);
+        s->ask_kind = ASK_ABOUT;
+        s->ask      = dialog_open(s->wm, s->cfg.catalog, "dialog.about.body",
+                                  NULL, 0, btns, 1);
         if (!s->ask)
             snprintf(s->last_error, sizeof s->last_error, "kein Speicher");
         return;
@@ -565,9 +572,10 @@ void shell_run_action(shell *s, const char *action)
          * wird damit selbst zum aktiven Fenster. Danach zu fragen, welche
          * Anwendung aktiv ist, liefert den Dialog - und der hat keine
          * Datensätze. */
-        s->ask_app = shell_active_app(s);
-        s->ask     = dialog_open(s->wm, s->cfg.catalog, "dialog.delete.body",
-                                 args, 1, btns, 2);
+        s->ask_app  = shell_active_app(s);
+        s->ask_kind = ASK_DELETE;
+        s->ask      = dialog_open(s->wm, s->cfg.catalog, "dialog.delete.body",
+                                  args, 1, btns, 2);
 
         /* Ohne Dialog wäre die Alternative, kommentarlos zu löschen. Lieber
          * gar nicht: der Nutzer kann es noch einmal versuchen. */
@@ -695,15 +703,38 @@ static void layout_app(shell *s, app_entry *a)
  *
  * Der erste Knopf ist immer der abbrechende (dialog.h), also zählt nur die
  * Eins: gelöscht wird, wenn ausdrücklich zugestimmt wurde. */
+/* Liest "JJJJ-MM" - kein Tag, das kennt nur die volle Form aus date_from_iso.
+ * Der Tag wird ohnehin auf 1 gesetzt, sobald das Datum feststeht. */
+static bool parse_year_month(const char *s, date *out)
+{
+    int y = 0, m = 0;
+    if (!s || sscanf(s, "%d-%d", &y, &m) != 2) return false;
+
+    date d = { y, m, 1 };
+    if (!date_valid(d)) return false;
+
+    *out = d;
+    return true;
+}
+
 static void finish_ask(shell *s)
 {
     int result = dialog_result(s->ask);
     if (result == DIALOG_OPEN) return;
 
+    ask_kind kind = s->ask_kind;
+
+    /* Der Wert muss VOR dialog_close() geholt werden - danach ist das Feld
+     * dahinter freigegeben. */
+    char input[32] = "";
+    if (kind == ASK_MONTH_JUMP)
+        snprintf(input, sizeof input, "%s", dialog_input_value(s->ask));
+
     window *w = dialog_window(s->ask);
     dialog_close(s->ask);
     wm_close(s->wm, w);
-    s->ask = NULL;
+    s->ask      = NULL;
+    s->ask_kind = ASK_NONE;
 
     /* Das Fenster, aus dem die Frage kam, wieder nach vorn holen. Ein
      * geschlossener Dialog lässt sonst gar kein Fenster aktiv zurück, und die
@@ -717,9 +748,21 @@ static void finish_ask(shell *s)
     browser *br = shell_app_browser(s, s->ask_app);
     if (!br) return;
 
-    char msg[256] = "";
-    if (!browser_delete_selected(br, msg, sizeof msg))
-        snprintf(s->last_error, sizeof s->last_error, "%s", msg);
+    if (kind == ASK_DELETE) {
+        char msg[256] = "";
+        if (!browser_delete_selected(br, msg, sizeof msg))
+            snprintf(s->last_error, sizeof s->last_error, "%s", msg);
+        return;
+    }
+
+    if (kind == ASK_MONTH_JUMP) {
+        date picked;
+        if (parse_year_month(input, &picked)) {
+            widget *month = browser_month(br);
+            if (month) monthview_select(month, picked);
+        }
+        return;
+    }
 }
 
 /* Die Statuszeile am unteren Rand.
@@ -893,6 +936,28 @@ void shell_event(shell *s, const event *e)
                     char msg[256] = "";
                     if (!browser_open_selected(a->br, msg, sizeof msg))
                         snprintf(s->last_error, sizeof s->last_error, "%s", msg);
+                    return;
+                }
+
+                /* Ein Klick auf die Monats-/Jahresbeschriftung im Kalenderkopf
+                 * fragt nach einem anderen Monat - siehe finish_ask(). */
+                widget *month = browser_month(a->br);
+                if (month && monthview_jump_requested(month) && !s->ask) {
+                    date shown = monthview_month(month);
+                    char cur[16];
+                    snprintf(cur, sizeof cur, "%04d-%02d", shown.year, shown.month);
+
+                    const char *btns[] = { "button.cancel", "button.ok" };
+
+                    s->ask_app  = shell_active_app(s);
+                    s->ask_kind = ASK_MONTH_JUMP;
+                    s->ask      = dialog_open_input(s->wm, s->cfg.catalog,
+                                                    "dialog.monthjump.body",
+                                                    NULL, 0, cur, btns, 2);
+                    if (!s->ask) {
+                        s->ask_kind = ASK_NONE;
+                        snprintf(s->last_error, sizeof s->last_error, "kein Speicher");
+                    }
                 }
                 return;
             }

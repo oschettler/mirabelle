@@ -17,6 +17,7 @@
 #include "gfx/pattern.h"
 #include "gfx/text.h"
 #include "ui/theme.h"
+#include "ui/widget.h"
 #include "ui/window.h"
 
 extern const font system12;
@@ -33,10 +34,16 @@ extern const font system12;
 struct dialog {
     wm     *m;
     window *win;
+    theme   th;        /* nur gebraucht, wenn field != NULL - siehe dort:
+                         * das Textfeld hält seinen th-Zeiger fest, und der
+                         * muss deshalb so lange leben wie der Dialog. */
 
     int  line_count;
     char line[DIALOG_MAX_LINES][DIALOG_TEXT_MAX];
     int  dialog_pad;   /* für die Textposition beim Zeichnen gemerkt */
+
+    widget *field;      /* NULL außer bei dialog_open_input() */
+    rect    field_rect;  /* im Koordinatensystem des Inhalts */
 
     int  button_count;
     char button_label[DIALOG_MAX_BUTTONS][DIALOG_LABEL_MAX];
@@ -165,9 +172,114 @@ dialog *dialog_open(wm *m, const catalog *cat,
     return d;
 }
 
+/* Wie dialog_open, nur mit einem einzeiligen Eingabefeld über den Knöpfen -
+ * für eine Frage, die keine Auswahl ist, sondern Text braucht. initial füllt
+ * das Feld vor, darf NULL sein.
+ *
+ * Vieles hier verdoppelt die Maßrechnung aus dialog_open statt sie zu teilen:
+ * eine gemeinsame Funktion müsste sonst wissen, ob es ein Feld gibt, und
+ * verzweigte an jeder zweiten Stelle - zwei kurze Funktionen lesen sich
+ * leichter als eine mit lauter Fallunterscheidungen. */
+dialog *dialog_open_input(wm *m, const catalog *cat,
+                          const char *body_key,
+                          const char *const *args, int argc,
+                          const char *initial,
+                          const char *const *button_keys, int button_count)
+{
+    if (button_count < 1) return NULL;
+    if (button_count > DIALOG_MAX_BUTTONS) button_count = DIALOG_MAX_BUTTONS;
+
+    dialog *d = calloc(1, sizeof *d);
+    if (!d) return NULL;
+
+    d->m            = m;
+    d->button_count = button_count;
+    d->focus        = button_count - 1;   /* der Voreinstellungsknopf */
+    d->result       = DIALOG_OPEN;
+
+    char body[DIALOG_TEXT_MAX];
+    if (!Tf(cat, body_key, body, sizeof body, args, argc))
+        snprintf(body, sizeof body, "%s", T(cat, body_key));
+    wrap_body(body, d->line, &d->line_count, DIALOG_WRAP_MAX_W);
+
+    for (int i = 0; i < button_count; i++)
+        snprintf(d->button_label[i], DIALOG_LABEL_MAX, "%s", T(cat, button_keys[i]));
+
+    d->th          = *wm_theme(m);
+    d->dialog_pad  = d->th.dialog_pad;
+
+    d->field = text_field_create(&d->th, cat);
+    if (!d->field) { free(d); return NULL; }
+    if (initial) text_widget_set_value(d->field, initial);
+    d->field->focused = true;
+
+    int max_line_w = 0;
+    for (int i = 0; i < d->line_count; i++) {
+        int lw = text_width(&system12, d->line[i]);
+        if (lw > max_line_w) max_line_w = lw;
+    }
+
+    int bw[DIALOG_MAX_BUTTONS];
+    int row_w = 0;
+    for (int i = 0; i < button_count; i++) {
+        int tw = text_width(&system12, d->button_label[i]);
+        bw[i] = tw + 2 * d->th.button_pad;
+        if (bw[i] < d->th.button_min_w) bw[i] = d->th.button_min_w;
+        row_w += bw[i];
+        if (i > 0) row_w += d->th.button_gap;
+    }
+
+    int content_w = max_line_w;
+    if (row_w > content_w) content_w = row_w;
+    if (DIALOG_WRAP_MAX_W > content_w) content_w = DIALOG_WRAP_MAX_W;
+    content_w += 2 * d->th.dialog_pad;
+
+    int text_h  = d->line_count * system12.size;
+    int field_h = d->th.button_h;
+
+    int content_h = d->th.dialog_pad + text_h + d->th.dialog_pad + field_h +
+                    d->th.dialog_pad + d->th.button_h + d->th.dialog_btn_pad;
+
+    d->field_rect = rect_make(d->th.dialog_pad, d->th.dialog_pad + text_h + d->th.dialog_pad,
+                              content_w - 2 * d->th.dialog_pad, field_h);
+    d->field->frame = d->field_rect;
+
+    int bx = content_w - d->th.dialog_btn_pad - row_w;
+    int by = content_h - d->th.dialog_btn_pad - d->th.button_h;
+    for (int i = 0; i < button_count; i++) {
+        d->button_rect[i] = rect_make(bx, by, bw[i], d->th.button_h);
+        bx += bw[i] + d->th.button_gap;
+    }
+
+    int frame_w = content_w + 2 * d->th.border;
+    int frame_h = content_h + d->th.titlebar_h + d->th.border;
+    int screen_w = 0, screen_h = 0;
+    wm_screen_size(m, &screen_w, &screen_h);
+    int frame_x = (screen_w - frame_w) / 2;
+    int frame_y = (screen_h - frame_h) / 2;
+
+    d->win = wm_open(m, rect_make(frame_x, frame_y, frame_w, frame_h), "", WIN_MODAL);
+    if (!d->win) {
+        widget_destroy(d->field);
+        free(d);
+        return NULL;
+    }
+
+    return d;
+}
+
+/* Was im Eingabefeld steht - auch nach Abbruch, damit der Aufrufer nicht
+ * selbst mitzählen muss, welcher Knopf das war. Leerstring bei einem Dialog
+ * ohne Feld. */
+const char *dialog_input_value(const dialog *d)
+{
+    return d->field ? text_widget_value(d->field) : "";
+}
+
 void dialog_close(dialog *d)
 {
     if (!d) return;
+    if (d->field) widget_destroy(d->field);
     wm_close(d->m, d->win);
     free(d);
 }
@@ -197,6 +309,8 @@ void dialog_draw(dialog *d)
         gfx_text(&g, &system12, d->dialog_pad, y, d->line[i]);
     }
 
+    if (d->field) widget_draw(d->field, &g);
+
     for (int i = 0; i < d->button_count; i++) {
         rect r = d->button_rect[i];
 
@@ -223,11 +337,12 @@ bool dialog_event(dialog *d, const event *e)
 {
     if (d->result != DIALOG_OPEN) return false;
 
+    rect cr = window_content_rect(d->win);
+
     switch (e->kind) {
     case EV_MOUSE_DOWN: {
-        rect cr = window_content_rect(d->win);
-        int  lx = e->x - cr.x;
-        int  ly = e->y - cr.y;
+        int lx = e->x - cr.x;
+        int ly = e->y - cr.y;
 
         for (int i = 0; i < d->button_count; i++) {
             if (rect_contains(d->button_rect[i], lx, ly)) {
@@ -236,8 +351,28 @@ bool dialog_event(dialog *d, const event *e)
                 return true;
             }
         }
+        if (d->field) {
+            event local = *e;
+            local.x = lx;
+            local.y = ly;
+            return widget_event(d->field, &local);
+        }
         return false;
     }
+
+    case EV_MOUSE_MOVE:
+    case EV_MOUSE_UP:
+        if (d->field) {
+            event local = *e;
+            local.x = e->x - cr.x;
+            local.y = e->y - cr.y;
+            return widget_event(d->field, &local);
+        }
+        return false;
+
+    case EV_TEXT:
+        if (d->field) return widget_event(d->field, e);
+        return false;
 
     case EV_KEY_DOWN:
         switch (e->key) {
@@ -250,21 +385,26 @@ bool dialog_event(dialog *d, const event *e)
             return true;
 
         case KEY_TAB:
-            if (e->mods & MOD_SHIFT)
-                d->focus = (d->focus + d->button_count - 1) % d->button_count;
-            else
-                d->focus = (d->focus + 1) % d->button_count;
+            if (!d->field) {
+                if (e->mods & MOD_SHIFT)
+                    d->focus = (d->focus + d->button_count - 1) % d->button_count;
+                else
+                    d->focus = (d->focus + 1) % d->button_count;
+            }
             return true;
 
         case KEY_RIGHT:
+            if (d->field) return widget_event(d->field, e);
             d->focus = (d->focus + 1) % d->button_count;
             return true;
 
         case KEY_LEFT:
+            if (d->field) return widget_event(d->field, e);
             d->focus = (d->focus + d->button_count - 1) % d->button_count;
             return true;
 
         default:
+            if (d->field) return widget_event(d->field, e);
             return false;
         }
 

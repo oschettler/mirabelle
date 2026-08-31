@@ -124,7 +124,8 @@ spartan.loading          = wird geholt ...
 spartan.failed           = Fehlgeschlagen.
 spartan.redirect         = Weiterleitung nach
 spartan.badlink          = Der Verweis führt nirgendwohin.
-dialog.delete.body       = „{0}“ wirklich löschen? Das lässt sich nicht rückgängig machen.
+dialog.delete.body       = „{0}” wirklich löschen? Das lässt sich nicht rückgängig machen.
+dialog.monthjump.body    = Gehe zu Monat und Jahr (JJJJ-MM):
 spartan.hint             = Return holt die Adresse. Tippen ersetzt sie, Esc bricht ab.
 
 # --- Statuszeile ------------------------------------------------------------

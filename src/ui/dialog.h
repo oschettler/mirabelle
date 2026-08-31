@@ -39,6 +39,19 @@ dialog *dialog_open(wm *m, const catalog *cat,
 /* Schließt den Dialog und gibt ihn frei. */
 void dialog_close(dialog *d);
 
+/* Wie dialog_open, aber mit einem einzeiligen Eingabefeld über den Knöpfen -
+ * für eine Frage, die Text statt einer Auswahl braucht. initial füllt das
+ * Feld vor, darf NULL sein. */
+dialog *dialog_open_input(wm *m, const catalog *cat,
+                          const char *body_key,
+                          const char *const *args, int argc,
+                          const char *initial,
+                          const char *const *button_keys, int button_count);
+
+/* Was im Eingabefeld steht, auch nach Abbruch. Leerstring bei einem Dialog,
+ * der mit dialog_open() angelegt wurde. */
+const char *dialog_input_value(const dialog *d);
+
 /* DIALOG_OPEN, solange nichts gewählt wurde; sonst der Index des Knopfs.
  * Esc liefert 0 - der erste Knopf ist immer der abbrechende. */
 int dialog_result(const dialog *d);

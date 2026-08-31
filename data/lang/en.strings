@@ -120,6 +120,7 @@ spartan.failed           = Failed.
 spartan.redirect         = Redirect to
 spartan.badlink          = That link goes nowhere.
 dialog.delete.body       = Really delete “{0}”? This cannot be undone.
+dialog.monthjump.body    = Go to month and year (YYYY-MM):
 spartan.hint             = Return fetches this address. Type to replace it, Esc cancels.
 
 # --- Statuszeile ------------------------------------------------------------
