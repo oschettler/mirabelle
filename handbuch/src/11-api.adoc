@@ -342,7 +342,7 @@ lässt sich das Protokoll ohne Netz prüfen, und Kapitel 13 zeigt, wie.
 Die drei Funktionen, die man braucht, sind `spartan_parse_url`,
 `spartan_fetch` und `spartan_resolve`.
 
-=== app/ — Schema, Browser, Schale
+=== app/ — Schema, Browser, Shell
 
 Auch diese Schicht hat ein eigenes Kapitel; hier die Einstiegspunkte.
 
@@ -354,7 +354,7 @@ Anwendung dahinter.
 Der **Browser** (`app/browser.h`) baut daraus Liste, Formular und Kalender. In
 ihm steht kein einziger Sammlungsname als Zeichenkette.
 
-Die **Schale** (`app/shell.h`) findet die Schemadateien, gibt jeder Anwendung
+Die **Shell** (`app/shell.h`) findet die Schemadateien, gibt jeder Anwendung
 ein Fenster und baut die Menüleiste. Sie kennt weder Lua noch die Namen der
 Anwendungen: Schemata liest ein übergebener Lader (`shell_schemas`), Skripte
 eine Handvoll Funktionszeiger (`shell_scripting`).

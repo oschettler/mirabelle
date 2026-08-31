@@ -314,12 +314,12 @@ Tastatur gebauter Weg. Wer jeden Befehl doppelt umsetzt — einen für die Maus,
 einen für die Tastatur —, vergisst früher oder später einen davon. Wer beide
 über dieselbe Belegungsdatei laufen lässt, kann das gar nicht.
 
-.Nicht jede Taste gehört der Schale
+.Nicht jede Taste gehört der Shell
 [NOTE]
 ====
 `list.next` bewegt die Auswahl und gehört der Liste; `list.open` öffnet einen
 Datensatz und gehört der Anwendung. Beides steht nebeneinander in derselben
-Datei, und die Schale muss unterscheiden: was sie selbst kann, führt sie aus,
+Datei, und die Shell muss unterscheiden: was sie selbst kann, führt sie aus,
 alles andere reicht sie an das Bedienelement weiter.
 
 Wer diese Unterscheidung wegläßt, bekommt eines von beidem — eine Auswahl, die

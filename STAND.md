@@ -25,7 +25,7 @@ Mutationsprüfstände laufen ohne unerklärte Überlebende.
 | M12 | Datumsrechnung, Monatsansicht, Ansichtsregistratur |
 | M13 | Lua 5.4, die API, der Schemalader, Skriptanwendungen |
 | M17 | SPARTAN-Protokoll, Netz in `plat.h`, Gemtext-Anzeige |
-| — | Die Schale: Fenster, Menüs, Rollbalken, Dialoge, Skriptanwendungen |
+| — | Die Shell: Fenster, Menüs, Rollbalken, Dialoge, Skriptanwendungen |
 
 Das Programm trägt sieben Anwendungen: **Aufgaben, Kontakte, Notizen, Termine**
 aus je einer Schemadatei und **Spartan, Gliederung, Agenda** aus je einer

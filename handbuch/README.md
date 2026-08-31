@@ -34,7 +34,7 @@ handbuch/
 | 6 | Buchstaben von Hand | Bitmapschrift, UTF-8, Umlaute |
 | 7 | Überlappende Fenster | Fensterverwaltung, Clipping, Ziehen |
 | 8 | Wo die Daten liegen | Gemtext, Front Matter, Vault, Suche |
-| 9 | Aus Dateien werden Anwendungen | Schemata, die Schale, Tastenbereiche |
+| 9 | Aus Dateien werden Anwendungen | Schemata, die Shell, Tastenbereiche |
 | 10 | Lua in einer halben Stunde | Die Sprache |
 | 11 | API-Referenz | C-Schnittstellen und die Lua-API |
 | 12 | Ein Browser für ein kleines Netz | SPARTAN, Transport, der Browser in Lua |

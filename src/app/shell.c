@@ -444,11 +444,11 @@ static app_entry *active_app(shell *s)
     return i < 0 ? NULL : &s->apps[i];
 }
 
-/* Was die Schale selbst tut, im Unterschied zu dem, was ein Bedienelement tut.
+/* Was die Shell selbst tut, im Unterschied zu dem, was ein Bedienelement tut.
  *
  * Die Tastenbelegung kennt beides nebeneinander: `list.next` bewegt die
  * Auswahl und gehört der Liste, `list.open` öffnet einen Datensatz und gehört
- * der Anwendung. Ohne diese Unterscheidung würde die Schale entweder alles
+ * der Anwendung. Ohne diese Unterscheidung würde die Shell entweder alles
  * schlucken - dann bewegte sich keine Auswahl mehr - oder alles durchlassen,
  * und dann täte Return nichts.
  *
@@ -477,7 +477,7 @@ static bool shell_handles(const char *action)
 /* Braucht diese Aktion einen Browser?
  *
  * Alles, was einen Datensatz anfasst. In einer Skriptanwendung gibt es keinen,
- * und dann darf die Schale die Taste nicht verbrauchen: Return ist in der
+ * und dann darf die Shell die Taste nicht verbrauchen: Return ist in der
  * Tastenbelegung mit `list.open` belegt, und ein Skript, das Return für etwas
  * anderes benutzt, bekäme sie sonst nie zu sehen. Genau das ist im
  * SPARTAN-Browser passiert - die Adresse ließ sich eintippen, aber Return tat
@@ -513,12 +513,13 @@ void shell_run_action(shell *s, const char *action)
     if (strcmp(action, "app.about") == 0) {
         if (s->ask) return;
 
+        const char *args[1]    = { PDA_VERSION };
         const char *btns[] = { "button.ok" };
 
         s->ask_app  = shell_active_app(s);
         s->ask_kind = ASK_ABOUT;
         s->ask      = dialog_open(s->wm, s->cfg.catalog, "dialog.about.body",
-                                  NULL, 0, btns, 1);
+                                  args, 1, btns, 1);
         if (!s->ask)
             snprintf(s->last_error, sizeof s->last_error, "kein Speicher");
         return;
@@ -669,7 +670,7 @@ static void update_title(shell *s, app_entry *a)
     }
 
     /* Die Übersicht eines Kalenders zeigt einen Monat, keine Sammlung. Welchen,
-     * steht im Raster selbst - die Schale rechnet ihn nicht nach. */
+     * steht im Raster selbst - die Shell rechnet ihn nicht nach. */
     widget *cal = browser_month(a->br);
     if (cal) {
         date m = monthview_month(cal);
@@ -871,12 +872,12 @@ void shell_event(shell *s, const event *e)
         if (!action)
             action = keymap_lookup(s->cfg.keymap, e->key, e->mods, "app");
 
-        /* Was in einem Bereich steht, aber der Schale nichts bedeutet -
+        /* Was in einem Bereich steht, aber der Shell nichts bedeutet -
          * `list.next` etwa -, geht weiter an das Widget. Es kennt seine Tasten
-         * selbst, und die Schale hat dazu nichts zu sagen.
+         * selbst, und die Shell hat dazu nichts zu sagen.
          *
          * Dasselbe gilt für eine Anwendung ohne Browser: sie bekommt die
-         * Taste, statt dass die Schale sie ins Leere laufen lässt. */
+         * Taste, statt dass die Shell sie ins Leere laufen lässt. */
         bool mine = action && (shell_handles(action) || is_app_label(s, action));
         if (mine && needs_browser(action) && (!cur || !cur->br)) mine = false;
 
@@ -931,7 +932,7 @@ void shell_event(shell *s, const event *e)
             if (browser_event(a->br, &local)) {
                 /* Ein Doppelklick in der Liste öffnet den Datensatz. Diese
                  * Entscheidung gehört der Anwendung, nicht dem Widget -
-                 * deshalb fragt die Schale nach und der Browser nicht. */
+                 * deshalb fragt die Shell nach und der Browser nicht. */
                 if (browser_was_opened(a->br)) {
                     char msg[256] = "";
                     if (!browser_open_selected(a->br, msg, sizeof msg))

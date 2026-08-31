@@ -42,7 +42,7 @@ button.discard           = Verwerfen
 # --- Dialoge ----------------------------------------------------------------
 dialog.discard.title     = Änderungen verwerfen?
 dialog.discard.body      = „{0}“ wurde geändert. Sollen die Änderungen verworfen werden?
-dialog.about.body        = mirabelle 0.1 – ein Taschencomputer im Stil von Macintosh System 1. Freie Software unter der GNU GPL, Version 3 oder neuer.
+dialog.about.body        = mirabelle {0} – ein Taschencomputer im Stil von Macintosh System 1. Freie Software unter der GNU GPL, Version 3 oder neuer.
 
 # --- Lizenz -----------------------------------------------------------------
 # Zwei Sätze aus der Ausgabe von --version. Sie stehen hier, weil ein Nutzer
@@ -62,7 +62,7 @@ list.count.one           = {0} Eintrag
 list.count.other         = {0} Einträge
 
 # --- Formate ----------------------------------------------------------------
-date.format              = %d.%m.%Y
+date.format              = %Y-%m-%d
 time.format              = %H:%M
 week.start               = 1
 weekday.short            = Mo Di Mi Do Fr Sa So

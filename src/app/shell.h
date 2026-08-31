@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-/* Die Schale: das Programm, das aus den Bausteinen eine Anwendung macht.
+/* Die Shell: das Programm, das aus den Bausteinen eine Anwendung macht.
  *
  * Bis hierher gab es Fenster, Widgets, Schemata, einen Browser, einen
  * Kalender, einen Gemtext-Anzeiger und eine Skriptanbindung - jedes für sich
@@ -9,7 +9,7 @@
  *
  * Sie liest beim Start alle Schemadateien aus `data/schema` und macht aus
  * jeder eine Anwendung. Aufgaben, Kontakte, Notizen und Termine entstehen
- * damit ohne eine Zeile Code, die sie namentlich nennt (D-7) - die Schale
+ * damit ohne eine Zeile Code, die sie namentlich nennt (D-7) - die Shell
  * zählt Dateien, nicht Anwendungen.
  *
  * Jede Anwendung bekommt auf Wunsch ein Fenster, darin einen Browser und
@@ -29,6 +29,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define PDA_VERSION "1.1"
+
 #include "core/collate.h"
 #include "core/i18n.h"
 #include "core/keymap.h"
@@ -43,10 +45,10 @@ typedef struct shell shell;
 
 /* --- Schemadateien lesen ----------------------------------------------------
  *
- * Die Schale liest kein Schema selbst. Sie durchsucht das Verzeichnis nach
+ * Die Shell liest kein Schema selbst. Sie durchsucht das Verzeichnis nach
  * Dateien mit der genannten Endung und reicht jede an `load` weiter.
  *
- * Der Grund ist derselbe wie bei den Skripten unten: die Schale kennt Lua
+ * Der Grund ist derselbe wie bei den Skripten unten: die Shell kennt Lua
  * nicht. Sie weiß, dass es Schemadateien gibt und wie eine `schema`-Struktur
  * aussieht - nicht, in welcher Sprache sie geschrieben sind. Ein Test kann
  * damit einen eigenen Lader einsetzen, ohne Lua zu übersetzen.
@@ -63,7 +65,7 @@ typedef struct {
 
 /* --- Anwendungen aus Skripten ----------------------------------------------
  *
- * Dieselbe Vorsichtsmaßnahme, eine Ebene weiter: die Schale bekommt eine
+ * Dieselbe Vorsichtsmaßnahme, eine Ebene weiter: die Shell bekommt eine
  * Handvoll Funktionszeiger und ruft sie auf; ob dahinter Lua steckt, ein
  * anderes Skriptsystem oder gar nichts, sieht sie nicht.
  *
@@ -83,7 +85,7 @@ typedef struct {
      *
      * Fertiger Text, kein Katalogschlüssel: was ein Skript dort zeigt, ist der
      * Titel einer abgerufenen Seite oder der Name einer geöffneten Datei, und
-     * beides steht in keinem Katalog. Den Namen der Anwendung setzt die Schale
+     * beides steht in keinem Katalog. Den Namen der Anwendung setzt die Shell
      * selbst dahinter.
      *
      * Darf NULL sein, und darf NULL liefern: dann steht dort wie bisher der
@@ -112,7 +114,7 @@ typedef struct {
     int screen_w, screen_h;
 } shell_config;
 
-/* Legt die Schale an und liest die Schemata ein.
+/* Legt die Shell an und liest die Schemata ein.
  *
  * Ein Schema, das sich nicht laden lässt, wird übersprungen und gemeldet -
  * eine kaputte Datei nimmt nicht die ganze Anwendung mit. Nur wenn gar keine
@@ -131,7 +133,7 @@ bool shell_open_app(shell *s, int index, char *err, size_t err_size);
 /* true, wenn das Fenster dieser Anwendung offen ist. */
 bool shell_app_is_open(const shell *s, int index);
 
-/* Das Fenster einer Anwendung, oder NULL. Gehört der Schale.
+/* Das Fenster einer Anwendung, oder NULL. Gehört der Shell.
  *
  * Damit lässt sich der Inhaltsbereich ausrechnen - eine Statuszeile braucht
  * das, und Tests brauchen es, um dorthin zu klicken, wo ein Nutzer klickt. */

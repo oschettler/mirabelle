@@ -2,7 +2,7 @@
 -- Eine Anwendung, die es nur in Lua gibt.
 --
 -- Sie liest Datensätze, ändert sie, schreibt sie zurück und zeichnet. Kein
--- C-Code weiß von ihr; die Schale findet sie, weil sie in data/apps liegt und
+-- C-Code weiß von ihr; die Shell findet sie, weil sie in data/apps liegt und
 -- sich mit app{} anmeldet.
 
 local COLLECTION = "Aufgaben"

@@ -139,7 +139,7 @@ static int l_send(lua_State *L)
     return 0;
 }
 
-/* --- Die Brücke zur Schale ------------------------------------------------------------
+/* --- Die Brücke zur Shell ------------------------------------------------------------
  *
  * Ab hier ruft C nach Lua. Alles davor war umgekehrt, und der Unterschied ist
  * wichtig: hier muss jeder Aufruf über lua_pcall gehen. Ein Skript, das einen

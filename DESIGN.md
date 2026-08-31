@@ -833,11 +833,11 @@ Prüfung zweimal vor, wären es früher oder später zwei verschiedene.
 
 **Damit ist Lua Pflicht.** Ohne Lua gibt es keine Schemata, ohne Schemata keine
 Anwendung — ein Programm ohne Lua hätte nichts zu zeigen. CMake bricht ab,
-statt still etwas Unbrauchbares zu bauen. Die Schale kennt Lua trotzdem nicht:
+statt still etwas Unbrauchbares zu bauen. Die Shell kennt Lua trotzdem nicht:
 sie bekommt einen Lader mit Dateiendung (`shell_schemas`), so wie sie für
 Skripte eine Handvoll Funktionszeiger bekommt. Das hält sie prüfbar — ein Test
 kann einen eigenen Lader einsetzen, und ein Schemafehler sieht nicht aus wie
-ein Schalenfehler.
+ein Shell-Fehler.
 
 Eine generische Anwendung liest das Schema und baut daraus
 Liste, Formular, Menüs und Tastenkürzel. **Aufgaben, Kontakte und Notizen
@@ -1162,5 +1162,5 @@ Zeichenkette im Quelltext.
 | D-13 | Textmodell getrennt vom Textwidget | Der schwierigste Teil eines Editors ist die Schreibmarke, nicht das Zeichnen — getrennt ist er ohne Bildschirm prüfbar |
 | D-14 | Elementmaße nach dem Style Guide, Auflösung und Schrift nicht | Ein Style Guide beschreibt das Aussehen; womit man es erreicht, bleibt Sache des Projekts |
 | D-15 | Der Schemavertrag ist die C-Struktur, nicht die Lua-Tabelle | Lesen und Prüfen bleiben getrennt: der Leser prüft die Gestalt der Datei, `schema_check` die Anwendung dahinter. Ein zweiter Lader bräuchte keine zweite Prüfung |
-| D-16 | Lua ist Pflicht, nicht Beiwerk | Die Schemadateien sind Lua-Tabellen; ohne Lua gäbe es keine Anwendung. CMake bricht ab, statt still etwas Unbrauchbares zu bauen. Die Schale kennt Lua trotzdem nicht — sie bekommt einen Lader (`shell_schemas`) |
+| D-16 | Lua ist Pflicht, nicht Beiwerk | Die Schemadateien sind Lua-Tabellen; ohne Lua gäbe es keine Anwendung. CMake bricht ab, statt still etwas Unbrauchbares zu bauen. Die Shell kennt Lua trotzdem nicht — sie bekommt einen Lader (`shell_schemas`) |
 | D-17 | Ein Skript bekommt die echten Bedienelemente, keine nachgebauten | Ein Nachbau ist eine zweite Wahrheit: er geht auseinander, sobald sich das Original ändert, und niemand merkt es. Wenn ein Skript etwas nachbaut, das es schon gibt, ist das ein Loch in der Schnittstelle |

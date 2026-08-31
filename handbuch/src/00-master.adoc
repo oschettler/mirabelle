@@ -12,7 +12,7 @@ Olav Schettler
 :ebook-format: epub3
 :author: Olav Schettler
 :email: olav@schettler.net
-:revnumber: 0.1
+:revnumber: 1.1
 :revremark: Entwurf, entsteht mit dem Projekt
 :description: Handbuch und Lehrbuch zu mirabelle: ein Taschencomputer im Stil von Macintosh System 1, gebaut in C und Lua, von der ersten Bitmap bis zum eigenen Gerät.
 :keywords: C, Lua, SDL3, ESP32, Bitmapgrafik, Macintosh System 1, Gemtext

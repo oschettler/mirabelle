@@ -18,7 +18,7 @@ ____
 Das Diagramm am Ende dieses Kapitels zeigt den vollständigen Stapel: `core/`
 (Ereignisse, UTF-8, Zeit, Sortierung), `gfx/` (Bitmap, Muster, Schrift), `ui/`
 (Fenster, Menüs, Dialoge, Widgets), `store/` (Datensätze und Vault), `net/`
-(das SPARTAN-Protokoll), `app/` (der generische Browser und die Schale),
+(das SPARTAN-Protokoll), `app/` (der generische Browser und die Shell),
 `lua/` (die Skriptanbindung) und ganz unten `plat/`, die Plattformschicht, um
 die es gleich geht. Alles davon läuft; nur `src/plat/plat_esp32.c` fehlt noch,
 siehe den Hinweis weiter unten.

@@ -39,7 +39,7 @@ button.discard           = Discard
 # --- Dialogs ----------------------------------------------------------------
 dialog.discard.title     = Discard changes?
 dialog.discard.body      = “{0}” has been changed. Discard the changes?
-dialog.about.body        = mirabelle 0.1 – a pocket computer in the style of Macintosh System 1. Free software under the GNU GPL, version 3 or later.
+dialog.about.body        = mirabelle {0} – a pocket computer in the style of Macintosh System 1. Free software under the GNU GPL, version 3 or later.
 
 # --- Licence ----------------------------------------------------------------
 # Two sentences from the output of --version. They live here because a user

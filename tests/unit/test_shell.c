@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-/* Die Schale, siehe app/shell.h.
+/* Die Shell, siehe app/shell.h.
  *
  * Hier wird geprüft, was erst im Zusammenspiel entsteht: dass aus Dateien
  * Anwendungen werden, dass ein Klick ankommt, wo er hingehört, und dass ein
@@ -123,7 +123,7 @@ static bool setup(void)
     snprintf(path, sizeof path, "%s/collate/search.fold", PDA_DATA_DIR);
     g_search = collate_load(path, err, sizeof err);
 
-    /* Schemadateien sind Lua-Tabellen (D-15). Die Schale liest sie nicht
+    /* Schemadateien sind Lua-Tabellen (D-15). Die Shell liest sie nicht
      * selbst, sie bekommt einen Lader - hier den echten, damit dieser Test
      * die mitgelieferten Dateien prüft und nicht seine eigenen Kopien. */
     g_lua = pdalua_open(g_cat, err, sizeof err);
@@ -182,7 +182,7 @@ static shell *open_shell(void)
 
     char   err[256] = "";
     shell *s = shell_create(&cfg, err, sizeof err);
-    if (!s) printf("  Schale: %s\n", err);
+    if (!s) printf("  Shell: %s\n", err);
     return s;
 }
 
@@ -198,7 +198,7 @@ static int app_by_label(const shell *s, const char *label)
 
 TEST(every_schema_file_becomes_an_application)
 {
-    /* Der Beweis, dass die Schale Dateien zählt und keine Anwendungen kennt:
+    /* Der Beweis, dass die Shell Dateien zählt und keine Anwendungen kennt:
      * sie findet genau die, die in data/schema liegen, und nennt keine davon
      * beim Namen. */
     REQUIRE(setup());
@@ -288,7 +288,7 @@ TEST(a_broken_schema_does_not_take_the_others_with_it)
 
 TEST(without_a_loader_the_shell_says_so)
 {
-    /* Die Schale liest Schemadateien nicht selbst, sie bekommt einen Lader
+    /* Die Shell liest Schemadateien nicht selbst, sie bekommt einen Lader
      * (shell.h). Fehlt er, gibt es keine Anwendungen - und das ist eine
      * Meldung wert, keine leere Menüleiste. */
     REQUIRE(setup());
@@ -548,7 +548,7 @@ TEST(a_click_reaches_the_list_in_the_active_window)
  *
  * Die Tests hier klicken und tippen, wie ein Nutzer es täte. Sie rechnen dabei
  * so wenig wie möglich nach: wo genau ein Fenster steht, fragen sie die
- * Schale, statt es aus der Anordnung herzuleiten - sonst prüften sie, ob ich
+ * Shell, statt es aus der Anordnung herzuleiten - sonst prüften sie, ob ich
  * beim Testschreiben richtig gerechnet habe.
  */
 
@@ -599,7 +599,7 @@ static void pick_menu_item(shell *s, int x, int item)
     shell_event(s, &pu);
 
     /* Trifft der Griff einen Eintrag, der etwas fragt, steht danach ein modaler
-     * Dialog im Weg und die Schale nimmt nichts anderes mehr an. Esc räumt ihn
+     * Dialog im Weg und die Shell nimmt nichts anderes mehr an. Esc räumt ihn
      * weg - für einen Test, der die Leiste abklopft, ist das der Weg zurück in
      * einen brauchbaren Zustand. */
     event esc = { .kind = EV_KEY_DOWN, .key = KEY_ESCAPE };
@@ -813,7 +813,7 @@ TEST(return_opens_a_record_and_escape_closes_it_again)
 
 TEST(the_arrow_keys_still_belong_to_the_list)
 {
-    /* Was die Tastenbelegung einem Bedienelement zuschreibt, darf die Schale
+    /* Was die Tastenbelegung einem Bedienelement zuschreibt, darf die Shell
      * nicht schlucken. Sonst bewegte sich keine Auswahl mehr. */
     REQUIRE(setup());
 
@@ -1110,8 +1110,8 @@ TEST(a_dialog_takes_everything_while_it_is_open)
 
 /* --- Skriptanwendungen -----------------------------------------------------------
  *
- * Die Schale kennt Lua nicht - sie bekommt eine Handvoll Funktionszeiger. Also
- * werden hier welche erfunden: so prüft der Test, was die Schale tut, und nicht,
+ * Die Shell kennt Lua nicht - sie bekommt eine Handvoll Funktionszeiger. Also
+ * werden hier welche erfunden: so prüft der Test, was die Shell tut, und nicht,
  * ob Lua funktioniert. Das steht in test_lua.c.
  */
 
@@ -1119,7 +1119,7 @@ typedef struct {
     int         count;
     int         updated, drawn, evented;
     bool        consume;
-    const char *window_title;   /* NULL: die Schale nimmt den Namen der Anwendung */
+    const char *window_title;   /* NULL: die Shell nimmt den Namen der Anwendung */
 
     /* Der Katalogschlüssel, unter dem die Anwendung läuft. NULL nimmt die
      * eingebauten. Ein Test, dem es auf Einzahl und Mehrzahl ankommt, setzt
@@ -1190,7 +1190,7 @@ static shell *open_shell_with_keys(fake_scripts *f, shell_scripting *sc,
 
     char   err[256] = "";
     shell *s = shell_create(&cfg, err, sizeof err);
-    if (!s) printf("  Schale: %s\n", err);
+    if (!s) printf("  Shell: %s\n", err);
     return s;
 }
 
@@ -1202,7 +1202,7 @@ static shell *open_shell_with(fake_scripts *f, shell_scripting *sc)
 TEST(a_script_can_name_its_own_window)
 {
     /* Ein Skript zeigt, was es gerade anzeigt - eine abgerufene Seite etwa.
-     * Den Namen der Anwendung setzt die Schale dahinter, damit ein Skript ihn
+     * Den Namen der Anwendung setzt die Shell dahinter, damit ein Skript ihn
      * nicht selbst zusammenbauen muss. */
     REQUIRE(setup());
 
@@ -1360,7 +1360,7 @@ TEST(a_script_application_gets_a_window_and_draws_itself)
     shell_event(s, &click);
     CHECK_EQ(f.evented, 2);
 
-    /* Schließen geht über die Schale, nicht über das Skript. */
+    /* Schließen geht über die Shell, nicht über das Skript. */
     shell_run_action(s, "window.close");
     CHECK(!shell_app_is_open(s, agenda));
 
@@ -1408,11 +1408,11 @@ TEST(keys_for_records_reach_a_script_that_has_none)
 {
     /* Der Fehler, um den es geht: im SPARTAN-Browser ließ sich die Adresse
      * eintippen, aber Return tat nichts. Return steht in der Tastenbelegung
-     * als `list.open`, die Schale hielt die Taste für ihre eigene und
+     * als `list.open`, die Shell hielt die Taste für ihre eigene und
      * verbrauchte sie - obwohl es in einer Skriptanwendung keine Liste gibt,
      * die sich öffnen ließe.
      *
-     * Regel: Eine Aktion, die einen Datensatz anfasst, gehört der Schale nur
+     * Regel: Eine Aktion, die einen Datensatz anfasst, gehört der Shell nur
      * dann, wenn es auch einen gibt. Sonst geht die Taste weiter. */
     REQUIRE(setup());
 
@@ -1436,7 +1436,7 @@ TEST(keys_for_records_reach_a_script_that_has_none)
     shell_event(s, &esc);
     CHECK_EQ(f.evented, 3);
 
-    /* Eine Taste, die der Schale selbst gehört, bleibt bei ihr: Cmd+1 wechselt
+    /* Eine Taste, die der Shell selbst gehört, bleibt bei ihr: Cmd+1 wechselt
      * die Anwendung, auch wenn ein Skript im Vordergrund steht. Sonst könnte
      * ein Skript das Programm übernehmen. */
     event eins = { .kind = EV_KEY_DOWN, .key = '1', .mods = MOD_CMD };
@@ -1451,7 +1451,7 @@ TEST(a_form_key_bound_to_the_app_area_still_reaches_a_script)
 {
     /* Die Bereiche stehen in einer Datei, nicht im Code. Wer `form.accept`
      * im Bereich `app` bindet, bekommt die Aktion auch in einem Fenster ohne
-     * Formular - und auch dann darf die Schale sie nicht verbrauchen, sondern
+     * Formular - und auch dann darf die Shell sie nicht verbrauchen, sondern
      * muss sie weiterreichen. Sonst hinge die Regel an der Belegung, die
      * gerade mitgeliefert wird. */
     REQUIRE(setup());

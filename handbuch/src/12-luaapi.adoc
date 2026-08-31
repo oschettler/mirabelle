@@ -33,7 +33,7 @@ die Anwendung erscheint nicht. Alles andere ist wahlfrei.
 
 `title` ist ein Katalogschlüssel und steht im Menü. `window_title` dagegen
 liefert fertigen Text — den Titel einer abgerufenen Seite etwa, der in keinem
-Katalog steht. Die Klammer mit dem Namen der Anwendung setzt die Schale
+Katalog steht. Die Klammer mit dem Namen der Anwendung setzt die Shell
 dahinter; ein Skript baut sie nicht selbst.
 
 === Ereignisse

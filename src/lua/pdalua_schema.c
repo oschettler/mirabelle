@@ -296,7 +296,7 @@ bool pdalua_schema(lua_State *L, const char *path, schema *out,
     return true;
 }
 
-/* --- Als Lader für die Schale ----------------------------------------------- */
+/* --- Als Lader für die Shell ----------------------------------------------- */
 
 static bool loader(void *user, const char *path, schema *out,
                    char *err, size_t err_size)
