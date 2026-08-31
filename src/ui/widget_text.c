@@ -237,14 +237,22 @@ static void text_area_rebuild_lines(text_widget *tw, int wrap_w)
 {
     tw->line_count = 0;   /* Kapazität bleibt, nur die Belegung wird verworfen */
 
-    const char *text       = textbuf_text(tw->buf);
-    int         real_lines = textbuf_line_count(tw->buf);
+    /* Ein einziger Durchlauf statt textbuf_line_start() je Zeile: das lief
+     * vorher jedes Mal wieder vom Anfang des Puffers los und machte den
+     * ganzen Umbruch O(Zeichen × Zeilen) - bei jedem Tastendruck spürbar auf
+     * langsamer Hardware. */
+    const char *text = textbuf_text(tw->buf);
+    size_t      len  = textbuf_len(tw->buf);
+    size_t      start = 0;
 
-    for (int i = 0; i < real_lines; i++) {
-        size_t start = textbuf_line_start(tw->buf, i);
-        size_t end   = (i + 1 < real_lines) ? textbuf_line_start(tw->buf, i + 1) - 1
-                                             : textbuf_len(tw->buf);
+    for (;;) {
+        const char *nl  = memchr(text + start, '\n', len - start);
+        size_t      end = nl ? (size_t)(nl - text) : len;
+
         wrap_real_line(tw, text, start, end, wrap_w);
+
+        if (!nl) break;
+        start = end + 1;
     }
 
     if (tw->line_count == 0) push_display_line(tw, 0, 0);
