@@ -330,7 +330,17 @@ widget *panel_focus(const panel *p)
 
 void panel_set_focus(panel *p, widget *w)
 {
-    if (p->focus >= 0) p->items[p->focus]->focused = false;
+    if (p->focus >= 0) {
+        widget *old = p->items[p->focus];
+        old->focused = false;
+
+        /* Steckt darin selbst ein Panel (etwa ein Textfeld mit Rollbalken
+         * daneben), muss auch dessen Fokus verschwinden - sonst bleibt der
+         * doppelte Fokusrahmen stehen, wenn der Fokus zu einem Geschwister
+         * wandert. */
+        panel *inner = panel_of_widget(old);
+        if (inner) panel_clear_focus(inner);
+    }
 
     p->focus = -1;
     for (int i = 0; i < p->count; i++) {
